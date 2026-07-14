@@ -17,10 +17,10 @@
 |------|------|----------------|
 | shadcn init (MNT-71) | 002-auth Fase 1.5 | Todo o shell (componentes shadcn) |
 | Auth funcional (Fase 1 do 002) | 002-auth | Middleware + rotas protegidas |
-| `/onboarding` (MNT-84) | 006-onboarding | Redirect pós-signup |
+| `/onboarding` (MNT-84) | 008-onboarding | Redirect pós-signup |
 | Auth pages (MNT-44) | 002-auth | Rotas em `(auth)/` |
 | `/settings/assistant` (MNT-66) | 003-assistant | Sub-rota de `/settings` |
-| `/charts` (MNT-91) | 005-visualizations | Aba Insights |
+| `/charts` (MNT-91) | 006-visualizations | Aba Insights |
 | Session Realtime (MNT-50) | 003-assistant | Página `/chat` |
 | Tools de tx/banco/recurring | 004-006 (a criar) | Listas e detalhes |
 
@@ -77,7 +77,7 @@ Mesmas do `specs/002-auth/tasks.md`.
   - Lista das `recurring_rules` — cada card: nome, valor (default_amount ou "variável"), banco, ativo/inativo
   - Botão "aplicar esse mês" em cada card → chama tool `apply_recurring_rule` (materializa transação)
   - Sub-rota `/recurring/:id` — edit
-- [ ] **MNT-105** [S] Insights `/charts` (aba **Insights**) — **já implementado em MNT-91** (`specs/005-visualizations`). Aqui só entra o link da tab
+- [ ] **MNT-105** [S] Insights `/charts` (aba **Insights**) — **já implementado em MNT-91** (`specs/006-visualizations`). Aqui só entra o link da tab
 - [ ] **MNT-106** [T][S] Settings hub `/settings` (aba **Perfil**) — layout com nav lateral (desktop) ou lista clicável (mobile):
   - `/settings/profile` — nickname, name, email, botão "verificar email" (se `email_verified=false`)
   - `/settings/assistant` — **já implementado em MNT-66** (`specs/003-assistant`), só entra na nav

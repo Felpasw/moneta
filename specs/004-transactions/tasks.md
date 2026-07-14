@@ -18,7 +18,7 @@
 | ToolRegistry + Dispatcher | 003-assistant Fase 2 | Registrar as ~15 tools novas |
 | `get_tool_help` (MNT-94) | 003-assistant Fase 2.5 | Playbooks on-demand |
 | Postgres + TypeORM | 002-auth Fase 0 | Migrations |
-| UI shell (MNT-98..99) | 007-ui-shell | Onde montar `/transactions`, `/banks`, `/invoices` |
+| UI shell (MNT-98..99) | 009-ui-shell | Onde montar `/transactions`, `/banks`, `/invoices` |
 | shadcn (MNT-71) | 002-auth Fase 1.5 | Componentes das páginas |
 
 ## Convenções
@@ -112,7 +112,7 @@ Essencial pra V1 — cartão é o meio principal e parcelamento é onipresente n
 
 ## Fase 6 — UI
 
-- [ ] **MNT-141** [T][S] Página `/transactions` (MNT-102 do 007-ui-shell) — lista virtualizada + filtros + FAB. Row de transaction em cartão mostra badge "Fatura {mês}" pequeno. Click em row abre `<TransactionDetail>` sheet
+- [ ] **MNT-141** [T][S] Página `/transactions` (MNT-102 do 009-ui-shell) — lista virtualizada + filtros + FAB. Row de transaction em cartão mostra badge "Fatura {mês}" pequeno. Click em row abre `<TransactionDetail>` sheet
 - [ ] **MNT-142** [T][S] Página `/banks` (MNT-103) — grid de cards. Cartão de crédito tem card com layout diferente: mostra "fatura atual: R$X | fecha em N dias | vencimento: DD/MM". Click abre `/banks/:id` com extrato daquela conta
 - [ ] **MNT-143** [T][S] Dashboard (`MNT-100`): quando user tem cartão, KPI card "Fatura atual" no topo (só o cartão de mais gasto, ou soma se múltiplos). Botão "pagar" navega pra `/invoices/:id`
 - [ ] **MNT-144** [T][S] Página `/invoices/:id` — detail da fatura: lista das transactions daquele ciclo (readonly), total, cycle_start/end, due_date, status. Botão "pagar fatura" abre modal pra escolher `fromAccountId` (contas não-cartão do user) e confirma
@@ -143,5 +143,5 @@ Essencial pra V1 — cartão é o meio principal e parcelamento é onipresente n
 - [Product Brief](../000-product-brief/spec.md) — modelo de dados financeiro
 - [Auth spec](../002-auth/tasks.md) — ownership context
 - [Assistant spec](../003-assistant/tasks.md) — ToolRegistry, playbooks
-- [UI shell spec](../007-ui-shell/tasks.md) — onde as páginas aterrissam
+- [UI shell spec](../009-ui-shell/tasks.md) — onde as páginas aterrissam
 - @nestjs/schedule — https://docs.nestjs.com/techniques/task-scheduling (pro job de fechamento de invoice)

@@ -110,6 +110,26 @@ Fluxo esperado (a ser detalhado em `specs/003-assistant/`):
 
 ---
 
+## Padrões do projeto
+
+**TDD é obrigatório pra todo código.** Teste vermelho antes do código de produção, sem exceção salvo config/migration/scaffold puros. Vale pra `/api` (Jest) e `/web` (Vitest + Testing Library). Ver `CLAUDE.md` na raiz do repo.
+
+**Ticket/branch/tag**: `MNT-N` global crescente. Branch = `MNT-N/slug`. Commit termina com `[MNT-N]`. Conventional Commits obrigatórios (release-please analisa isso).
+
+**UI kit**: shadcn/ui em tudo. Nada de bootstrap/mui/chakra — foi decidido.
+
+**Playbook obrigatório em todo tool do assistente** (contrato de `AssistantTool` em `specs/003-assistant`). Sem playbook, tool não passa no linter.
+
+**Anti prompt-injection**: campos user-controlled que caem no system prompt são sempre enum/preset, nunca free-text.
+
+**Ownership universal**: todo use-case filtra por `user_id` da sessão. `userId` do payload de tool call é ignorado — sempre do `AssistantContext`.
+
+**Balance atomic**: toda operação que altera saldo (transaction, transfer, invoice payment) roda em transação DB única. Ver `specs/004-transactions` MNT-130.
+
+**Redis pra efêmero**: tokens de curta duração (password reset, email verification, passkey challenges) vivem no Redis, não no Postgres. Ver `specs/002-auth`.
+
+---
+
 ## Ordem de execução das specs
 
 Sequência de dependência. Blocos posteriores dependem dos anteriores estarem prontos (não necessariamente 100% — leia notas por bloco). Cada bloco pode gerar vários commits/PRs, cada um com sua Release PR do release-please.
@@ -132,25 +152,27 @@ Infraestrutura que permite tools existirem — sem OpenAI Realtime ainda. `ToolR
 
 Tasks: MNT-52..54 (Fase 2) + MNT-93..97 (Fase 2.5).
 
-### Bloco 3 — Tools de domínio (`specs/004-transactions` + `specs/005-visualizations`)
+### Bloco 3 — Tools de domínio (`specs/004-transactions` + `specs/005-recurring` + `specs/006-visualizations`)
 
 O núcleo do produto — dados financeiros. Cada CRUD tem REST endpoint + tool wrapper com playbook. **Neste ponto o assistente ainda não existe**, mas os endpoints funcionam via REST (testes de integração + Postman).
 
-- `specs/004-transactions` (MNT-122..148): banks catalog, contas, categorias, transactions, transfers, faturas de cartão
-- `specs/005-visualizations` (MNT-72..79, MNT-88..92): dynamic charts + saved charts
+- `specs/004-transactions` (MNT-122..148, MNT-154..157): banks catalog, contas, categorias, transactions, transfers, faturas de cartão, parcelamento
+- `specs/005-recurring` (MNT-158..164): salário fixo/variável, despesas fixas, materialização mensal
+- `specs/006-visualizations` (MNT-72..79, MNT-88..92): dynamic charts + saved charts
 
-### Bloco 4 — Agent (`specs/003-assistant` restante)
+### Bloco 4 — Agent + Advisory (`specs/003-assistant` restante + `specs/007-advisory`)
 
-O assistente conversacional em si. Setup dos providers (OpenAI + ElevenLabs), Realtime bridge, TTS streaming, avatar RPM 3D, personalização, memória de conversa. Consome as tools do Bloco 3.
+O assistente conversacional em si + as tools de consultoria financeira. Setup dos providers (OpenAI + ElevenLabs), Realtime bridge, TTS streaming, avatar RPM 3D, personalização, memória de conversa. Consome as tools do Bloco 3.
 
-Tasks: MNT-45..51 (Fase 0 + 1) + MNT-55..70 (Fases 3, 4, 5).
+- `specs/003-assistant` (MNT-45..51 + MNT-55..70): providers, Realtime, TTS, RPM, memória, personalização
+- `specs/007-advisory` (MNT-165..171): tools analíticas + simulação de compra + insights ativos
 
-### Bloco 5 — Onboarding + UI shell (`specs/006-onboarding` + `specs/007-ui-shell`)
+### Bloco 5 — Onboarding + UI shell (`specs/008-onboarding` + `specs/009-ui-shell`)
 
 Assistente conduz onboarding conversacional (depende do agent do Bloco 4). UI shell monta as páginas ao redor de todas as capabilities já implementadas.
 
-- `specs/006-onboarding` (MNT-80..87)
-- `specs/007-ui-shell` (MNT-98..111)
+- `specs/008-onboarding` (MNT-80..87)
+- `specs/009-ui-shell` (MNT-98..111)
 
 ### Bloco 6 — Auth completo (`specs/002-auth` restante)
 
@@ -158,9 +180,9 @@ Fecha auth com OAuth Google, Passkey (web + Capacitor) e hardening (audit log, p
 
 Tasks: MNT-18..23 (Google) + MNT-24..34 (Passkey web + Capacitor) + MNT-35..39 (Hardening).
 
-### Bloco 7 — `[DEFERRED]` Import (`specs/008-import`)
+### Bloco 7 — `[DEFERRED]` Import (`specs/010-import`)
 
-Só depois de V1 rodando com usuários reais. Ver `specs/008-import/tasks.md` — todas as tasks marcadas `[DEFERRED]`.
+Só depois de V1 rodando com usuários reais. Ver `specs/010-import/tasks.md` — todas as tasks marcadas `[DEFERRED]`.
 
 Tasks: MNT-112..121.
 
