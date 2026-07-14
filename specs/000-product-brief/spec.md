@@ -180,9 +180,21 @@ Fecha auth com OAuth Google, Passkey (web + Capacitor) e hardening (audit log, p
 
 Tasks: MNT-18..23 (Google) + MNT-24..34 (Passkey web + Capacitor) + MNT-35..39 (Hardening).
 
-### Bloco 7 — `[DEFERRED]` Import (`specs/010-import`)
+### Bloco 7 — Deploy + CI (`specs/010-deploy-ci`)
 
-Só depois de V1 rodando com usuários reais. Ver `specs/010-import/tasks.md` — todas as tasks marcadas `[DEFERRED]`.
+Sai do laptop e vai pro ar. Docker do `/api` no Fly.io + `/web` na Vercel + GitHub Actions pra CI (test/lint/build em PR) + secrets em prod. Migrations rodam no boot.
+
+Tasks: MNT-172..182.
+
+### Bloco 8 — Notificações push (`specs/011-notifications`)
+
+FCM proativo — fatura fechando (D-3, D-1), gasto anormal, sessão longa esquecida. Preferências por user + quiet hours.
+
+Tasks: MNT-183..191.
+
+### Bloco 9 — `[DEFERRED]` Import (`specs/012-import`)
+
+Só depois de V1 rodando com usuários reais. Ver `specs/012-import/tasks.md` — todas as tasks marcadas `[DEFERRED]`.
 
 Tasks: MNT-112..121.
 
