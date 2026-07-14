@@ -81,4 +81,4 @@ import_rows {
 - ofx-js: https://www.npmjs.com/package/ofx-js
 - OpenAI structured output: https://platform.openai.com/docs/guides/structured-outputs
 - Google Document AI: https://cloud.google.com/document-ai (pra PDF depois)
-- [Product Brief](../001-product-brief/spec.md)
+- [Product Brief](../000-product-brief/spec.md)

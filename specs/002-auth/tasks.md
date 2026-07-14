@@ -60,7 +60,7 @@ Bundle grande — commitar em 2 partes: (a) infra de token/hash, (b) use-cases +
 
 ### (b) use-cases + rotas
 
-- [ ] **MNT-9** [T][S] Use-case `SignupWithPassword({ email, password, name })` → valida `name` (1-100 chars, trim, sem HTML); cria `User(email, name)` + `Credential(type='password', hash)`; erro claro em email duplicado. `nickname` e `onboarded_at` ficam NULL — assistente captura no onboarding (`specs/008-onboarding`)
+- [ ] **MNT-9** [T][S] Use-case `SignupWithPassword({ email, password, name })` → valida `name` (1-100 chars, trim, sem HTML); cria `User(email, name)` + `Credential(type='password', hash)`; erro claro em email duplicado. `nickname` e `onboarded_at` ficam NULL — assistente captura no onboarding (`specs/006-onboarding`)
 - [ ] **MNT-10** [T][S] Use-case `LoginWithPassword(email, password)` → verifica hash, cria `Session(refreshTokenHash, userAgent, ip, expiresAt)`, retorna par
 - [ ] **MNT-11** [T][S] Use-case `RefreshTokens(refreshToken)` → localiza Session por hash, valida não-revogada e não-expirada, ROTACIONA (revoga a antiga, cria nova), retorna novo par
 - [ ] **MNT-12** [T][S] Use-case `Logout(refreshToken)` → revoga Session
@@ -76,7 +76,7 @@ Bundle grande — commitar em 2 partes: (a) infra de token/hash, (b) use-cases +
 
 Depende da Fase 1. Ativa a possibilidade de recuperar senha esquecida — parte essencial da UX de login por senha, por isso vem antes de OAuth/Passkey.
 
-**Prereq cross-cutting de UI:** `MNT-71` (abaixo) precisa ser feito antes de `MNT-44`. Também bloqueia `MNT-66` (`specs/003-assistant`) e `specs/007-visualizations` inteiro. É a foundation frontend do projeto.
+**Prereq cross-cutting de UI:** `MNT-71` (abaixo) precisa ser feito antes de `MNT-44`. Também bloqueia `MNT-66` (`specs/003-assistant`) e `specs/005-visualizations` inteiro. É a foundation frontend do projeto.
 
 - [ ] **MNT-71** [S] Init shadcn/ui em `/web`: `pnpm dlx shadcn@latest init` (base color neutral, react-server-components on, path `@/components`); adicionar componentes base já esperados — `button`, `input`, `label`, `form`, `dialog`, `radio-group`, `select`, `card`, `avatar`, `tabs`, `scroll-area`, `sonner`. Ajustar `tailwind.config` e `globals.css` conforme output do CLI. Verificar que build passa
 - [ ] **MNT-40** 🛑 [HUMANO] Escolher SMTP provider e criar conta. Recomendação: **Resend** (free 3k emails/mês, DX ótima, HTTP API — evita SMTP direto). Alternativas: SendGrid, Mailgun, Amazon SES. Salvar `RESEND_API_KEY` (ou equivalente) e `MAIL_FROM` no `.env`
@@ -147,7 +147,7 @@ Todas `[P]` — podem ser feitas em qualquer ordem depois da Fase 1.
 
 ## Referências
 
-- [Product Brief](../001-product-brief/spec.md)
+- [Product Brief](../000-product-brief/spec.md)
 - @simplewebauthn: https://simplewebauthn.dev/docs/
 - passport-google-oauth20: https://github.com/jaredhanson/passport-google-oauth2
 - Argon2id parametrização recomendada: OWASP Password Storage Cheat Sheet

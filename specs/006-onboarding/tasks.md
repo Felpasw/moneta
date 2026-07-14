@@ -72,6 +72,6 @@ Mesmas do `specs/002-auth/tasks.md`.
 
 ## Referências
 
-- [Product Brief](../001-product-brief/spec.md)
+- [Product Brief](../000-product-brief/spec.md)
 - [Auth spec](../002-auth/tasks.md) — signup captura `name`
 - [Assistant spec](../003-assistant/tasks.md) — ToolRegistry, prompts, session

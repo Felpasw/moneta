@@ -110,7 +110,64 @@ Fluxo esperado (a ser detalhado em `specs/003-assistant/`):
 
 ---
 
+## Ordem de execução das specs
+
+Sequência de dependência. Blocos posteriores dependem dos anteriores estarem prontos (não necessariamente 100% — leia notas por bloco). Cada bloco pode gerar vários commits/PRs, cada um com sua Release PR do release-please.
+
+### Bloco 0 — Versionamento (`specs/001-release-management`) 🔴
+
+**Antes de qualquer código.** Setup do release-please + commitlint + husky. Sem isso, todo histórico de commit vira "initial 0.1.0" no changelog. Ver `specs/001-release-management/tasks.md`.
+
+Tasks: MNT-149..153.
+
+### Bloco 1 — Foundation & Auth base (`specs/002-auth` parcial)
+
+Infra que segura tudo. Postgres + Redis subindo, TypeORM, módulos, users, JWT, senha, shadcn init.
+
+Tasks: MNT-1..17 (Fase 0 + Fase 1) + MNT-71 (shadcn init dentro da Fase 1.5) + MNT-40..44 (reset de senha).
+
+### Bloco 2 — Framework de tools (`specs/003-assistant` parcial)
+
+Infraestrutura que permite tools existirem — sem OpenAI Realtime ainda. `ToolRegistry`, `ToolDispatcher`, `AssistantContext`, playbooks on-demand, meta-tool `get_tool_help`.
+
+Tasks: MNT-52..54 (Fase 2) + MNT-93..97 (Fase 2.5).
+
+### Bloco 3 — Tools de domínio (`specs/004-transactions` + `specs/005-visualizations`)
+
+O núcleo do produto — dados financeiros. Cada CRUD tem REST endpoint + tool wrapper com playbook. **Neste ponto o assistente ainda não existe**, mas os endpoints funcionam via REST (testes de integração + Postman).
+
+- `specs/004-transactions` (MNT-122..148): banks catalog, contas, categorias, transactions, transfers, faturas de cartão
+- `specs/005-visualizations` (MNT-72..79, MNT-88..92): dynamic charts + saved charts
+
+### Bloco 4 — Agent (`specs/003-assistant` restante)
+
+O assistente conversacional em si. Setup dos providers (OpenAI + ElevenLabs), Realtime bridge, TTS streaming, avatar RPM 3D, personalização, memória de conversa. Consome as tools do Bloco 3.
+
+Tasks: MNT-45..51 (Fase 0 + 1) + MNT-55..70 (Fases 3, 4, 5).
+
+### Bloco 5 — Onboarding + UI shell (`specs/006-onboarding` + `specs/007-ui-shell`)
+
+Assistente conduz onboarding conversacional (depende do agent do Bloco 4). UI shell monta as páginas ao redor de todas as capabilities já implementadas.
+
+- `specs/006-onboarding` (MNT-80..87)
+- `specs/007-ui-shell` (MNT-98..111)
+
+### Bloco 6 — Auth completo (`specs/002-auth` restante)
+
+Fecha auth com OAuth Google, Passkey (web + Capacitor) e hardening (audit log, pen test, sign-out everywhere). Aditivo — nada quebra se ficar sem por um tempo, mas expande as formas de login.
+
+Tasks: MNT-18..23 (Google) + MNT-24..34 (Passkey web + Capacitor) + MNT-35..39 (Hardening).
+
+### Bloco 7 — `[DEFERRED]` Import (`specs/008-import`)
+
+Só depois de V1 rodando com usuários reais. Ver `specs/008-import/tasks.md` — todas as tasks marcadas `[DEFERRED]`.
+
+Tasks: MNT-112..121.
+
+---
+
 ## Histórico
 
 - 2026-07-14 — Brief inicial capturado por Felipe
 - 2026-07-14 — ADR-01/02/03/04 decididos (auth Passport, Postgres, OpenAI Realtime, ElevenLabs)
+- 2026-07-14 — Ordem de execução definida em 8 blocos (versionamento → foundation → framework → tools → agent → onboarding+ui → auth completo → import)

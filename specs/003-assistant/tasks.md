@@ -159,7 +159,7 @@ Placeholder. As tools específicas (`add_transaction`, `remove_transaction`, `li
 
 ## Referências
 
-- [Product Brief](../001-product-brief/spec.md)
+- [Product Brief](../000-product-brief/spec.md)
 - OpenAI Realtime API: https://platform.openai.com/docs/guides/realtime
 - OpenAI Realtime — ephemeral tokens: https://platform.openai.com/docs/api-reference/realtime-sessions/create
 - ElevenLabs streaming: https://elevenlabs.io/docs/api-reference/streaming
