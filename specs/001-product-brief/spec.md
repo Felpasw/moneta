@@ -72,24 +72,45 @@ Todas as ferramentas devem ser invocáveis pelo assistente via function calling:
 
 - **Web**: Next.js 16 App Router + Capacitor 8 (mesma base para iOS/Android)
 - **API**: NestJS 11
-- **Persistência**: 🛑 HARD STOP — decidir antes de qualquer entidade
-- **LLM/voz**: 🛑 HARD STOP — decidir provider(es) antes de implementar tools
-- **Auth pattern**: 🛑 HARD STOP — decidir antes de qualquer código de auth (ADR)
+- **Persistência**: Postgres 16 via docker-compose + TypeORM (migrations manuais, `synchronize: false`)
+- **Auth pattern**: Custom Passport + JWT híbrido (access Bearer + refresh cookie/secure storage) — ver `specs/002-auth/tasks.md`
+- **LLM + STT + tool calling**: OpenAI Realtime API (`gpt-4o-realtime`)
+- **TTS**: ElevenLabs
 - **Segurança financeira**: PAN/CVV/tokens NUNCA persistidos; segredos fora do código; logs sem PII sensível
+
+### Stack do assistente conversacional (detalhe)
+
+Fluxo esperado (a ser detalhado em `specs/003-assistant/`):
+
+1. Client (web/Capacitor) captura áudio
+2. **OpenAI Realtime** faz STT + inferência LLM com tool calling; output em **texto** (não áudio nativo do Realtime — ignorado pra ter voz custom via ElevenLabs)
+3. Tool calls são executados server-side pelo NestJS (auth do usuário, acesso ao Postgres); resultado volta pra sessão Realtime
+4. Texto final da resposta é enviado pra **ElevenLabs TTS** streaming
+5. Áudio streamado de volta pro client e reproduzido
+
+**Decisões de arquitetura pendentes** (novo bloco de HARD STOPs pra `specs/003-assistant/`):
+
+- Como conectar client ↔ OpenAI Realtime: **ephemeral session tokens** (client direto, latência baixa) OU **proxy WebSocket via NestJS** (mais controle, latência maior). Ephemeral é o padrão da OpenAI; proxy é seguro e mais fácil de auditar tool calls.
+- Onde executar tool calls: server-side é obrigatório (auth do user). Se ephemeral, client relaya `tool_call` → NestJS → resultado → client → Realtime.
+- ElevenLabs: streaming via WebSocket ou HTTP chunked. Streaming pra evitar latência perceptível.
+- Cache/memória de conversa: histórico persistido no Postgres (contexto entre sessões) vs. só durante a sessão.
 
 ---
 
-## Decisões pendentes (bloqueios)
+## Decisões (registro)
 
-| ID     | Decisão                                    | Bloqueia                          |
-|--------|--------------------------------------------|-----------------------------------|
-| ADR-01 | Auth pattern (custom / Auth.js / managed)  | Toda feature de auth              |
-| ADR-02 | Persistência (Postgres/SQLite/etc + ORM)   | Entidades, migrations             |
-| ADR-03 | LLM provider (OpenAI/Anthropic/local)      | Tool calling, avaliação de custos |
-| ADR-04 | TTS provider (ElevenLabs/OpenAI/nativo)    | Vozes do assistente               |
+| ID     | Decisão                                                                 | Status    |
+|--------|-------------------------------------------------------------------------|-----------|
+| ADR-01 | Auth pattern → Custom Passport + JWT híbrido                            | ✅ Decidido |
+| ADR-02 | Persistência → Postgres 16 (docker-compose) + TypeORM                   | ✅ Decidido |
+| ADR-03 | LLM + STT → OpenAI Realtime API (`gpt-4o-realtime`) com output em texto | ✅ Decidido |
+| ADR-04 | TTS → ElevenLabs (streaming)                                            | ✅ Decidido |
+| ADR-05 | Client ↔ Realtime: ephemeral token OU proxy WebSocket                   | 🛑 Pendente |
+| ADR-06 | Memória de conversa: persistir histórico entre sessões?                 | 🛑 Pendente |
 
 ---
 
 ## Histórico
 
 - 2026-07-14 — Brief inicial capturado por Felipe
+- 2026-07-14 — ADR-01/02/03/04 decididos (auth Passport, Postgres, OpenAI Realtime, ElevenLabs)

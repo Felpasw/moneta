@@ -1,4 +1,4 @@
-# Autenticação (MNT-1 … MNT-44)
+# Autenticação (MNT-1..44, MNT-71)
 
 ## Decisões (inline, sem ADR separado a pedido do Felipe)
 
@@ -8,7 +8,13 @@
   - Web: cookie `HttpOnly + Secure + SameSite=Lax`, `path=/auth/refresh`
   - Mobile (Capacitor): `@capacitor/preferences` + secure storage nativo
 - **Hash de senha**: Argon2id (memoryCost=19456, timeCost=2, parallelism=1)
-- **DB**: Postgres 16 via docker-compose + TypeORM + migrations manuais (`synchronize: false`)
+- **DB persistente**: Postgres 16 via docker-compose + TypeORM + migrations manuais (`synchronize: false`)
+- **Store efêmero (Redis 7 via docker-compose)**: tokens de curta duração e single-use ficam **fora do Postgres** — usam Redis com TTL nativo:
+  - `password_reset:{token_hash}` → `{ userId }`, TTL 15min, `GETDEL` pra atomicidade single-use
+  - `email_verification:{token_hash}` → `{ userId }`, TTL 24h
+  - `passkey_challenge:enroll:{userId}` → `{ challenge }`, TTL 5min
+  - `passkey_challenge:auth:{sessionId}` → `{ challenge }`, TTL 5min (login usernameless)
+  - Cliente: `ioredis` (controle direto, DI via NestJS custom provider)
 - **Ordem de implementação**: senha+JWT → reset de senha por email → Google web → Google nativo → Passkey web → Passkey mobile → hardening
 - **SMTP provider**: TBD em MNT-40 (recomendação: Resend — free tier generoso, DX ótima, HTTP API)
 
@@ -32,12 +38,12 @@ Após commit, atualizar item pra `[x] ✅ commit \`<hash>\``.
 
 Todos `[S]` — cada um depende do anterior.
 
-- [ ] **MNT-1** [S] `docker-compose.yml` na raiz com serviço `postgres:16-alpine`, volume named, healthcheck; `.env.example` do `/api` com `DATABASE_URL`
+- [ ] **MNT-1** [S] `docker-compose.yml` na raiz com **dois serviços**: `postgres:16-alpine` (volume named + healthcheck) e `redis:7-alpine` (volume named + healthcheck, `--appendonly yes` pra durabilidade); `.env.example` do `/api` com `DATABASE_URL` e `REDIS_URL`
 - [ ] **MNT-2** [S] `src/config/data-source.ts` (TypeORM DataSource pra migrations); scripts `migration:generate`, `migration:run`, `migration:revert` no `package.json`
-- [ ] **MNT-3** [S] `TypeOrmModule.forRootAsync` no `AppModule` via `ConfigService` (nunca `synchronize: true`)
-- [ ] **MNT-4** [S] Skeleton dos módulos `src/auth/` e `src/users/` no padrão Clean Arch (`domain/`, `application/use-cases/`, `infrastructure/repositories/`, DTOs, controller/service). `auth.module.ts` importa `UsersModule`
-- [ ] **MNT-5** [T][S] Entities + primeira migration: `users`, `credentials`, `sessions`, `oauth_accounts`, `passkey_credentials`, `passkey_challenges`, `password_reset_tokens`, `email_verification_tokens`. Índices em `users.email` unique, `oauth_accounts (provider, provider_id)` unique, `sessions.user_id`, `password_reset_tokens.token_hash` unique
-- [ ] **MNT-6** [S] Health check endpoint `/health` valida conexão DB — smoke test da fundação
+- [ ] **MNT-3** [S] `TypeOrmModule.forRootAsync` no `AppModule` via `ConfigService` (nunca `synchronize: true`). **Também**: `RedisModule` global com `ioredis` client como provider (`REDIS_CLIENT`), inicializado a partir de `REDIS_URL`
+- [ ] **MNT-4** [S] Skeleton dos módulos `src/auth/` e `src/users/` no padrão Clean Arch (`domain/`, `application/use-cases/`, `infrastructure/repositories/`, DTOs, controller/service). `auth.module.ts` importa `UsersModule`. Módulo compartilhado `src/infrastructure/redis/` exporta `REDIS_CLIENT` pra ser injetado nos use-cases que precisam
+- [ ] **MNT-5** [T][S] Entities + primeira migration (**só o que é persistente de longo prazo**): `users` (com `name VARCHAR(100) NOT NULL`, `nickname VARCHAR(50) NULLABLE`, `onboarded_at TIMESTAMPTZ NULLABLE`), `credentials`, `sessions`, `oauth_accounts`, `passkey_credentials`. **Fora daqui** (vão pro Redis, sem tabela): `passkey_challenges`, `password_reset_tokens`, `email_verification_tokens`. Índices em `users.email` unique, `oauth_accounts (provider, provider_id)` unique, `sessions.user_id`, `passkey_credentials.credential_id` unique
+- [ ] **MNT-6** [S] Health check endpoint `/health` valida Postgres **e** Redis (`PING`) — smoke test da fundação
 
 🛑 **HARD STOP**: nenhuma fase abaixo antes do `docker compose up -d` subir Postgres OK, migration **MNT-5** rodar OK e `/health` responder 200.
 
@@ -54,7 +60,7 @@ Bundle grande — commitar em 2 partes: (a) infra de token/hash, (b) use-cases +
 
 ### (b) use-cases + rotas
 
-- [ ] **MNT-9** [T][S] Use-case `SignupWithPassword(email, password)` → cria `User` + `Credential(type='password', hash)`; erro claro em email duplicado
+- [ ] **MNT-9** [T][S] Use-case `SignupWithPassword({ email, password, name })` → valida `name` (1-100 chars, trim, sem HTML); cria `User(email, name)` + `Credential(type='password', hash)`; erro claro em email duplicado. `nickname` e `onboarded_at` ficam NULL — assistente captura no onboarding (`specs/008-onboarding`)
 - [ ] **MNT-10** [T][S] Use-case `LoginWithPassword(email, password)` → verifica hash, cria `Session(refreshTokenHash, userAgent, ip, expiresAt)`, retorna par
 - [ ] **MNT-11** [T][S] Use-case `RefreshTokens(refreshToken)` → localiza Session por hash, valida não-revogada e não-expirada, ROTACIONA (revoga a antiga, cria nova), retorna novo par
 - [ ] **MNT-12** [T][S] Use-case `Logout(refreshToken)` → revoga Session
@@ -70,10 +76,13 @@ Bundle grande — commitar em 2 partes: (a) infra de token/hash, (b) use-cases +
 
 Depende da Fase 1. Ativa a possibilidade de recuperar senha esquecida — parte essencial da UX de login por senha, por isso vem antes de OAuth/Passkey.
 
+**Prereq cross-cutting de UI:** `MNT-71` (abaixo) precisa ser feito antes de `MNT-44`. Também bloqueia `MNT-66` (`specs/003-assistant`) e `specs/007-visualizations` inteiro. É a foundation frontend do projeto.
+
+- [ ] **MNT-71** [S] Init shadcn/ui em `/web`: `pnpm dlx shadcn@latest init` (base color neutral, react-server-components on, path `@/components`); adicionar componentes base já esperados — `button`, `input`, `label`, `form`, `dialog`, `radio-group`, `select`, `card`, `avatar`, `tabs`, `scroll-area`, `sonner`. Ajustar `tailwind.config` e `globals.css` conforme output do CLI. Verificar que build passa
 - [ ] **MNT-40** 🛑 [HUMANO] Escolher SMTP provider e criar conta. Recomendação: **Resend** (free 3k emails/mês, DX ótima, HTTP API — evita SMTP direto). Alternativas: SendGrid, Mailgun, Amazon SES. Salvar `RESEND_API_KEY` (ou equivalente) e `MAIL_FROM` no `.env`
 - [ ] **MNT-41** [T][S] `MailerModule` no `/api` — port `EmailSender` no `domain/`, adapter Resend/SMTP no `infrastructure/`. Config via `ConfigService`. Teste com adapter mock
 - [ ] **MNT-42** [T][S] Template "reset de senha" (HTML + fallback texto) — engine simples (Handlebars ou template string tipado). Renderização testável isolada
-- [ ] **MNT-36** [T][S] Use-case `ForgotPassword(email)` — idempotente e **sem revelar existência** (retorna 200 mesmo pra email inexistente); gera token 15min single-use armazenado hash em `password_reset_tokens`. Use-case `ResetPassword(token, newPassword)` — valida token, atualiza `Credential`, **revoga todas as `Session`** do user. Endpoints `POST /auth/forgot`, `POST /auth/reset`
+- [ ] **MNT-36** [T][S] Use-case `ForgotPassword(email)` — idempotente e **sem revelar existência** (retorna 200 mesmo pra email inexistente); gera token aleatório 32B, armazena `password_reset:{sha256(token)}` → `{ userId }` no Redis com TTL 15min. Use-case `ResetPassword(token, newPassword)` — `GETDEL` a chave (atomicamente single-use), valida existência, atualiza `Credential`, **revoga todas as `Session`** do user. Endpoints `POST /auth/forgot`, `POST /auth/reset`
 - [ ] **MNT-43** [T][P] Rate limit em `/auth/forgot`: 3 tentativas / 15min por email + 10 / hora por IP (impede enumeration e spam)
 - [ ] **MNT-44** [S] Web UI no `/web`: link "Esqueci minha senha" na tela de login; página `/forgot-password` com input de email e mensagem neutra pós-submit; página `/reset-password?token=...` com form de nova senha + confirmação
 
@@ -82,7 +91,7 @@ Depende da Fase 1. Ativa a possibilidade de recuperar senha esquecida — parte 
 ## Fase 2 — Google OAuth (web)
 
 - [ ] **MNT-18** 🛑 [HUMANO][SEC] Criar OAuth Client no Google Cloud Console (Web); adicionar `http://localhost:3000` e URL de prod em Authorized redirect URIs; salvar `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no `.env` (nunca no git)
-- [ ] **MNT-19** [T][S] `GoogleStrategy` (passport-google-oauth20) + use-case `LoginWithGoogle(idToken, profile)` — se `email_verified=true` e existe User com esse email, LINKA `OAuthAccount`; senão cria User novo. Feature flag `ALLOW_GOOGLE_LINK_BY_EMAIL` (default `true`) — se `false`, exige o user logar primeiro e linkar explicitamente
+- [ ] **MNT-19** [T][S] `GoogleStrategy` (passport-google-oauth20) + use-case `LoginWithGoogle(idToken, profile)` — se `email_verified=true` e existe User com esse email, LINKA `OAuthAccount`; senão cria User novo populando `name` a partir de `profile.displayName` (fallback `given_name + family_name`). Feature flag `ALLOW_GOOGLE_LINK_BY_EMAIL` (default `true`) — se `false`, exige o user logar primeiro e linkar explicitamente
 - [ ] **MNT-20** [S] Rotas `GET /auth/google` (redirect) e `GET /auth/google/callback` — callback reaproveita mesmo pipeline de tokens (emite access+refresh, seta cookie)
 
 ---
@@ -98,10 +107,10 @@ Depende da Fase 1. Ativa a possibilidade de recuperar senha esquecida — parte 
 ## Fase 4 — Passkey (web)
 
 - [ ] **MNT-24** [S] `@simplewebauthn/server` no `/api`, `@simplewebauthn/browser` no `/web`
-- [ ] **MNT-25** [T][S] Use-case `EnrollPasskeyBegin(userId)` → gera challenge, salva `PasskeyChallenge`, retorna options
-- [ ] **MNT-26** [T][S] Use-case `EnrollPasskeyFinish(userId, response)` → verifica, cria `PasskeyCredential`
-- [ ] **MNT-27** [T][S] Use-case `AuthPasskeyBegin(email?)` → usernameless (`allowCredentials: []`) por padrão
-- [ ] **MNT-28** [T][S] Use-case `AuthPasskeyFinish(response)` → verifica, atualiza `counter`, emite tokens
+- [ ] **MNT-25** [T][S] Use-case `EnrollPasskeyBegin(userId)` → gera challenge via `@simplewebauthn/server`, armazena `passkey_challenge:enroll:{userId}` → `{ challenge }` no Redis TTL 5min, retorna options
+- [ ] **MNT-26** [T][S] Use-case `EnrollPasskeyFinish(userId, response)` → `GETDEL` challenge do Redis, verifica, cria `PasskeyCredential` no Postgres
+- [ ] **MNT-27** [T][S] Use-case `AuthPasskeyBegin(email?)` → usernameless por padrão (`allowCredentials: []`); armazena `passkey_challenge:auth:{sessionId}` → `{ challenge }` no Redis TTL 5min. Retorna `sessionId` opaco + options
+- [ ] **MNT-28** [T][S] Use-case `AuthPasskeyFinish(sessionId, response)` → `GETDEL` challenge do Redis, verifica, atualiza `counter` do `PasskeyCredential`, emite tokens
 - [ ] **MNT-29** [S] Endpoints `POST /auth/passkey/enroll/{begin,finish}`, `/auth/passkey/login/{begin,finish}`
 - [ ] **MNT-30** [S] Client web: hook `usePasskey()` empacotando `@simplewebauthn/browser`
 
@@ -120,7 +129,7 @@ Depende da Fase 1. Ativa a possibilidade de recuperar senha esquecida — parte 
 
 Todas `[P]` — podem ser feitas em qualquer ordem depois da Fase 1.
 
-- [ ] **MNT-35** [T][P] Email verification: token 24h, endpoint `/auth/verify-email`. Reaproveita `MailerModule` (MNT-41) e template pattern. Feature flag `REQUIRE_VERIFIED_EMAIL` (default `false`)
+- [ ] **MNT-35** [T][P] Email verification: token aleatório single-use, armazenado `email_verification:{sha256(token)}` → `{ userId }` no Redis com TTL 24h; endpoint `/auth/verify-email` faz `GETDEL` atomicamente. Reaproveita `MailerModule` (MNT-41) e template pattern. Feature flag `REQUIRE_VERIFIED_EMAIL` (default `false`)
 - [ ] **MNT-37** [T][P] "Sign out everywhere" — revoga todas as `Session` do user; obrigatório também em troca de senha
 - [ ] **MNT-38** [T][P] Audit log: `login_success`, `login_failure`, `passkey_enrolled`, `oauth_linked`, `password_changed`, `all_sessions_revoked` — tabela `auth_audit_log`
 - [ ] **MNT-39** [SEC] Pen test manual: brute-force real (com throttler ativo), timing attack no lookup de email (usar `constant-time compare` no email → hash de credential), refresh token reuse (uso de refresh já rotacionado dispara revogação de toda a sessão)
