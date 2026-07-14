@@ -54,28 +54,28 @@ Mesmas do resto. Todas as tasks são `[S]` sequenciais — cada uma depende da a
 
 ## Fase 0 — Setup
 
-- [ ] **MNT-149** [S] Configuração do release-please:
+- [x] **MNT-149** [S] ✅ commit `c5bc1fb` — Configuração do release-please:
   - `release-please-config.json` na raiz — declara os 2 packages (`api` e `web`), release type `node`, cada um com changelog próprio
   - `.release-please-manifest.json` — versão atual de cada package. Baseline: `{ "api": "0.1.0", "web": "0.1.0" }`
   - `api/CHANGELOG.md` e `web/CHANGELOG.md` iniciais com header e primeira entrada `0.1.0 — initial baseline`
   - Ajustar `api/package.json` e `web/package.json` pra `"version": "0.1.0"`
-- [ ] **MNT-150** [S] GitHub Actions `.github/workflows/release-please.yml`:
+- [x] **MNT-150** [S] ✅ commit `7e283b2` — GitHub Actions `.github/workflows/release-please.yml`:
   - Triggers: `push` em `main`, `workflow_dispatch` (manual)
   - Job usa `googleapis/release-please-action@v4`
   - Permissions: `contents: write`, `pull-requests: write`
   - Comportamento: após merge em `main`, abre/atualiza a Release PR; quando Release PR é mergeada, cria tags `api-v0.X.Y` / `web-v0.X.Y` + GitHub Releases com o CHANGELOG como body
-- [ ] **MNT-151** [S] Preview de versão em Pull Requests (nice-to-have mas barato):
+- [x] **MNT-151** [S] ✅ commit `7e283b2` — Preview de versão em Pull Requests (nice-to-have mas barato):
   - Workflow separado `.github/workflows/version-preview.yml` que roda em `pull_request` events
   - Usa `release-please-action` em modo preview (`skip-github-release: true`, `skip-tag: true`) pra calcular versão-alvo
   - Comenta no PR: "esse merge vai bumpar `api` de 0.1.0 → 0.2.0 (feat)"
   - Comentário se atualiza a cada push no branch
-- [ ] **MNT-152** [S] Enforcement — commitlint + husky:
+- [x] **MNT-152** [S] ✅ commit `aadab83` — Enforcement — commitlint + husky:
   - `pnpm add -D -w @commitlint/cli @commitlint/config-conventional husky lint-staged`
   - `commitlint.config.js` com `extends: ['@commitlint/config-conventional']` + regra custom que permite `[MNT-N]` no final do subject sem contar como erro
   - `.husky/commit-msg` roda `pnpm commitlint --edit $1`
   - Commit fora do padrão é bloqueado localmente
   - Fallback CI: workflow `.github/workflows/commitlint.yml` valida commits em PRs (defesa em profundidade se alguém pular o hook local)
-- [ ] **MNT-153** [S] Documentação em `docs/RELEASING.md`:
+- [ ] **MNT-153** [S] [DEFERRED] Documentação em `docs/RELEASING.md` — adiado enquanto projeto for solo. Retomar se entrar colaborador ou se o fluxo for esquecido:
   - Como criar feature branch (`MNT-N/slug`)
   - Como commitar (com exemplos do formato)
   - Como PR e o que esperar do bot (comment de preview, Release PR)
