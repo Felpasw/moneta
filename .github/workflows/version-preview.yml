@@ -1,0 +1,118 @@
+name: Version Preview
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Compute bump preview from PR commits
+        id: bump
+        shell: bash
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+
+          COMMITS=$(git log --format="%s" "$BASE..$HEAD" || true)
+
+          count() { echo "$COMMITS" | grep -cE "$1" 2>/dev/null || echo 0; }
+
+          FEAT=$(count '^feat(\([^)]+\))?:')
+          FIX=$(count '^fix(\([^)]+\))?:')
+          PERF=$(count '^perf(\([^)]+\))?:')
+          REFACTOR=$(count '^refactor(\([^)]+\))?:')
+          BREAKING=$(count '^(feat|fix|refactor|perf)(\([^)]+\))?!:')
+          BREAKING_FOOTER=$(git log --format="%b" "$BASE..$HEAD" | grep -c 'BREAKING CHANGE:' || echo 0)
+          TOTAL_BREAKING=$(( BREAKING + BREAKING_FOOTER ))
+
+          FEAT_API=$(count '^feat\(api\)')
+          FEAT_WEB=$(count '^feat\(web\)')
+          FIX_API=$(count '^fix\(api\)')
+          FIX_WEB=$(count '^fix\(web\)')
+
+          if [ "$TOTAL_BREAKING" -gt 0 ]; then BUMP="minor (breaking em pre-1.0)"
+          elif [ "$FEAT" -gt 0 ]; then BUMP="minor"
+          elif [ "$FIX" -gt 0 ] || [ "$PERF" -gt 0 ]; then BUMP="patch"
+          else BUMP="nenhum (nenhum feat/fix/perf detectado)"
+          fi
+
+          {
+            echo "feat=$FEAT"
+            echo "fix=$FIX"
+            echo "perf=$PERF"
+            echo "refactor=$REFACTOR"
+            echo "breaking=$TOTAL_BREAKING"
+            echo "feat_api=$FEAT_API"
+            echo "feat_web=$FEAT_WEB"
+            echo "fix_api=$FIX_API"
+            echo "fix_web=$FIX_WEB"
+            echo "bump=$BUMP"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upsert PR comment with preview
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- version-preview-bot -->';
+            const outputs = {
+              feat:     '${{ steps.bump.outputs.feat }}',
+              fix:      '${{ steps.bump.outputs.fix }}',
+              perf:     '${{ steps.bump.outputs.perf }}',
+              refactor: '${{ steps.bump.outputs.refactor }}',
+              breaking: '${{ steps.bump.outputs.breaking }}',
+              featApi:  '${{ steps.bump.outputs.feat_api }}',
+              featWeb:  '${{ steps.bump.outputs.feat_web }}',
+              fixApi:   '${{ steps.bump.outputs.fix_api }}',
+              fixWeb:   '${{ steps.bump.outputs.fix_web }}',
+              bump:     '${{ steps.bump.outputs.bump }}',
+            };
+
+            const body = [
+              marker,
+              '## 📦 Prévia de versionamento',
+              '',
+              'Commits neste PR desde base:',
+              '',
+              `- ✨ \`feat\`: ${outputs.feat} (api: ${outputs.featApi}, web: ${outputs.featWeb})`,
+              `- 🐛 \`fix\`: ${outputs.fix} (api: ${outputs.fixApi}, web: ${outputs.fixWeb})`,
+              `- ⚡ \`perf\`: ${outputs.perf}`,
+              `- 🔨 \`refactor\`: ${outputs.refactor}`,
+              `- 💥 breaking: ${outputs.breaking}`,
+              '',
+              `**Bump esperado ao mergear**: ${outputs.bump}`,
+              '',
+              '_Estimativa heurística por prefixo de commit. O release-please recalcula na hora do merge considerando scope (`api` vs `web`)._',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                comment_id: existing.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body,
+              });
+            }
