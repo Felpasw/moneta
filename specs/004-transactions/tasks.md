@@ -1,4 +1,4 @@
-# Transações, contas, transferências e faturas (MNT-122 … MNT-146)
+# Transações, contas, transferências e faturas (MNT-122..148, MNT-154..157)
 
 ## Decisões (inline)
 
@@ -93,6 +93,23 @@ Mesmas do resto dos specs. Bundle onde faz sentido (várias tools do mesmo domí
 
 ---
 
+## Fase 5.5 — Parcelamento (compras parceladas no cartão)
+
+Essencial pra V1 — cartão é o meio principal e parcelamento é onipresente no BR. Sem isso, "quanto vou pagar mês que vem?" mente porque ignora parcelas futuras.
+
+**Decisões dessa fase:**
+- **Sem juros** por default (parcelas iguais, `total = installments * amount`). Diferenças de arredondamento de centavo vão pra última parcela
+- **Cartão só**: `add_installment_purchase` só aceita conta com `credit_limit` (é sinal de que é cartão). Compra parcelada em débito → registra como transação normal
+- **Reconhecimento no assistente**: playbook detalhada pra parsing de expressões PT-BR ("Nx de R$", "N vezes de R$", "parcelei em N", "N parcelas de R$", "R$X em N vezes"). Sempre confirma valor total + N parcelas antes de invocar
+- **Cancelamento em lote**: 1 tool deleta o grupo inteiro (todas as parcelas + ajusta invoices/saldos)
+
+- [ ] **MNT-154** [T][S] Migration: entity `installment_groups` (`id`, `user_id FK`, `account_id FK`, `total_amount`, `installments_count INT`, `installment_amount`, `description`, `category_id nullable FK`, `purchase_date TIMESTAMPTZ`, `created_at`, `updated_at`). `transactions` ganha colunas nullable `installment_group_id UUID FK` + `installment_number INT` (1..N). Check constraint: se um NOT NULL, ambos NOT NULL. Check adicional: `installments_count >= 2` (parcelamento em 1x = transação normal)
+- [ ] **MNT-155** [T][S] Tool `add_installment_purchase({ accountId, totalAmount?, installmentAmount?, installmentsCount, description, categoryId?, occurredAt })` — cria `installment_groups` row + materializa N `transactions` (cada uma com `occurred_at = addMonths(occurredAt, i-1)`, `installment_number=i`, `installment_group_id=group.id`, `invoice_id` resolvido via `CreditCardCycleService` — MNT-136). Descrição de cada transaction fica `"{description} ({i}/{N})"`. **Playbook crítico**: reconhecer expressões PT-BR de parcelamento; confirmar totalAmount + count antes; se juros mencionados, avisar que V1 registra sem juros (soma linear) e perguntar se ok — se não, orientar user a passar valores exatos por parcela via múltiplos `add_transaction`; se conta não tem `credit_limit`, erro claro sugerindo `add_transaction` normal
+- [ ] **MNT-156** [T][S] Tool `cancel_installment_purchase({ groupId })` — ownership check, deleta em transação DB atômica: (a) as N transactions do group, (b) ajusta `balance` da conta, (c) ajusta `total_amount` das invoices afetadas, (d) deleta o group. Retorna resumo `{ deletedCount, affectedInvoices, refundedAmount }` pro assistente confirmar
+- [ ] **MNT-157** [T][S] `AvailableLimitService` — `calculate(accountId): { totalLimit, currentInvoiceAmount, closedUnpaidAmount, futureCommittedAmount, usedTotal, available }` só pra contas com `credit_limit`. `futureCommittedAmount` = soma das transactions em invoices ainda não existentes ou em invoices `open` com `occurred_at > hoje` (= parcelas futuras). Endpoint `GET /banks/:id/limit-info`. Tool `get_available_limit({ accountId })` pro assistente responder "quanto tenho de limite?". Card do cartão em `/banks` mostra decomposição visual (fatura atual + faturas fechadas + comprometido futuro)
+
+---
+
 ## Fase 6 — UI
 
 - [ ] **MNT-141** [T][S] Página `/transactions` (MNT-102 do 007-ui-shell) — lista virtualizada + filtros + FAB. Row de transaction em cartão mostra badge "Fatura {mês}" pequeno. Click em row abre `<TransactionDetail>` sheet
@@ -118,7 +135,7 @@ Mesmas do resto dos specs. Bundle onde faz sentido (várias tools do mesmo domí
 - Anexos (foto do recibo, PDF do boleto) — DEFERRED
 - Notificações antes do vencimento da fatura — DEFERRED (spec de notifications virá em algum momento)
 - Fatura com mais de uma moeda (Wise, Nomad) — DEFERRED
-- Parcelamento (uma compra de R$1200 em 12x) — DEFERRED, provavelmente vale um mini-spec próprio depois
+- Parcelamento **com juros calculado automaticamente** (parcelas com valores diferentes por conta de juros) — DEFERRED. V1 cobre parcelamento sem juros (Fase 5.5)
 - Estorno / crédito na fatura — DEFERRED
 
 ## Referências
