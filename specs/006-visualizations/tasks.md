@@ -3,7 +3,7 @@
 ## Decisões (inline)
 
 - **UI kit**: **shadcn/ui** (init em MNT-71 no `specs/002-auth`) — usa o `<Chart>` do shadcn, que é wrapper de **Recharts**. Ganhamos tema/dark mode automático + tooltip customizado alinhado com o resto da UI
-- **Padrão LLM ↔ dados**: LLM preenche schema estruturado (`ChartSpec`, Zod-validado), backend traduz pra query TypeORM tipada. **Zero SQL do LLM, zero código do LLM, zero shell.**
+- **Padrão LLM ↔ dados**: LLM preenche schema estruturado (`ChartSpec`, Zod-validado), backend traduz pra chamada Prisma tipada (Client API `findMany`/`groupBy`/`aggregate`; `$queryRaw` só onde a API estruturada não cobre, sempre parametrizado). **Zero SQL do LLM, zero código do LLM, zero shell.**
 - **Segurança**:
   - `userId` **sempre** vem do contexto de auth da sessão (nunca do payload da tool)
   - Só campos do **whitelist** do schema entram na query
@@ -57,7 +57,7 @@ Mesmas do `specs/002-auth/tasks.md` (`[T]`, `[S]`, `[P]`, `[HUMANO]`, `🛑`, `[
   }
   ```
   Whitelist estrito de `XField` — só campos permitidos (`date`, `category`, `bank`, `tag`, `transactionType`). `dateRange` é união discriminada: absoluto **ou** preset (necessário pra saved charts que se atualizam sozinhos). Testes rejeitam campo fora do whitelist, agregação inválida por tipo, e preset fora do enum
-- [ ] **MNT-74** [T][S] `ChartQueryBuilder` (`api/src/assistant/application/services/chart-query-builder.ts`): `build(spec, userId, now): QueryBuilder<Transaction>` — spec → TypeORM query builder tipado (nunca raw SQL). Resolve `dateRange.preset` em runtime usando `now` (ex: `last_month` = 1º ao último dia do mês anterior à `now`). Cobre os 8 chartTypes. Timeout 5s (via `.setLock` ou pg `statement_timeout`). Re-agregação automática se contagem esperada > cap
+- [ ] **MNT-74** [T][S] `ChartQueryBuilder` (`api/src/assistant/application/services/chart-query-builder.ts`): `build(spec, userId, now): Promise<ChartData>` — spec → chamada Prisma tipada (`findMany`/`groupBy`/`aggregate` da Client API; `$queryRaw` parametrizado só onde a API estruturada não cobre — ex: `date_trunc` custom). Resolve `dateRange.preset` em runtime usando `now` (ex: `last_month` = 1º ao último dia do mês anterior à `now`). Cobre os 8 chartTypes. Timeout 5s (pg `statement_timeout` via `$executeRawUnsafe('SET LOCAL statement_timeout')` dentro de transação, ou middleware que aborta). Re-agregação automática se contagem esperada > cap
 - [ ] **MNT-75** [T][S] Tool `create_visualization` (`api/src/assistant/infrastructure/tools/create-visualization.tool.ts`) — implementa interface `AssistantTool` (MNT-52); registrada via `@AssistantTool()`. Fluxo: valida input com Zod → `ChartQueryBuilder.build` → executa → retorna `{ spec, data, meta: { totalRows, aggregatedFrom? } }`. Erro estruturado (`{ error: 'field_not_allowed', field }`) pro LLM entender e reformular pro user
 
 ---
@@ -127,4 +127,5 @@ Assistente sugere salvar quando o gráfico tem valor recorrente ("Quer salvar es
 - shadcn charts: https://ui.shadcn.com/charts
 - Recharts docs: https://recharts.org
 - Zod: https://zod.dev
-- TypeORM QueryBuilder: https://typeorm.io/select-query-builder
+- Prisma Client CRUD: https://www.prisma.io/docs/orm/prisma-client/queries/crud
+- Prisma aggregation/groupBy: https://www.prisma.io/docs/orm/prisma-client/queries/aggregation-grouping-summarizing

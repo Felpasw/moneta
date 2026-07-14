@@ -72,7 +72,7 @@ Todas as ferramentas devem ser invocáveis pelo assistente via function calling:
 
 - **Web**: Next.js 16 App Router + Capacitor 8 (mesma base para iOS/Android)
 - **API**: NestJS 11
-- **Persistência**: Postgres 16 via docker-compose + TypeORM (migrations manuais, `synchronize: false`)
+- **Persistência**: Postgres 16 via docker-compose + Prisma (`schema.prisma` como source of truth, `prisma migrate dev`/`deploy`, sem `db push` em prod)
 - **Auth pattern**: Custom Passport + JWT híbrido (access Bearer + refresh cookie/secure storage) — ver `specs/002-auth/tasks.md`
 - **LLM + STT + tool calling**: OpenAI Realtime API (`gpt-4o-realtime`)
 - **TTS**: ElevenLabs
@@ -102,7 +102,7 @@ Fluxo esperado (a ser detalhado em `specs/003-assistant/`):
 | ID     | Decisão                                                                 | Status    |
 |--------|-------------------------------------------------------------------------|-----------|
 | ADR-01 | Auth pattern → Custom Passport + JWT híbrido                            | ✅ Decidido |
-| ADR-02 | Persistência → Postgres 16 (docker-compose) + TypeORM                   | ✅ Decidido |
+| ADR-02 | Persistência → Postgres 16 (docker-compose) + Prisma                    | ✅ Decidido |
 | ADR-03 | LLM + STT → OpenAI Realtime API (`gpt-4o-realtime`) com output em texto | ✅ Decidido |
 | ADR-04 | TTS → ElevenLabs (streaming)                                            | ✅ Decidido |
 | ADR-05 | Client ↔ Realtime: ephemeral token OU proxy WebSocket                   | 🛑 Pendente |
@@ -126,6 +126,8 @@ Fluxo esperado (a ser detalhado em `specs/003-assistant/`):
 
 **Balance atomic**: toda operação que altera saldo (transaction, transfer, invoice payment) roda em transação DB única. Ver `specs/004-transactions` MNT-130.
 
+**Ports & Adapters + DI (NestJS)** pros 3 pilares externos: **DB (Prisma)**, **LLM+STT (OpenAI Realtime)**, **TTS (ElevenLabs)**. Cada um atrás de **port** (interface tipada em `domain/`) + **adapter** concreto em `infrastructure/`. Use-cases e services conhecem só os ports. Trocar provedor (TTS ElevenLabs → OpenAI TTS, LLM Realtime → alternativo, ORM Prisma → outro) = registrar outro adapter no módulo NestJS, zero mudança em regra de negócio. Foi esse padrão que permitiu trocar TypeORM→Prisma antes da primeira linha de código escrita.
+
 **Redis pra efêmero**: tokens de curta duração (password reset, email verification, passkey challenges) vivem no Redis, não no Postgres. Ver `specs/002-auth`.
 
 ---
@@ -142,7 +144,7 @@ Tasks: MNT-149..153.
 
 ### Bloco 1 — Foundation & Auth base (`specs/002-auth` parcial)
 
-Infra que segura tudo. Postgres + Redis subindo, TypeORM, módulos, users, JWT, senha, shadcn init.
+Infra que segura tudo. Postgres + Redis subindo, Prisma, módulos, users, JWT, senha, shadcn init.
 
 Tasks: MNT-1..17 (Fase 0 + Fase 1) + MNT-71 (shadcn init dentro da Fase 1.5) + MNT-40..44 (reset de senha).
 
@@ -205,3 +207,4 @@ Tasks: MNT-112..121.
 - 2026-07-14 — Brief inicial capturado por Felipe
 - 2026-07-14 — ADR-01/02/03/04 decididos (auth Passport, Postgres, OpenAI Realtime, ElevenLabs)
 - 2026-07-14 — Ordem de execução definida em 8 blocos (versionamento → foundation → framework → tools → agent → onboarding+ui → auth completo → import)
+- 2026-07-14 — ADR-02 revisado: troca de TypeORM por **Prisma** como camada de persistência (antes de qualquer código escrito). Impacta MNT-2/3/5 (schema.prisma + PrismaService), MNT-74 (ChartQueryBuilder usa Prisma Client API), MNT-146 (injection defense via Prisma), MNT-173 (`prisma migrate deploy` no entrypoint)
