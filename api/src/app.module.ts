@@ -8,6 +8,7 @@ import { AgentModule } from './agent/agent.module';
 import { AuthModule } from './auth/auth.module';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
+import { ToolsModule } from './tools/tools.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { UsersModule } from './users/users.module';
     EphemeralStoreModule,
     UsersModule,
     AuthModule,
+    ToolsModule,
     AgentModule,
   ],
   controllers: [AppController, HealthController],
