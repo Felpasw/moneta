@@ -22,3 +22,10 @@ export interface AuthPasskeyBeginResult {
   sessionId: string;
   options: AuthenticationOptions;
 }
+
+export interface AuthPasskeyFinishInput {
+  sessionId: string;
+  response: { id: string; [key: string]: unknown };
+  userAgent?: string;
+  ip?: string;
+}

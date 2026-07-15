@@ -3,6 +3,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
 import { UsersModule } from '../users/users.module';
 import { AuthPasskeyBeginUseCase } from './application/use-cases/auth-passkey-begin.use-case';
+import { AuthPasskeyFinishUseCase } from './application/use-cases/auth-passkey-finish.use-case';
 import { EnrollPasskeyBeginUseCase } from './application/use-cases/enroll-passkey-begin.use-case';
 import { EnrollPasskeyFinishUseCase } from './application/use-cases/enroll-passkey-finish.use-case';
 import { LoginWithPasswordUseCase } from './application/use-cases/login-with-password.use-case';
@@ -50,6 +51,7 @@ import { SimpleWebAuthnService } from './infrastructure/webauthn/simple-webauthn
     EnrollPasskeyBeginUseCase,
     EnrollPasskeyFinishUseCase,
     AuthPasskeyBeginUseCase,
+    AuthPasskeyFinishUseCase,
     JwtAuthGuard,
     IpEmailThrottlerGuard,
   ],

@@ -51,6 +51,24 @@ export interface AuthenticationOptions {
   [key: string]: unknown;
 }
 
+export interface VerifyAuthenticationInput {
+  response: unknown;
+  expectedChallenge: string;
+  expectedOrigin: string;
+  expectedRPID: string;
+  credential: {
+    id: string;
+    publicKey: Uint8Array;
+    counter: number;
+    transports?: string[];
+  };
+}
+
+export interface VerifiedAuthentication {
+  verified: boolean;
+  newCounter?: number;
+}
+
 export interface WebAuthnService {
   generateRegistrationOptions(
     input: GenerateRegistrationOptionsInput,
@@ -61,4 +79,7 @@ export interface WebAuthnService {
   generateAuthenticationOptions(
     input: GenerateAuthenticationOptionsInput,
   ): Promise<AuthenticationOptions>;
+  verifyAuthenticationResponse(
+    input: VerifyAuthenticationInput,
+  ): Promise<VerifiedAuthentication>;
 }
