@@ -19,6 +19,7 @@ import { ZodValidationPipe } from '../@common/infrastructure/pipes/zod-validatio
 import { LoginWithPasswordUseCase } from './application/use-cases/login-with-password.use-case';
 import { LogoutUseCase } from './application/use-cases/logout.use-case';
 import { RefreshTokensUseCase } from './application/use-cases/refresh-tokens.use-case';
+import { SignOutEverywhereUseCase } from './application/use-cases/sign-out-everywhere.use-case';
 import { SignupWithPasswordUseCase } from './application/use-cases/signup-with-password.use-case';
 import { InvalidCredentialsError } from './domain/errors/invalid-credentials.error';
 import { InvalidNameError } from './domain/errors/invalid-name.error';
@@ -29,6 +30,9 @@ import { loginSchema, type LoginDto } from './dto/login.dto';
 import { refreshBodySchema, type RefreshBodyDto } from './dto/refresh.dto';
 import { signupSchema, type SignupDto } from './dto/signup.dto';
 import { REFRESH_COOKIE } from './infrastructure/constants/cookie';
+import { CurrentUser } from './infrastructure/decorators/current-user.decorator';
+import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
+import type { DecodedToken } from './domain/services/token-service';
 
 const extractRefreshToken = (
   req: Request,
@@ -49,6 +53,7 @@ export class AuthController {
     private readonly login: LoginWithPasswordUseCase,
     private readonly refresh: RefreshTokensUseCase,
     private readonly logout: LogoutUseCase,
+    private readonly signOutEverywhere: SignOutEverywhereUseCase,
   ) {}
 
   @Post('signup')
@@ -149,6 +154,17 @@ export class AuthController {
     if (refreshToken) {
       await this.logout.execute({ refreshToken });
     }
+    res.clearCookie(REFRESH_COOKIE.name, { path: REFRESH_COOKIE.options.path });
+  }
+
+  @Post('logout-everywhere')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  async doLogoutEverywhere(
+    @CurrentUser() user: DecodedToken,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.signOutEverywhere.execute({ userId: user.sub });
     res.clearCookie(REFRESH_COOKIE.name, { path: REFRESH_COOKIE.options.path });
   }
 }

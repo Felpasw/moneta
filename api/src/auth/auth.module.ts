@@ -9,6 +9,7 @@ import { EnrollPasskeyFinishUseCase } from './application/use-cases/enroll-passk
 import { LoginWithPasswordUseCase } from './application/use-cases/login-with-password.use-case';
 import { LogoutUseCase } from './application/use-cases/logout.use-case';
 import { RefreshTokensUseCase } from './application/use-cases/refresh-tokens.use-case';
+import { SignOutEverywhereUseCase } from './application/use-cases/sign-out-everywhere.use-case';
 import { SignupWithPasswordUseCase } from './application/use-cases/signup-with-password.use-case';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -49,6 +50,7 @@ import { SimpleWebAuthnService } from './infrastructure/webauthn/simple-webauthn
     LoginWithPasswordUseCase,
     RefreshTokensUseCase,
     LogoutUseCase,
+    SignOutEverywhereUseCase,
     EnrollPasskeyBeginUseCase,
     EnrollPasskeyFinishUseCase,
     AuthPasskeyBeginUseCase,

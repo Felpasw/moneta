@@ -8,7 +8,11 @@ import { AuthController } from '~/auth/auth.controller';
 import { LoginWithPasswordUseCase } from '~/auth/application/use-cases/login-with-password.use-case';
 import { LogoutUseCase } from '~/auth/application/use-cases/logout.use-case';
 import { RefreshTokensUseCase } from '~/auth/application/use-cases/refresh-tokens.use-case';
+import { SignOutEverywhereUseCase } from '~/auth/application/use-cases/sign-out-everywhere.use-case';
 import { SignupWithPasswordUseCase } from '~/auth/application/use-cases/signup-with-password.use-case';
+import { TOKEN_SERVICE } from '~/auth/domain/services/token-service';
+import { JwtAuthGuard } from '~/auth/infrastructure/guards/jwt-auth.guard';
+import { JwtTokenService } from '~/auth/infrastructure/jwt-token.service';
 import { AUTH_THROTTLER } from '~/auth/infrastructure/constants/throttler';
 import { IpEmailThrottlerGuard } from '~/auth/infrastructure/guards/ip-email-throttler.guard';
 
@@ -40,6 +44,9 @@ const buildApp = async (): Promise<{
         },
       },
       { provide: LogoutUseCase, useValue: { execute: jest.fn() } },
+      { provide: SignOutEverywhereUseCase, useValue: { execute: jest.fn() } },
+      { provide: TOKEN_SERVICE, useClass: JwtTokenService },
+      JwtAuthGuard,
       IpEmailThrottlerGuard,
     ],
   }).compile();

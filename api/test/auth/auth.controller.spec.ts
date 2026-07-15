@@ -8,7 +8,11 @@ import { AuthController } from '~/auth/auth.controller';
 import { LoginWithPasswordUseCase } from '~/auth/application/use-cases/login-with-password.use-case';
 import { LogoutUseCase } from '~/auth/application/use-cases/logout.use-case';
 import { RefreshTokensUseCase } from '~/auth/application/use-cases/refresh-tokens.use-case';
+import { SignOutEverywhereUseCase } from '~/auth/application/use-cases/sign-out-everywhere.use-case';
 import { SignupWithPasswordUseCase } from '~/auth/application/use-cases/signup-with-password.use-case';
+import { TOKEN_SERVICE } from '~/auth/domain/services/token-service';
+import { JwtAuthGuard } from '~/auth/infrastructure/guards/jwt-auth.guard';
+import { JwtTokenService } from '~/auth/infrastructure/jwt-token.service';
 import { InvalidCredentialsError } from '~/auth/domain/errors/invalid-credentials.error';
 import { InvalidNameError } from '~/auth/domain/errors/invalid-name.error';
 import {
@@ -25,6 +29,7 @@ interface Mocks {
   login: { execute: jest.Mock };
   refresh: { execute: jest.Mock };
   logout: { execute: jest.Mock };
+  signOutEverywhere: { execute: jest.Mock };
 }
 
 const buildApp = async (): Promise<{
@@ -37,6 +42,7 @@ const buildApp = async (): Promise<{
     login: { execute: jest.fn() },
     refresh: { execute: jest.fn() },
     logout: { execute: jest.fn() },
+    signOutEverywhere: { execute: jest.fn() },
   };
 
   const module = await Test.createTestingModule({
@@ -46,6 +52,12 @@ const buildApp = async (): Promise<{
       { provide: LoginWithPasswordUseCase, useValue: mocks.login },
       { provide: RefreshTokensUseCase, useValue: mocks.refresh },
       { provide: LogoutUseCase, useValue: mocks.logout },
+      {
+        provide: SignOutEverywhereUseCase,
+        useValue: mocks.signOutEverywhere,
+      },
+      { provide: TOKEN_SERVICE, useClass: JwtTokenService },
+      JwtAuthGuard,
     ],
   })
     .overrideGuard(IpEmailThrottlerGuard)
@@ -328,6 +340,43 @@ describe('AuthController', () => {
       expect(cookie).toBeDefined();
       expect(cookie).toContain('Path=/auth/refresh');
       expect(cookie).toMatch(/Expires=.+1970/);
+    });
+  });
+
+  describe('POST /auth/logout-everywhere', () => {
+    it('revokes all sessions of the authenticated user and returns 204', async () => {
+      const tokens = new JwtTokenService();
+      const accessToken = tokens.signAccess({ sub: 'user-42' });
+
+      const res = await request(http)
+        .post('/auth/logout-everywhere')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(204);
+      expect(mocks.signOutEverywhere.execute).toHaveBeenCalledWith({
+        userId: 'user-42',
+      });
+    });
+
+    it('clears the refresh cookie in the response', async () => {
+      const tokens = new JwtTokenService();
+      const accessToken = tokens.signAccess({ sub: 'user-42' });
+
+      const res = await request(http)
+        .post('/auth/logout-everywhere')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      const cookie = findCookie(res.headers['set-cookie'], REFRESH_COOKIE_NAME);
+      expect(cookie).toBeDefined();
+      expect(cookie).toContain('Path=/auth/refresh');
+      expect(cookie).toMatch(/Expires=.+1970/);
+    });
+
+    it('returns 401 without a Bearer token', async () => {
+      const res = await request(http).post('/auth/logout-everywhere');
+
+      expect(res.status).toBe(401);
+      expect(mocks.signOutEverywhere.execute).not.toHaveBeenCalled();
     });
   });
 });

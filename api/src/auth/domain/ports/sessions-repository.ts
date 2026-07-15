@@ -36,4 +36,5 @@ export interface SessionsRepository {
   findByRefreshTokenHash(hash: string): Promise<SessionWithUser | null>;
   rotate(input: RotateSessionInput): Promise<Session>;
   revokeByRefreshTokenHash(hash: string, now: Date): Promise<void>;
+  revokeAllByUserId(userId: string, now: Date): Promise<void>;
 }

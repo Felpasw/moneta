@@ -57,6 +57,13 @@ export class PrismaSessionsRepository implements SessionsRepository {
     });
   }
 
+  async revokeAllByUserId(userId: string, now: Date): Promise<void> {
+    await this.prisma.session.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: now },
+    });
+  }
+
   async rotate(input: RotateSessionInput): Promise<Session> {
     return this.prisma.$transaction(async (tx) => {
       await tx.session.update({
