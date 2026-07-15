@@ -6,6 +6,7 @@ import { EphemeralStoreModule } from './@common/infrastructure/ephemeral-store/e
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { validateEnv } from './config/env';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { UsersModule } from './users/users.module';
@@ -15,6 +16,7 @@ import { UsersModule } from './users/users.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
+      validate: validateEnv,
     }),
     ClockModule,
     PrismaModule,

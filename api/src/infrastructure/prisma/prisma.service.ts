@@ -7,17 +7,19 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
+import { env } from '../../config/env';
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
   constructor(config: ConfigService) {
-    const url = config.get<string>('DATABASE_URL');
-    if (!url) {
-      throw new Error('DATABASE_URL is not configured');
-    }
-    super({ adapter: new PrismaPg({ connectionString: url }) });
+    super({
+      adapter: new PrismaPg({
+        connectionString: config.getOrThrow<string>(env.DATABASE_URL),
+      }),
+    });
   }
 
   async onModuleInit(): Promise<void> {
