@@ -9,6 +9,9 @@ export const envSchema = z.object({
   REDIS_URL: z.string().min(1),
   JWT_ACCESS_SECRET: z.string().min(1),
   JWT_REFRESH_SECRET: z.string().min(1),
+  LLM_API_KEY: z.string().min(1),
+  TTS_API_KEY: z.string().min(1),
+  TTS_DEFAULT_VOICE_ID: z.string().min(1),
   WEB_ORIGIN: z.url().default('http://localhost:3000'),
   PORT: z.coerce.number().int().positive().default(3333),
   NODE_ENV: z
