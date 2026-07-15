@@ -1,0 +1,7 @@
+import type { RegistrationOptions } from '../../domain/services/webauthn-service';
+
+export interface EnrollPasskeyBeginInput {
+  userId: string;
+}
+
+export type EnrollPasskeyBeginResult = RegistrationOptions;

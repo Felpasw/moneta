@@ -14,6 +14,8 @@ export const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
+  RP_ID: z.string().min(1).default('localhost'),
+  RP_NAME: z.string().min(1).default('Moneta'),
 });
 
 export type Env = z.infer<typeof envSchema>;

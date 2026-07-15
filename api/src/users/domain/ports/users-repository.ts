@@ -23,4 +23,5 @@ export interface UsersRepository {
   findByEmailWithPasswordCredential(
     email: string,
   ): Promise<UserWithPasswordCredential | null>;
+  findById(id: string): Promise<UserSnapshot | null>;
 }
