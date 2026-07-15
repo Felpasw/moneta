@@ -9,8 +9,11 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+
+import { IpEmailThrottlerGuard } from './infrastructure/guards/ip-email-throttler.guard';
 
 import { ZodValidationPipe } from '../@common/infrastructure/pipes/zod-validation.pipe';
 import { LoginWithPasswordUseCase } from './application/use-cases/login-with-password.use-case';
@@ -50,6 +53,7 @@ export class AuthController {
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(IpEmailThrottlerGuard)
   async doSignup(@Body(new ZodValidationPipe(signupSchema)) dto: SignupDto) {
     try {
       const user = await this.signup.execute(dto);
@@ -67,6 +71,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(IpEmailThrottlerGuard)
   async doLogin(
     @Body(new ZodValidationPipe(loginSchema)) dto: LoginDto,
     @Req() req: Request,
@@ -99,6 +104,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(IpEmailThrottlerGuard)
   async doRefresh(
     @Body(new ZodValidationPipe(refreshBodySchema)) body: RefreshBodyDto,
     @Req() req: Request,

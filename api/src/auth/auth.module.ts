@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 import { UsersModule } from '../users/users.module';
 import { LoginWithPasswordUseCase } from './application/use-cases/login-with-password.use-case';
@@ -11,12 +12,19 @@ import { SESSIONS_REPOSITORY } from './domain/ports/sessions-repository';
 import { PASSWORD_HASHER } from './domain/services/password-hasher';
 import { TOKEN_SERVICE } from './domain/services/token-service';
 import { Argon2PasswordHasher } from './infrastructure/argon2-password-hasher';
+import { AUTH_THROTTLER } from './infrastructure/constants/throttler';
+import { IpEmailThrottlerGuard } from './infrastructure/guards/ip-email-throttler.guard';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 import { JwtTokenService } from './infrastructure/jwt-token.service';
 import { PrismaSessionsRepository } from './infrastructure/repositories/prisma-sessions.repository';
 
 @Module({
-  imports: [UsersModule],
+  imports: [
+    UsersModule,
+    ThrottlerModule.forRoot([
+      { ttl: AUTH_THROTTLER.ttl, limit: AUTH_THROTTLER.limit },
+    ]),
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,
@@ -28,6 +36,7 @@ import { PrismaSessionsRepository } from './infrastructure/repositories/prisma-s
     RefreshTokensUseCase,
     LogoutUseCase,
     JwtAuthGuard,
+    IpEmailThrottlerGuard,
   ],
   exports: [JwtAuthGuard],
 })

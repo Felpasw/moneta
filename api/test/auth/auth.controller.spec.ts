@@ -15,6 +15,7 @@ import {
   InvalidRefreshTokenError,
   InvalidRefreshTokenReason,
 } from '~/auth/domain/errors/invalid-refresh-token.error';
+import { IpEmailThrottlerGuard } from '~/auth/infrastructure/guards/ip-email-throttler.guard';
 import { EmailAlreadyRegisteredError } from '~/users/domain/errors/email-already-registered.error';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
@@ -46,7 +47,10 @@ const buildApp = async (): Promise<{
       { provide: RefreshTokensUseCase, useValue: mocks.refresh },
       { provide: LogoutUseCase, useValue: mocks.logout },
     ],
-  }).compile();
+  })
+    .overrideGuard(IpEmailThrottlerGuard)
+    .useValue({ canActivate: () => true })
+    .compile();
 
   const app = module.createNestApplication();
   app.use(cookieParser());
