@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { UsersModule } from '../users/users.module';
 import { LoginWithPasswordUseCase } from './application/use-cases/login-with-password.use-case';
+import { RefreshTokensUseCase } from './application/use-cases/refresh-tokens.use-case';
 import { SignupWithPasswordUseCase } from './application/use-cases/signup-with-password.use-case';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -22,6 +23,7 @@ import { PrismaSessionsRepository } from './infrastructure/repositories/prisma-s
     { provide: SESSIONS_REPOSITORY, useClass: PrismaSessionsRepository },
     SignupWithPasswordUseCase,
     LoginWithPasswordUseCase,
+    RefreshTokensUseCase,
   ],
 })
 export class AuthModule {}
