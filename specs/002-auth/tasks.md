@@ -108,12 +108,12 @@ Depende da Fase 1. Ativa a possibilidade de recuperar senha esquecida — parte 
 
 ## Fase 4 — Passkey (web)
 
-- [ ] **MNT-24** [S] `@simplewebauthn/server` no `/api`, `@simplewebauthn/browser` no `/web`
-- [ ] **MNT-25** [T][S] Use-case `EnrollPasskeyBegin(userId)` → gera challenge via `@simplewebauthn/server`, armazena `passkey_challenge:enroll:{userId}` → `{ challenge }` no Redis TTL 5min, retorna options
-- [ ] **MNT-26** [T][S] Use-case `EnrollPasskeyFinish(userId, response)` → `GETDEL` challenge do Redis, verifica, cria `PasskeyCredential` no Postgres
-- [ ] **MNT-27** [T][S] Use-case `AuthPasskeyBegin(email?)` → usernameless por padrão (`allowCredentials: []`); armazena `passkey_challenge:auth:{sessionId}` → `{ challenge }` no Redis TTL 5min. Retorna `sessionId` opaco + options
-- [ ] **MNT-28** [T][S] Use-case `AuthPasskeyFinish(sessionId, response)` → `GETDEL` challenge do Redis, verifica, atualiza `counter` do `PasskeyCredential`, emite tokens
-- [ ] **MNT-29** [S] Endpoints `POST /auth/passkey/enroll/{begin,finish}`, `/auth/passkey/login/{begin,finish}`
+- [x] **MNT-24** [S] ✅ commit `70290b5` — `@simplewebauthn/server` no `/api`, `@simplewebauthn/browser` no `/web` (browser fica pra MNT-30)
+- [x] **MNT-25** [T][S] ✅ commit `70290b5` — Use-case `EnrollPasskeyBegin(userId)` → gera challenge via `@simplewebauthn/server`, armazena `passkey_challenge:enroll:{userId}` → `{ challenge }` no Redis TTL 5min, retorna options
+- [x] **MNT-26** [T][S] ✅ commit `8f708c0` — Use-case `EnrollPasskeyFinish(userId, response)` → `GETDEL` challenge do Redis, verifica, cria `PasskeyCredential` no Postgres
+- [x] **MNT-27** [T][S] ✅ commit `5e66bf7` — Use-case `AuthPasskeyBegin(email?)` → usernameless por padrão (`allowCredentials: []`); armazena `passkey_challenge:auth:{sessionId}` → `{ challenge }` no Redis TTL 5min. Retorna `sessionId` opaco + options
+- [x] **MNT-28** [T][S] ✅ commit `ee7d8af` — Use-case `AuthPasskeyFinish(sessionId, response)` → `GETDEL` challenge do Redis, verifica, atualiza `counter` do `PasskeyCredential`, emite tokens
+- [x] **MNT-29** [S] ✅ commit `ea69238` — Endpoints `POST /auth/passkey/enroll/{begin,finish}`, `/auth/passkey/login/{begin,finish}`
 - [ ] **MNT-30** [S] Client web: hook `usePasskey()` empacotando `@simplewebauthn/browser`
 
 ---
@@ -132,8 +132,8 @@ Depende da Fase 1. Ativa a possibilidade de recuperar senha esquecida — parte 
 Todas `[P]` — podem ser feitas em qualquer ordem depois da Fase 1.
 
 - [ ] **MNT-35** [T][P] Email verification: token aleatório single-use, armazenado `email_verification:{sha256(token)}` → `{ userId }` no Redis com TTL 24h; endpoint `/auth/verify-email` faz `GETDEL` atomicamente. Reaproveita `MailerModule` (MNT-41) e template pattern. Feature flag `REQUIRE_VERIFIED_EMAIL` (default `false`)
-- [ ] **MNT-37** [T][P] "Sign out everywhere" — revoga todas as `Session` do user; obrigatório também em troca de senha
-- [ ] **MNT-38** [T][P] Audit log: `login_success`, `login_failure`, `passkey_enrolled`, `oauth_linked`, `password_changed`, `all_sessions_revoked` — tabela `auth_audit_log`
+- [x] **MNT-37** [T][P] ✅ commit `abd89a2` — "Sign out everywhere" — revoga todas as `Session` do user; obrigatório também em troca de senha
+- [x] **MNT-38** [T][P] ✅ commit `88717b3` — Audit log: `login_success`, `login_failure`, `passkey_enrolled`, `oauth_linked`, `password_changed`, `all_sessions_revoked` — tabela `auth_audit_log`
 - [ ] **MNT-39** [SEC] Pen test manual: brute-force real (com throttler ativo), timing attack no lookup de email (usar `constant-time compare` no email → hash de credential), refresh token reuse (uso de refresh já rotacionado dispara revogação de toda a sessão)
 
 ---
