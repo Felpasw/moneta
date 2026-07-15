@@ -12,6 +12,7 @@ import { RefreshTokensUseCase } from './application/use-cases/refresh-tokens.use
 import { SignupWithPasswordUseCase } from './application/use-cases/signup-with-password.use-case';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { PasskeyController } from './passkey.controller';
 import { PASSKEY_CREDENTIALS_REPOSITORY } from './domain/ports/passkey-credentials-repository';
 import { SESSIONS_REPOSITORY } from './domain/ports/sessions-repository';
 import { PASSWORD_HASHER } from './domain/services/password-hasher';
@@ -33,7 +34,7 @@ import { SimpleWebAuthnService } from './infrastructure/webauthn/simple-webauthn
       { ttl: AUTH_THROTTLER.ttl, limit: AUTH_THROTTLER.limit },
     ]),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, PasskeyController],
   providers: [
     AuthService,
     { provide: PASSWORD_HASHER, useClass: Argon2PasswordHasher },
