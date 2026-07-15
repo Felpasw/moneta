@@ -63,9 +63,9 @@ Bundle grande — commitar em 2 partes: (a) infra de token/hash, (b) use-cases +
 ### (b) use-cases + rotas
 
 - [x] **MNT-9** [T][S] ✅ commit `9ae0775` — Use-case `SignupWithPassword({ email, password, name })` → valida `name` (1-100 chars, trim, sem HTML); cria `User(email, name)` + `Credential(type='password', hash)`; erro claro em email duplicado. `nickname` e `onboarded_at` ficam NULL — assistente captura no onboarding (`specs/008-onboarding`)
-- [ ] **MNT-10** [T][S] Use-case `LoginWithPassword(email, password)` → verifica hash, cria `Session(refreshTokenHash, userAgent, ip, expiresAt)`, retorna par
-- [ ] **MNT-11** [T][S] Use-case `RefreshTokens(refreshToken)` → localiza Session por hash, valida não-revogada e não-expirada, ROTACIONA (revoga a antiga, cria nova), retorna novo par
-- [ ] **MNT-12** [T][S] Use-case `Logout(refreshToken)` → revoga Session
+- [x] **MNT-10** [T][S] ✅ commit `18218d2` — Use-case `LoginWithPassword(email, password)` → verifica hash, cria `Session(refreshTokenHash, userAgent, ip, expiresAt)`, retorna par
+- [x] **MNT-11** [T][S] ✅ commit `424218c` — Use-case `RefreshTokens(refreshToken)` → localiza Session por hash, valida não-revogada e não-expirada, ROTACIONA (revoga a antiga, cria nova), retorna novo par
+- [x] **MNT-12** [T][S] ✅ commit `54e8694` — Use-case `Logout(refreshToken)` → revoga Session
 - [ ] **MNT-13** [S] `AuthController`: `POST /auth/signup`, `/login`, `/refresh`, `/logout`. `/refresh` e `/logout` leem o refresh do cookie **ou** do body (mobile)
 - [ ] **MNT-14** [S] Set/clear cookie no controller: `HttpOnly + Secure + SameSite=Lax + path=/auth/refresh`
 - [ ] **MNT-15** [T][S] `JwtAuthGuard` + `@CurrentUser()` decorator; teste endpoint protegido
