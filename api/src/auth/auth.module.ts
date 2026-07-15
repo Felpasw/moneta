@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { UsersModule } from '../users/users.module';
+import { SignupWithPasswordUseCase } from './application/use-cases/signup-with-password.use-case';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PASSWORD_HASHER } from './domain/services/password-hasher';
@@ -15,6 +16,7 @@ import { JwtTokenService } from './infrastructure/jwt-token.service';
     AuthService,
     { provide: PASSWORD_HASHER, useClass: Argon2PasswordHasher },
     { provide: TOKEN_SERVICE, useClass: JwtTokenService },
+    SignupWithPasswordUseCase,
   ],
 })
 export class AuthModule {}
