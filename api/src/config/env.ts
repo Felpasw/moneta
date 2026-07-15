@@ -11,6 +11,9 @@ export const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(1),
   WEB_ORIGIN: z.url().default('http://localhost:3000'),
   PORT: z.coerce.number().int().positive().default(3333),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
 });
 
 export type Env = z.infer<typeof envSchema>;
