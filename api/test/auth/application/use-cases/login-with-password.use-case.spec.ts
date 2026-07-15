@@ -18,6 +18,8 @@ const buildUseCase = () => {
   };
   const users = {
     createWithPasswordCredential: jest.fn(),
+    findByEmail: jest.fn(),
+    findById: jest.fn(),
     findByEmailWithPasswordCredential: jest.fn().mockResolvedValue({
       id: 'user-1',
       email: 'alice@example.com',

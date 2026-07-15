@@ -47,6 +47,12 @@ export class PrismaUsersRepository implements UsersRepository {
     return { id: user.id, email: user.email, name: user.name };
   }
 
+  async findByEmail(email: string): Promise<UserSnapshot | null> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) return null;
+    return { id: user.id, email: user.email, name: user.name };
+  }
+
   async findByEmailWithPasswordCredential(
     email: string,
   ): Promise<UserWithPasswordCredential | null> {

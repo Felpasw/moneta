@@ -38,6 +38,19 @@ export interface VerifiedRegistration {
   credential?: VerifiedRegistrationCredential;
 }
 
+export interface GenerateAuthenticationOptionsInput {
+  rpID: string;
+  allowCredentials: Array<{
+    id: string;
+    transports?: string[];
+  }>;
+}
+
+export interface AuthenticationOptions {
+  challenge: string;
+  [key: string]: unknown;
+}
+
 export interface WebAuthnService {
   generateRegistrationOptions(
     input: GenerateRegistrationOptionsInput,
@@ -45,4 +58,7 @@ export interface WebAuthnService {
   verifyRegistrationResponse(
     input: VerifyRegistrationInput,
   ): Promise<VerifiedRegistration>;
+  generateAuthenticationOptions(
+    input: GenerateAuthenticationOptionsInput,
+  ): Promise<AuthenticationOptions>;
 }

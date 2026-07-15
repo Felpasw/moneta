@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  generateAuthenticationOptions,
   generateRegistrationOptions,
   verifyRegistrationResponse,
 } from '@simplewebauthn/server';
@@ -9,6 +10,8 @@ import type {
 } from '@simplewebauthn/server';
 
 import type {
+  AuthenticationOptions,
+  GenerateAuthenticationOptionsInput,
   GenerateRegistrationOptionsInput,
   RegistrationOptions,
   VerifiedRegistration,
@@ -62,5 +65,18 @@ export class SimpleWebAuthnService implements WebAuthnService {
         backedUp: info.credentialBackedUp,
       },
     };
+  }
+
+  async generateAuthenticationOptions(
+    input: GenerateAuthenticationOptionsInput,
+  ): Promise<AuthenticationOptions> {
+    const options = await generateAuthenticationOptions({
+      rpID: input.rpID,
+      allowCredentials: input.allowCredentials.map((c) => ({
+        id: c.id,
+        transports: c.transports as AuthenticatorTransportFuture[] | undefined,
+      })),
+    });
+    return options as unknown as AuthenticationOptions;
   }
 }
