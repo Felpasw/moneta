@@ -66,11 +66,11 @@ Bundle grande — commitar em 2 partes: (a) infra de token/hash, (b) use-cases +
 - [x] **MNT-10** [T][S] ✅ commit `18218d2` — Use-case `LoginWithPassword(email, password)` → verifica hash, cria `Session(refreshTokenHash, userAgent, ip, expiresAt)`, retorna par
 - [x] **MNT-11** [T][S] ✅ commit `424218c` — Use-case `RefreshTokens(refreshToken)` → localiza Session por hash, valida não-revogada e não-expirada, ROTACIONA (revoga a antiga, cria nova), retorna novo par
 - [x] **MNT-12** [T][S] ✅ commit `54e8694` — Use-case `Logout(refreshToken)` → revoga Session
-- [ ] **MNT-13** [S] `AuthController`: `POST /auth/signup`, `/login`, `/refresh`, `/logout`. `/refresh` e `/logout` leem o refresh do cookie **ou** do body (mobile)
-- [ ] **MNT-14** [S] Set/clear cookie no controller: `HttpOnly + Secure + SameSite=Lax + path=/auth/refresh`
-- [ ] **MNT-15** [T][S] `JwtAuthGuard` + `@CurrentUser()` decorator; teste endpoint protegido
-- [ ] **MNT-16** [T][P] `@nestjs/throttler` — rate limit `5 tentativas / 15min` por IP+email em `/login`, `/signup`, `/refresh`
-- [ ] **MNT-17** [SEC] Auditoria de logs: nenhum log contém senha, hash, refresh token completo, ou JWT completo. Só últimos 6 chars do refresh pra correlação. Teste automatizado
+- [x] **MNT-13** [S] ✅ commit `f4c3d9e` — `AuthController`: `POST /auth/signup`, `/login`, `/refresh`, `/logout`. `/refresh` e `/logout` leem o refresh do cookie **ou** do body (mobile)
+- [x] **MNT-14** [S] ✅ commit `f4c3d9e` — Set/clear cookie no controller: `HttpOnly + Secure + SameSite=Lax + path=/auth/refresh`
+- [x] **MNT-15** [T][S] ✅ commit `f3ca0af` — `JwtAuthGuard` + `@CurrentUser()` decorator; teste endpoint protegido
+- [x] **MNT-16** [T][P] ✅ commit `e5ba7c6` — `@nestjs/throttler` — rate limit `5 tentativas / 15min` por IP+email em `/login`, `/signup`, `/refresh`
+- [x] **MNT-17** [SEC] ✅ commit `4987380` (primitiva pronta; consumidores futuros — MNT-38 audit log, request-logging middleware — chamam `redactSecrets` antes de logar) — Auditoria de logs: nenhum log contém senha, hash, refresh token completo, ou JWT completo. Só últimos 6 chars do refresh pra correlação. Teste automatizado
 
 ---
 
