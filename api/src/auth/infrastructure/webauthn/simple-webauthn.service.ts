@@ -1,10 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { generateRegistrationOptions } from '@simplewebauthn/server';
-import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
+import {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+} from '@simplewebauthn/server';
+import type {
+  AuthenticatorTransportFuture,
+  RegistrationResponseJSON,
+} from '@simplewebauthn/server';
 
 import type {
   GenerateRegistrationOptionsInput,
   RegistrationOptions,
+  VerifiedRegistration,
+  VerifyRegistrationInput,
   WebAuthnService,
 } from '../../domain/services/webauthn-service';
 
@@ -26,5 +34,33 @@ export class SimpleWebAuthnService implements WebAuthnService {
       })),
     });
     return options as unknown as RegistrationOptions;
+  }
+
+  async verifyRegistrationResponse(
+    input: VerifyRegistrationInput,
+  ): Promise<VerifiedRegistration> {
+    const result = await verifyRegistrationResponse({
+      response: input.response as RegistrationResponseJSON,
+      expectedChallenge: input.expectedChallenge,
+      expectedOrigin: input.expectedOrigin,
+      expectedRPID: input.expectedRPID,
+    });
+
+    if (!result.verified || !result.registrationInfo) {
+      return { verified: result.verified };
+    }
+
+    const info = result.registrationInfo;
+    return {
+      verified: true,
+      credential: {
+        credentialId: info.credential.id,
+        publicKey: info.credential.publicKey,
+        counter: info.credential.counter,
+        transports: info.credential.transports ?? [],
+        deviceType: info.credentialDeviceType,
+        backedUp: info.credentialBackedUp,
+      },
+    };
   }
 }

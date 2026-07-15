@@ -5,3 +5,8 @@ export interface EnrollPasskeyBeginInput {
 }
 
 export type EnrollPasskeyBeginResult = RegistrationOptions;
+
+export interface EnrollPasskeyFinishInput {
+  userId: string;
+  response: unknown;
+}
