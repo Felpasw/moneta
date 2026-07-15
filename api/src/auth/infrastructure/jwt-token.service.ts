@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 
 import { env } from '../../config/env';
@@ -12,31 +11,23 @@ import { JWT_TTL_SECONDS } from './constants/jwt';
 
 @Injectable()
 export class JwtTokenService implements TokenService {
-  private readonly accessSecret: string;
-  private readonly refreshSecret: string;
-
-  constructor(config: ConfigService) {
-    this.accessSecret = config.getOrThrow<string>(env.JWT_ACCESS_SECRET);
-    this.refreshSecret = config.getOrThrow<string>(env.JWT_REFRESH_SECRET);
-  }
-
   signAccess(payload: TokenPayload): string {
-    return jwt.sign(payload, this.accessSecret, {
+    return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
       expiresIn: JWT_TTL_SECONDS.access,
     });
   }
 
   verifyAccess(token: string): DecodedToken {
-    return jwt.verify(token, this.accessSecret) as DecodedToken;
+    return jwt.verify(token, env.JWT_ACCESS_SECRET) as DecodedToken;
   }
 
   signRefresh(payload: TokenPayload): string {
-    return jwt.sign(payload, this.refreshSecret, {
+    return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
       expiresIn: JWT_TTL_SECONDS.refresh,
     });
   }
 
   verifyRefresh(token: string): DecodedToken {
-    return jwt.verify(token, this.refreshSecret) as DecodedToken;
+    return jwt.verify(token, env.JWT_REFRESH_SECRET) as DecodedToken;
   }
 }
