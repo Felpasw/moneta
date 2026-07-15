@@ -1,0 +1,2 @@
+export const CLOSE_UNAUTHORIZED = 4401;
+export const CLOSE_UPSTREAM_ERROR = 4500;
