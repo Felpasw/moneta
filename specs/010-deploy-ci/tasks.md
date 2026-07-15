@@ -5,7 +5,7 @@
 - **`/api`** deploya no **Fly.io** (free tier: 3 VMs shared-cpu-1x + 3GB Postgres em `fly-postgres`, latência boa BR via `gru` region)
 - **`/web`** deploya no **Vercel** (integração Next.js nativa, preview deploys por PR gratuitos)
 - **Docker multi-stage** pro `/api`: build stage (`node:24-alpine` + deps + build) → runtime stage (só `dist/` + `node_modules/production`)
-- **Migrations rodam no boot** do container (`entrypoint.sh`: `pnpm typeorm migration:run && node dist/main`). Nunca `synchronize`, nunca migration manual em prod
+- **Migrations rodam no boot** do container (`entrypoint.sh`: `pnpm prisma migrate deploy && node dist/main`). Nunca `db push` em prod (não versiona schema), nunca migration manual em prod
 - **CI em cada PR**: lint + typecheck + test + build. Bloqueia merge se qualquer falhar
 - **Preview deploy**: Vercel automático em cada PR do `/web`. Fly.io não tem preview equivalente free — pula preview do `/api`, só produção
 - **Secrets**: Fly secrets (`flyctl secrets set`) + Vercel env vars. Nunca no repo. `.env.example` documenta todas
@@ -17,7 +17,7 @@
 |------|------|----------------|
 | Release-please (Bloco 0) | 001-release-management | CI já precisa entender Conventional Commits |
 | Auth Fase 0 (docker-compose) | 002-auth | Base do Dockerfile do `/api` |
-| Migrations funcionando | 002-auth Fase 0 | Boot roda migration:run |
+| Migrations funcionando | 002-auth Fase 0 | Boot roda prisma migrate deploy |
 
 ## Convenções
 
@@ -31,7 +31,7 @@ Mesmas do resto. Muitas tasks têm dependência humana (contas em provedores).
   - Build stage: `node:24-alpine`, `WORKDIR /app`, `COPY package.json pnpm-lock.yaml`, `pnpm install --frozen-lockfile`, `COPY . .`, `pnpm build`
   - Runtime stage: `node:24-alpine`, `WORKDIR /app`, copy `dist/`, `node_modules/`, `package.json`; user non-root (`USER node`); `HEALTHCHECK CMD wget -qO- http://localhost:3333/health || exit 1`; `EXPOSE 3333`; `CMD ["node", "dist/main"]`
   - `.dockerignore` — exclui `node_modules`, `dist`, `test`, `.env*`, `*.md`
-- [ ] **MNT-173** [T][S] `api/entrypoint.sh` — script que roda `pnpm typeorm migration:run --dataSource dist/config/data-source.js` e depois `exec node dist/main`. Dockerfile chama esse entrypoint em vez de `node dist/main` direto
+- [ ] **MNT-173** [T][S] `api/entrypoint.sh` — script que roda `pnpm prisma migrate deploy` e depois `exec node dist/main`. Dockerfile chama esse entrypoint em vez de `node dist/main` direto
 
 ---
 

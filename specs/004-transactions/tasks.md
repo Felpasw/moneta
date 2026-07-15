@@ -17,7 +17,7 @@
 | Auth Fase 1 | 002-auth | Ownership de tudo (userId da sessão) |
 | ToolRegistry + Dispatcher | 003-assistant Fase 2 | Registrar as ~15 tools novas |
 | `get_tool_help` (MNT-94) | 003-assistant Fase 2.5 | Playbooks on-demand |
-| Postgres + TypeORM | 002-auth Fase 0 | Migrations |
+| Postgres + Prisma | 002-auth Fase 0 | Migrations |
 | UI shell (MNT-98..99) | 009-ui-shell | Onde montar `/transactions`, `/banks`, `/invoices` |
 | shadcn (MNT-71) | 002-auth Fase 1.5 | Componentes das páginas |
 
@@ -122,7 +122,7 @@ Essencial pra V1 — cartão é o meio principal e parcelamento é onipresente n
 
 ## Fase 7 — Segurança e integração
 
-- [ ] **MNT-146** [SEC] Ownership checks universais — todos os use-cases usam `AssistantContext.userId` da sessão; testes validam que payload com `accountId` de outro user falha; injection defense em `ListTransactions` (todos os filtros parametrizados via TypeORM, nunca raw SQL)
+- [ ] **MNT-146** [SEC] Ownership checks universais — todos os use-cases usam `AssistantContext.userId` da sessão; testes validam que payload com `accountId` de outro user falha; injection defense em `ListTransactions` (todos os filtros via Prisma Client API tipada; `$queryRaw` só com params validados por Zod — nunca string concatenation)
 - [ ] **MNT-147** [T][S] Golden test integrado end-to-end — fluxo real: adicionar cartão → 5 compras → esperar close_day → confirmar invoice fechada + total certo → criar transfer da conta corrente → invoice marcada paid. Reproduz o journey completo pra garantir que todas as camadas conversam certo
 - [ ] **MNT-148** [SEC] PII scrubbing na resposta do assistente — antes de mandar texto pro ElevenLabs TTS, regex remove valores estranhos: CPF/CNPJ (raro mas possível se user disser), números de cartão (nunca deve aparecer, defesa em profundidade). Log das ocorrências pra auditoria
 

@@ -54,8 +54,9 @@ Detalhes vivem nos specs. Aqui só ponteiros:
 - **Prioridade de execução**: `specs/001-release-management` (MNT-149..153) **antes** de MNT-1. Ver `specs/000-product-brief/spec.md` seção "Ordem de execução"
 - **Ticket / branch / tag**: `MNT-N` global crescente, formato `MNT-N/slug` em branch, `[MNT-N]` no fim do commit subject
 - **Commit**: Conventional Commits (`<tipo>(<escopo>): <descrição> [MNT-N]`) — release-please analisa isso pra gerar CHANGELOG
-- **Persistência**: Postgres 16 (docker-compose) + TypeORM + migrations manuais (`synchronize: false` sempre)
-- **Store efêmero**: Redis 7 pra tokens de curta duração (password reset, email verification, passkey challenges) — ver `specs/002-auth`
+- **Persistência**: Postgres 16 (docker-compose) + Prisma (`prisma/schema.prisma` como source of truth; `prisma migrate dev` local pra criar migration; `prisma migrate deploy` em prod; `db push` proibido em prod — não versiona schema)
+- **Ports & Adapters via DI (NestJS)** pros pilares externos e side-effects testáveis: **DB (Prisma)**, **LLM+STT (OpenAI Realtime)**, **TTS (ElevenLabs)**, **EphemeralStore (Redis)**, **EmailSender (Resend/SMTP)**, **Clock**. Cada um atrás de **port** (interface em `domain/`) + **adapter** (implementação em `infrastructure/`). Use-cases injetam o port, nunca o client concreto nem `new Date()` inline. Swap de provider = trocar adapter no `@Module.providers`, zero mudança em regra de negócio. Foi esse padrão que permitiu trocar TypeORM→Prisma antes da 1ª linha de código
+- **Store efêmero**: Redis 7 pra tokens de curta duração (password reset, email verification, passkey challenges) atrás do port `EphemeralStore` — ver `specs/002-auth`
 - **Auth pattern**: Passport + JWT híbrido — ver `specs/002-auth`
 - **UI kit**: shadcn/ui (init em MNT-71) — todos os componentes de UI derivam daí
 - **Assistente**: OpenAI Realtime + ElevenLabs + Ready Player Me (RPM) — ver `specs/003-assistant`
