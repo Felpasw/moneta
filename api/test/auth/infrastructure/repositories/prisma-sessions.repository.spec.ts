@@ -20,6 +20,7 @@ const makePrisma = (methods: {
   create?: jest.Mock;
   findUnique?: jest.Mock;
   update?: jest.Mock;
+  updateMany?: jest.Mock;
   transaction?: jest.Mock;
 }): PrismaService =>
   ({
@@ -27,6 +28,7 @@ const makePrisma = (methods: {
       create: methods.create,
       findUnique: methods.findUnique,
       update: methods.update,
+      updateMany: methods.updateMany,
     },
     $transaction: methods.transaction,
   }) as unknown as PrismaService;
@@ -128,6 +130,29 @@ describe('PrismaSessionsRepository', () => {
 
       const result = await repo.findByRefreshTokenHash('unknown');
       expect(result).toBeNull();
+    });
+  });
+
+  describe('revokeByRefreshTokenHash', () => {
+    it('revokes only non-revoked sessions matching the hash', async () => {
+      const updateMany = jest.fn().mockResolvedValue({ count: 1 });
+      const repo = new PrismaSessionsRepository(makePrisma({ updateMany }));
+
+      await repo.revokeByRefreshTokenHash('some-hash', NOW);
+
+      expect(updateMany).toHaveBeenCalledWith({
+        where: { refreshTokenHash: 'some-hash', revokedAt: null },
+        data: { revokedAt: NOW },
+      });
+    });
+
+    it('is idempotent when no session matches (count=0)', async () => {
+      const updateMany = jest.fn().mockResolvedValue({ count: 0 });
+      const repo = new PrismaSessionsRepository(makePrisma({ updateMany }));
+
+      await expect(
+        repo.revokeByRefreshTokenHash('unknown-hash', NOW),
+      ).resolves.toBeUndefined();
     });
   });
 

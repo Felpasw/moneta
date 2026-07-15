@@ -50,6 +50,13 @@ export class PrismaSessionsRepository implements SessionsRepository {
     };
   }
 
+  async revokeByRefreshTokenHash(hash: string, now: Date): Promise<void> {
+    await this.prisma.session.updateMany({
+      where: { refreshTokenHash: hash, revokedAt: null },
+      data: { revokedAt: now },
+    });
+  }
+
   async rotate(input: RotateSessionInput): Promise<Session> {
     return this.prisma.$transaction(async (tx) => {
       await tx.session.update({
