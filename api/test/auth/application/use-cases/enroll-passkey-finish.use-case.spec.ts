@@ -1,5 +1,6 @@
 import { EnrollPasskeyFinishUseCase } from '~/auth/application/use-cases/enroll-passkey-finish.use-case';
 import { PasskeyEnrollmentFailedError } from '~/auth/domain/errors/passkey-enrollment-failed.error';
+import { AuthAuditEventType } from '~/auth/domain/ports/auth-audit-log-repository';
 
 const CHALLENGE = 'stored-challenge-abc';
 const PUBLIC_KEY = new Uint8Array([1, 2, 3, 4]);
@@ -29,14 +30,16 @@ const buildUseCase = () => {
     getAndDelete: jest.fn().mockResolvedValue({ challenge: CHALLENGE }),
     delete: jest.fn(),
   };
+  const audit = { record: jest.fn().mockResolvedValue(undefined) };
 
   const useCase = new EnrollPasskeyFinishUseCase(
     passkeys,
     webauthn,
     ephemeralStore,
+    audit,
   );
 
-  return { useCase, passkeys, webauthn, ephemeralStore };
+  return { useCase, passkeys, webauthn, ephemeralStore, audit };
 };
 
 const RESPONSE_STUB = { id: 'attestation-response' };
@@ -120,5 +123,29 @@ describe('EnrollPasskeyFinishUseCase', () => {
       useCase.execute({ userId: 'user-1', response: RESPONSE_STUB }),
     ).rejects.toBeInstanceOf(PasskeyEnrollmentFailedError);
     expect(passkeys.create).not.toHaveBeenCalled();
+  });
+
+  it('records a PASSKEY_ENROLLED audit event on success', async () => {
+    const { useCase, audit } = buildUseCase();
+    await useCase.execute({ userId: 'user-1', response: RESPONSE_STUB });
+
+    expect(audit.record).toHaveBeenCalledWith({
+      event: AuthAuditEventType.PASSKEY_ENROLLED,
+      userId: 'user-1',
+      context: {
+        credentialId: 'new-credential-id',
+        deviceType: 'multiDevice',
+      },
+    });
+  });
+
+  it('does not record an audit event when enrollment fails', async () => {
+    const { useCase, audit, ephemeralStore } = buildUseCase();
+    ephemeralStore.getAndDelete.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute({ userId: 'user-1', response: RESPONSE_STUB }),
+    ).rejects.toBeInstanceOf(PasskeyEnrollmentFailedError);
+    expect(audit.record).not.toHaveBeenCalled();
   });
 });

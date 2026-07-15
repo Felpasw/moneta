@@ -1,4 +1,5 @@
 import { SignOutEverywhereUseCase } from '~/auth/application/use-cases/sign-out-everywhere.use-case';
+import { AuthAuditEventType } from '~/auth/domain/ports/auth-audit-log-repository';
 
 const NOW = new Date('2026-07-15T12:00:00Z');
 
@@ -11,9 +12,10 @@ const buildUseCase = () => {
     revokeAllByUserId: jest.fn().mockResolvedValue(undefined),
   };
   const clock = { now: jest.fn().mockReturnValue(NOW) };
+  const audit = { record: jest.fn().mockResolvedValue(undefined) };
 
-  const useCase = new SignOutEverywhereUseCase(sessions, clock);
-  return { useCase, sessions, clock };
+  const useCase = new SignOutEverywhereUseCase(sessions, clock, audit);
+  return { useCase, sessions, clock, audit };
 };
 
 describe('SignOutEverywhereUseCase', () => {
@@ -37,5 +39,14 @@ describe('SignOutEverywhereUseCase', () => {
     const { useCase, clock } = buildUseCase();
     await useCase.execute({ userId: 'user-1' });
     expect(clock.now).toHaveBeenCalledTimes(1);
+  });
+
+  it('records an ALL_SESSIONS_REVOKED audit event with the userId', async () => {
+    const { useCase, audit } = buildUseCase();
+    await useCase.execute({ userId: 'user-1' });
+    expect(audit.record).toHaveBeenCalledWith({
+      event: AuthAuditEventType.ALL_SESSIONS_REVOKED,
+      userId: 'user-1',
+    });
   });
 });

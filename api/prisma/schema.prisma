@@ -19,6 +19,7 @@ model User {
   sessions           Session[]
   oauthAccounts      OAuthAccount[]
   passkeyCredentials PasskeyCredential[]
+  authAuditLogs      AuthAuditLog[]
 
   @@map("users")
 }
@@ -77,6 +78,34 @@ model OAuthAccount {
   @@unique([provider, providerId])
   @@index([userId])
   @@map("oauth_accounts")
+}
+
+enum AuthAuditEvent {
+  login_success
+  login_failure
+  passkey_enrolled
+  oauth_linked
+  password_changed
+  all_sessions_revoked
+
+  @@map("auth_audit_event")
+}
+
+model AuthAuditLog {
+  id        String         @id @default(uuid()) @db.Uuid
+  event     AuthAuditEvent
+  userId    String?        @map("user_id") @db.Uuid
+  ip        String?        @db.Inet
+  userAgent String?        @map("user_agent")
+  context   Json?          @db.JsonB
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([event])
+  @@index([createdAt])
+  @@map("auth_audit_log")
 }
 
 model PasskeyCredential {

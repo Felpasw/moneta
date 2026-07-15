@@ -1,5 +1,6 @@
 import { LoginWithPasswordUseCase } from '~/auth/application/use-cases/login-with-password.use-case';
 import { InvalidCredentialsError } from '~/auth/domain/errors/invalid-credentials.error';
+import { AuthAuditEventType } from '~/auth/domain/ports/auth-audit-log-repository';
 import type { CreateSessionInput } from '~/auth/domain/ports/sessions-repository';
 
 const NOW = new Date('2026-07-15T12:00:00Z');
@@ -40,6 +41,7 @@ const buildUseCase = () => {
   const clock = {
     now: jest.fn().mockReturnValue(NOW),
   };
+  const audit = { record: jest.fn().mockResolvedValue(undefined) };
 
   const useCase = new LoginWithPasswordUseCase(
     hasher,
@@ -47,9 +49,10 @@ const buildUseCase = () => {
     users,
     sessions,
     clock,
+    audit,
   );
 
-  return { useCase, hasher, tokens, users, sessions, clock };
+  return { useCase, hasher, tokens, users, sessions, clock, audit };
 };
 
 describe('LoginWithPasswordUseCase', () => {
@@ -159,5 +162,64 @@ describe('LoginWithPasswordUseCase', () => {
     const call = calls[0][0];
     expect(call.userAgent).toBeUndefined();
     expect(call.ip).toBeUndefined();
+  });
+
+  it('records a LOGIN_SUCCESS audit event on success', async () => {
+    const { useCase, audit } = buildUseCase();
+    await useCase.execute({
+      email: 'alice@example.com',
+      password: 'plaintext',
+      userAgent: 'jest',
+      ip: '127.0.0.1',
+    });
+
+    expect(audit.record).toHaveBeenCalledWith({
+      event: AuthAuditEventType.LOGIN_SUCCESS,
+      userId: 'user-1',
+      ip: '127.0.0.1',
+      userAgent: 'jest',
+    });
+  });
+
+  it('records a LOGIN_FAILURE (reason=user_not_found) when the email is unknown', async () => {
+    const { useCase, users, audit } = buildUseCase();
+    users.findByEmailWithPasswordCredential.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute({
+        email: 'ghost@example.com',
+        password: 'p',
+        ip: '10.0.0.1',
+        userAgent: 'jest',
+      }),
+    ).rejects.toThrow(InvalidCredentialsError);
+
+    expect(audit.record).toHaveBeenCalledWith({
+      event: AuthAuditEventType.LOGIN_FAILURE,
+      ip: '10.0.0.1',
+      userAgent: 'jest',
+      context: { email: 'ghost@example.com', reason: 'user_not_found' },
+    });
+  });
+
+  it('records a LOGIN_FAILURE (reason=wrong_password) with userId when password fails', async () => {
+    const { useCase, hasher, audit } = buildUseCase();
+    hasher.verify.mockResolvedValue(false);
+
+    await expect(
+      useCase.execute({
+        email: 'alice@example.com',
+        password: 'wrong',
+        ip: '10.0.0.1',
+      }),
+    ).rejects.toThrow(InvalidCredentialsError);
+
+    expect(audit.record).toHaveBeenCalledWith({
+      event: AuthAuditEventType.LOGIN_FAILURE,
+      userId: 'user-1',
+      ip: '10.0.0.1',
+      userAgent: undefined,
+      context: { email: 'alice@example.com', reason: 'wrong_password' },
+    });
   });
 });

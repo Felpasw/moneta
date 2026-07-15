@@ -14,6 +14,7 @@ import { SignupWithPasswordUseCase } from './application/use-cases/signup-with-p
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PasskeyController } from './passkey.controller';
+import { AUTH_AUDIT_LOG_REPOSITORY } from './domain/ports/auth-audit-log-repository';
 import { PASSKEY_CREDENTIALS_REPOSITORY } from './domain/ports/passkey-credentials-repository';
 import { SESSIONS_REPOSITORY } from './domain/ports/sessions-repository';
 import { PASSWORD_HASHER } from './domain/services/password-hasher';
@@ -24,6 +25,7 @@ import { AUTH_THROTTLER } from './infrastructure/constants/throttler';
 import { IpEmailThrottlerGuard } from './infrastructure/guards/ip-email-throttler.guard';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 import { JwtTokenService } from './infrastructure/jwt-token.service';
+import { PrismaAuthAuditLogRepository } from './infrastructure/repositories/prisma-auth-audit-log.repository';
 import { PrismaPasskeyCredentialsRepository } from './infrastructure/repositories/prisma-passkey-credentials.repository';
 import { PrismaSessionsRepository } from './infrastructure/repositories/prisma-sessions.repository';
 import { SimpleWebAuthnService } from './infrastructure/webauthn/simple-webauthn.service';
@@ -46,6 +48,10 @@ import { SimpleWebAuthnService } from './infrastructure/webauthn/simple-webauthn
       useClass: PrismaPasskeyCredentialsRepository,
     },
     { provide: WEBAUTHN_SERVICE, useClass: SimpleWebAuthnService },
+    {
+      provide: AUTH_AUDIT_LOG_REPOSITORY,
+      useClass: PrismaAuthAuditLogRepository,
+    },
     SignupWithPasswordUseCase,
     LoginWithPasswordUseCase,
     RefreshTokensUseCase,

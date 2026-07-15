@@ -10,6 +10,11 @@ import {
   PasskeyEnrollmentFailedReason,
 } from '../../domain/errors/passkey-enrollment-failed.error';
 import {
+  AUTH_AUDIT_LOG_REPOSITORY,
+  AuthAuditEventType,
+  type AuthAuditLogRepository,
+} from '../../domain/ports/auth-audit-log-repository';
+import {
   PASSKEY_CREDENTIALS_REPOSITORY,
   type PasskeyCredentialsRepository,
 } from '../../domain/ports/passkey-credentials-repository';
@@ -31,6 +36,8 @@ export class EnrollPasskeyFinishUseCase {
     @Inject(WEBAUTHN_SERVICE) private readonly webauthn: WebAuthnService,
     @Inject(EPHEMERAL_STORE)
     private readonly ephemeralStore: EphemeralStore,
+    @Inject(AUTH_AUDIT_LOG_REPOSITORY)
+    private readonly audit: AuthAuditLogRepository,
   ) {}
 
   async execute(input: EnrollPasskeyFinishInput): Promise<void> {
@@ -65,6 +72,15 @@ export class EnrollPasskeyFinishUseCase {
       transports: result.credential.transports,
       deviceType: result.credential.deviceType,
       backedUp: result.credential.backedUp,
+    });
+
+    await this.audit.record({
+      event: AuthAuditEventType.PASSKEY_ENROLLED,
+      userId: input.userId,
+      context: {
+        credentialId: result.credential.credentialId,
+        deviceType: result.credential.deviceType,
+      },
     });
   }
 }
