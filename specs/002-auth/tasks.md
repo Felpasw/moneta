@@ -57,12 +57,12 @@ Bundle grande — commitar em 2 partes: (a) infra de token/hash, (b) use-cases +
 
 ### (a) infra
 
-- [ ] **MNT-7** [T][S] `PasswordHasher` port (`domain/`) + adapter Argon2id (`infrastructure/`); teste com hash conhecido
-- [ ] **MNT-8** [T][S] `JwtTokenService` — assina access (15m) e refresh (30d) com secrets separados (`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`); teste round-trip
+- [x] **MNT-7** [T][S] ✅ commit `a8f6474` — `PasswordHasher` port (`domain/`) + adapter Argon2id (`infrastructure/`); teste com hash conhecido
+- [x] **MNT-8** [T][S] ✅ commit `a8f6474` — `JwtTokenService` — assina access (15m) e refresh (30d) com secrets separados (`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`); teste round-trip
 
 ### (b) use-cases + rotas
 
-- [ ] **MNT-9** [T][S] Use-case `SignupWithPassword({ email, password, name })` → valida `name` (1-100 chars, trim, sem HTML); cria `User(email, name)` + `Credential(type='password', hash)`; erro claro em email duplicado. `nickname` e `onboarded_at` ficam NULL — assistente captura no onboarding (`specs/008-onboarding`)
+- [x] **MNT-9** [T][S] ✅ commit `9ae0775` — Use-case `SignupWithPassword({ email, password, name })` → valida `name` (1-100 chars, trim, sem HTML); cria `User(email, name)` + `Credential(type='password', hash)`; erro claro em email duplicado. `nickname` e `onboarded_at` ficam NULL — assistente captura no onboarding (`specs/008-onboarding`)
 - [ ] **MNT-10** [T][S] Use-case `LoginWithPassword(email, password)` → verifica hash, cria `Session(refreshTokenHash, userAgent, ip, expiresAt)`, retorna par
 - [ ] **MNT-11** [T][S] Use-case `RefreshTokens(refreshToken)` → localiza Session por hash, valida não-revogada e não-expirada, ROTACIONA (revoga a antiga, cria nova), retorna novo par
 - [ ] **MNT-12** [T][S] Use-case `Logout(refreshToken)` → revoga Session
