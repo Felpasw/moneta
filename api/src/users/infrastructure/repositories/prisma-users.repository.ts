@@ -7,6 +7,7 @@ import type {
   CreateUserWithPasswordCredentialInput,
   UserSnapshot,
   UsersRepository,
+  UserWithPasswordCredential,
 } from '../../domain/ports/users-repository';
 
 const UNIQUE_CONSTRAINT_CODE = 'P2002';
@@ -38,5 +39,25 @@ export class PrismaUsersRepository implements UsersRepository {
       }
       throw e;
     }
+  }
+
+  async findByEmailWithPasswordCredential(
+    email: string,
+  ): Promise<UserWithPasswordCredential | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        credentials: { where: { type: CredentialType.password }, take: 1 },
+      },
+    });
+    if (!user) return null;
+    const [credential] = user.credentials;
+    if (!credential) return null;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      passwordHash: credential.hash,
+    };
   }
 }

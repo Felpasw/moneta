@@ -18,6 +18,7 @@ const buildUseCase = () => {
           name: input.name,
         }),
       ),
+    findByEmailWithPasswordCredential: jest.fn(),
   };
   const useCase = new SignupWithPasswordUseCase(hasher, repo);
   return { useCase, hasher, repo };
