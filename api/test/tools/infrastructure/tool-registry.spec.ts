@@ -1,12 +1,21 @@
-import { Test, type TestingModule } from '@nestjs/testing';
 import { DiscoveryModule } from '@nestjs/core';
+import { Test, type TestingModule } from '@nestjs/testing';
 
 import type {
   AssistantTool,
   AssistantToolResult,
 } from '~/tools/domain/assistant-tool';
+import { MetaToolName } from '~/tools/domain/constants/meta-tool-name';
 import { RegisterAssistantTool } from '~/tools/infrastructure/register-assistant-tool.decorator';
 import { ToolRegistry } from '~/tools/infrastructure/tool-registry';
+
+const RESERVED_META_NAMES: readonly string[] = Object.values(MetaToolName);
+const userNames = (registry: ToolRegistry): string[] =>
+  registry
+    .getAll()
+    .map((t) => t.name)
+    .filter((n) => !RESERVED_META_NAMES.includes(n))
+    .sort();
 
 const makeExecute = () =>
   jest.fn((): Promise<AssistantToolResult> => Promise.resolve({ ok: true }));
@@ -57,11 +66,7 @@ describe('ToolRegistry', () => {
     ]);
     const registry = module.get(ToolRegistry);
 
-    const names = registry
-      .getAll()
-      .map((t) => t.name)
-      .sort();
-    expect(names).toEqual(['get_balance', 'transfer']);
+    expect(userNames(registry)).toEqual(['get_balance', 'transfer']);
   });
 
   it('getByName returns the tool instance or null', async () => {
@@ -80,6 +85,7 @@ describe('ToolRegistry', () => {
 
     const shape = registry
       .toRealtimeToolsList()
+      .filter((t) => !RESERVED_META_NAMES.includes(t.name))
       .sort((a, b) => a.name.localeCompare(b.name));
 
     expect(shape).toEqual([
