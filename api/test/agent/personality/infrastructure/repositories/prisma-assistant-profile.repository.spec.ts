@@ -15,6 +15,7 @@ const CREATED_PROFILE = {
 interface FakeAssistantProfileDelegate {
   create: jest.Mock;
   findUnique: jest.Mock;
+  update: jest.Mock;
 }
 
 const makePrisma = (
@@ -100,6 +101,44 @@ describe('PrismaAssistantProfileRepository', () => {
       const result = await repo.findByUserId('user-none');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('update', () => {
+    it('patches only the provided fields via prisma.assistantProfile.update and returns the updated row', async () => {
+      const update = jest.fn().mockResolvedValue({
+        ...CREATED_PROFILE,
+        treatmentStyle: 'formal',
+        avatarUrl: 'https://models.readyplayer.me/xyz.glb',
+      });
+      const repo = new PrismaAssistantProfileRepository(makePrisma({ update }));
+
+      const result = await repo.update('user-1', {
+        treatmentStyle: TreatmentStyle.Formal,
+        avatarUrl: 'https://models.readyplayer.me/xyz.glb',
+      });
+
+      expect(update).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+        data: {
+          treatmentStyle: TreatmentStyle.Formal,
+          avatarUrl: 'https://models.readyplayer.me/xyz.glb',
+        },
+      });
+      expect(result.treatmentStyle).toBe(TreatmentStyle.Formal);
+      expect(result.avatarUrl).toBe('https://models.readyplayer.me/xyz.glb');
+    });
+
+    it('translates a Prisma P2025 (record not found) into ProfileNotFoundError', async () => {
+      const notFound = Object.assign(new Error('not found'), {
+        code: 'P2025',
+      });
+      const update = jest.fn().mockRejectedValue(notFound);
+      const repo = new PrismaAssistantProfileRepository(makePrisma({ update }));
+
+      await expect(repo.update('user-none', { voiceId: 'v' })).rejects.toThrow(
+        /profile.+user-none/i,
+      );
     });
   });
 });

@@ -1,5 +1,6 @@
 import type { AssistantProfile } from '../types/assistant-profile';
 import type { CreateAssistantProfileInput } from '../types/create-assistant-profile-input';
+import type { UpdateAssistantProfileInput } from '../types/update-assistant-profile-input';
 
 export const ASSISTANT_PROFILE_REPOSITORY = Symbol(
   'ASSISTANT_PROFILE_REPOSITORY',
@@ -8,4 +9,8 @@ export const ASSISTANT_PROFILE_REPOSITORY = Symbol(
 export interface AssistantProfileRepository {
   findByUserId(userId: string): Promise<AssistantProfile | null>;
   create(input: CreateAssistantProfileInput): Promise<AssistantProfile>;
+  update(
+    userId: string,
+    patch: UpdateAssistantProfileInput,
+  ): Promise<AssistantProfile>;
 }
