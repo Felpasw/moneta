@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 import { ClockModule } from './@common/infrastructure/clock/clock.module';
 import { EphemeralStoreModule } from './@common/infrastructure/ephemeral-store/ephemeral-store.module';
@@ -13,6 +14,7 @@ import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ClockModule,
     PrismaModule,
     EphemeralStoreModule,

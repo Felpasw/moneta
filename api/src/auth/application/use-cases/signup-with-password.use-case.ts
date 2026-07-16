@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import {
   USERS_REPOSITORY,
@@ -12,6 +13,10 @@ import {
 } from '../../domain/constants/name';
 import { InvalidNameError } from '../../domain/errors/invalid-name.error';
 import {
+  USER_SIGNED_UP_EVENT,
+  type UserSignedUpPayload,
+} from '../../domain/events/user-signed-up.event';
+import {
   PASSWORD_HASHER,
   type PasswordHasher,
 } from '../../domain/services/password-hasher';
@@ -24,6 +29,7 @@ export class SignupWithPasswordUseCase {
     private readonly hasher: PasswordHasher,
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: UsersRepository,
+    private readonly events: EventEmitter2,
   ) {}
 
   async execute(input: SignupWithPasswordInput): Promise<UserSnapshot> {
@@ -40,10 +46,19 @@ export class SignupWithPasswordUseCase {
     const email = input.email.toLowerCase().trim();
     const passwordHash = await this.hasher.hash(input.password);
 
-    return this.usersRepository.createWithPasswordCredential({
+    const user = await this.usersRepository.createWithPasswordCredential({
       email,
       name,
       passwordHash,
     });
+
+    const payload: UserSignedUpPayload = {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+    };
+    this.events.emit(USER_SIGNED_UP_EVENT, payload);
+
+    return user;
   }
 }

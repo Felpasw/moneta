@@ -20,8 +20,31 @@ model User {
   oauthAccounts      OAuthAccount[]
   passkeyCredentials PasskeyCredential[]
   authAuditLogs      AuthAuditLog[]
+  assistantProfile   AssistantProfile?
 
   @@map("users")
+}
+
+enum TreatmentStyle {
+  formal
+  informal
+  very_informal
+
+  @@map("treatment_style")
+}
+
+model AssistantProfile {
+  id             String         @id @default(uuid()) @db.Uuid
+  userId         String         @unique @map("user_id") @db.Uuid
+  treatmentStyle TreatmentStyle @default(informal) @map("treatment_style")
+  voiceId        String         @map("voice_id") @db.VarChar(255)
+  avatarUrl      String?        @map("avatar_url") @db.VarChar(500)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("assistant_profiles")
 }
 
 enum CredentialType {

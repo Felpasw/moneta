@@ -1,16 +1,9 @@
-import type { AudioChunk, TtsClient } from '~/agent/domain/ports/tts-client';
+import type { TtsClient } from '~/agent/domain/ports/tts-client';
 
-export interface TtsPipelineListeners {
-  readonly onAudio: (chunk: AudioChunk) => void;
-  readonly onDone: () => void;
-  readonly onCanceled: () => void;
-  readonly onError: (err: Error) => void;
-}
-
-export interface SpeakParams {
-  readonly text: string;
-  readonly voiceId: string;
-}
+import type {
+  SpeakParams,
+  TtsPipelineListeners,
+} from '~/agent/domain/types/tts-pipeline';
 
 export class TtsPipeline {
   private current: AbortController | null = null;

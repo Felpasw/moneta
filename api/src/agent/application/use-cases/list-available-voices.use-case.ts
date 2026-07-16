@@ -5,11 +5,9 @@ import { CLOCK } from '~/@common/domain/ports/clock';
 import type { TtsClient, TtsVoice } from '~/agent/domain/ports/tts-client';
 import { TTS_CLIENT } from '~/agent/infrastructure/tts/tts.tokens';
 
-const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
+import type { ListAvailableVoicesUseCaseOptions } from '~/agent/domain/types/list-available-voices';
 
-export interface ListAvailableVoicesUseCaseOptions {
-  readonly cacheTtlMs?: number;
-}
+const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
 
 interface CacheEntry {
   readonly voices: TtsVoice[];
