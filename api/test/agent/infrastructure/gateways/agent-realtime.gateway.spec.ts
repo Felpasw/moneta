@@ -10,6 +10,9 @@ import type {
   TtsClient,
   TtsVoice,
 } from '~/agent/domain/ports/tts-client';
+import { TreatmentStyle } from '~/agent/personality/domain/constants/treatment-style';
+import type { AssistantProfileRepository } from '~/agent/personality/domain/ports/assistant-profile-repository';
+import type { AssistantProfile } from '~/agent/personality/domain/types/assistant-profile';
 import type { TokenService } from '~/auth/domain/services/token-service';
 
 type Listener<T extends unknown[]> = (...args: T) => void;
@@ -51,6 +54,9 @@ class FakeUpstream implements RealtimeUpstream {
   }
   emitError(err: Error): void {
     for (const fn of this.errorListeners) fn(err);
+  }
+  emitOpen(): void {
+    for (const fn of this.openListeners) fn();
   }
 }
 
@@ -122,6 +128,33 @@ const makeNoopTts = (): TtsClient => ({
   listVoices: (): Promise<TtsVoice[]> => Promise.resolve([]),
 });
 
+const buildProfile = (
+  patch: Partial<AssistantProfile> = {},
+): AssistantProfile => ({
+  id: 'p-1',
+  userId: 'user-1',
+  treatmentStyle: TreatmentStyle.Informal,
+  voiceId: 'v-1',
+  avatarUrl: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  ...patch,
+});
+
+const makeProfileRepo = (
+  profile: AssistantProfile | null,
+): AssistantProfileRepository => ({
+  findByUserId: jest.fn().mockResolvedValue(profile),
+  create: jest.fn(),
+  update: jest.fn(),
+});
+
+const makeFailingProfileRepo = (err: Error): AssistantProfileRepository => ({
+  findByUserId: jest.fn().mockRejectedValue(err),
+  create: jest.fn(),
+  update: jest.fn(),
+});
+
 const makeControllableTts = (): ControllableTts => {
   const handles: ControllableTts['handles'] = [];
   const tts: TtsClient = {
@@ -181,6 +214,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
 
@@ -203,6 +237,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
 
@@ -223,6 +258,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
 
@@ -243,6 +279,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
 
@@ -264,6 +301,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
 
@@ -286,6 +324,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
 
@@ -307,6 +346,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
       client.readyState = 3;
@@ -331,6 +371,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
 
@@ -351,6 +392,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
 
@@ -372,6 +414,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
 
@@ -393,6 +436,7 @@ describe('AgentRealtimeGateway', () => {
         tokens,
         factory.asPort,
         makeNoopTts(),
+        makeProfileRepo(null),
       );
       const client = makeClient();
 
@@ -433,7 +477,12 @@ describe('AgentRealtimeGateway', () => {
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
       const { tts, handles } = makeControllableTts();
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort, tts);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        tts,
+        makeProfileRepo(null),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -460,7 +509,12 @@ describe('AgentRealtimeGateway', () => {
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
       const { tts, handles } = makeControllableTts();
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort, tts);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        tts,
+        makeProfileRepo(null),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -487,7 +541,12 @@ describe('AgentRealtimeGateway', () => {
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
       const { tts, handles } = makeControllableTts();
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort, tts);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        tts,
+        makeProfileRepo(null),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -505,7 +564,12 @@ describe('AgentRealtimeGateway', () => {
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
       const { tts, handles } = makeControllableTts();
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort, tts);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        tts,
+        makeProfileRepo(null),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -518,6 +582,162 @@ describe('AgentRealtimeGateway', () => {
       await flushMicrotasks();
 
       expect(handles).toHaveLength(0);
+    });
+  });
+
+  describe('system prompt injection', () => {
+    const flushMicrotasks = (): Promise<void> =>
+      new Promise((resolve) => setImmediate(resolve));
+
+    const findSessionUpdate = (
+      upstream: FakeUpstream,
+    ): { instructions: string } | undefined => {
+      for (const payload of upstream.sent) {
+        if (typeof payload !== 'string') continue;
+        try {
+          const parsed = JSON.parse(payload) as {
+            type?: string;
+            session?: { instructions?: string };
+          };
+          if (
+            parsed.type === 'session.update' &&
+            parsed.session?.instructions
+          ) {
+            return { instructions: parsed.session.instructions };
+          }
+        } catch {
+          /* not JSON */
+        }
+      }
+      return undefined;
+    };
+
+    it('sends session.update with a prompt containing the very-informal snippet when profile is very_informal', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-vi' }));
+      const factory = makeFactory(upstream);
+      const repo = makeProfileRepo(
+        buildProfile({
+          userId: 'user-vi',
+          treatmentStyle: TreatmentStyle.VeryInformal,
+        }),
+      );
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        repo,
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+
+      const event = findSessionUpdate(upstream);
+      expect(event).toBeDefined();
+      expect(event?.instructions).toMatch(/muito informal/i);
+      expect(event?.instructions).toMatch(/zoa/i);
+    });
+
+    it('sends session.update with the formal snippet when profile is formal', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-f' }));
+      const factory = makeFactory(upstream);
+      const repo = makeProfileRepo(
+        buildProfile({
+          userId: 'user-f',
+          treatmentStyle: TreatmentStyle.Formal,
+        }),
+      );
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        repo,
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+
+      const event = findSessionUpdate(upstream);
+      expect(event?.instructions).toMatch(/formalidade/i);
+    });
+
+    it('falls back to the default treatment style when profile is missing', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-no-profile' }));
+      const factory = makeFactory(upstream);
+      const repo = makeProfileRepo(null);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        repo,
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+
+      const event = findSessionUpdate(upstream);
+      expect(event?.instructions).toMatch(/informal/i);
+    });
+
+    it('does not inject prompt before upstream opens', () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-1' }));
+      const factory = makeFactory(upstream);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        makeProfileRepo(buildProfile()),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+
+      expect(findSessionUpdate(upstream)).toBeUndefined();
+    });
+
+    it('logs and swallows repository errors without breaking the connection', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-1' }));
+      const factory = makeFactory(upstream);
+      const repo = makeFailingProfileRepo(new Error('db down'));
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        repo,
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+
+      expect(client.close).not.toHaveBeenCalled();
+      expect(findSessionUpdate(upstream)).toBeUndefined();
     });
   });
 });

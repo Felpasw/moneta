@@ -1,4 +1,4 @@
-import type { TreatmentStyle } from './constants/treatment-style';
+import type { TreatmentStyle } from '../constants/treatment-style';
 
 export interface AssistantProfile {
   readonly id: string;

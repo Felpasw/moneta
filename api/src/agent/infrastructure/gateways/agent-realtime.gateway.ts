@@ -18,11 +18,16 @@ import {
 } from '~/agent/domain/ports/realtime-upstream';
 import type { TtsClient } from '~/agent/domain/ports/tts-client';
 import { TTS_CLIENT } from '~/agent/infrastructure/tts/tts.tokens';
+import {
+  ASSISTANT_PROFILE_REPOSITORY,
+  type AssistantProfileRepository,
+} from '~/agent/personality/domain/ports/assistant-profile-repository';
 import { env } from '~/config/env';
 
 import { CLOSE_UNAUTHORIZED } from './constants/close-codes';
 import { extractHandshakeToken } from './utils/extract-handshake-token';
 import { wireRelay } from './utils/wire-relay';
+import { wireSystemPrompt } from './utils/wire-system-prompt';
 import { wireTtsTap } from './utils/wire-tts-tap';
 
 @WebSocketGateway({ path: '/agent/ws' })
@@ -37,6 +42,8 @@ export class AgentRealtimeGateway
     @Inject(REALTIME_UPSTREAM_FACTORY)
     private readonly upstreamFactory: RealtimeUpstreamFactory,
     @Inject(TTS_CLIENT) private readonly tts: TtsClient,
+    @Inject(ASSISTANT_PROFILE_REPOSITORY)
+    private readonly profiles: AssistantProfileRepository,
   ) {}
 
   handleConnection(client: WebSocket, req: IncomingMessage): void {
@@ -49,6 +56,12 @@ export class AgentRealtimeGateway
     const upstream = this.upstreamFactory.connect(userId);
     this.upstreams.set(client, upstream);
     wireRelay({ client, upstream, logger: this.logger, userId });
+    wireSystemPrompt({
+      upstream,
+      userId,
+      profiles: this.profiles,
+      logger: this.logger,
+    });
     wireTtsTap({
       client,
       upstream,
