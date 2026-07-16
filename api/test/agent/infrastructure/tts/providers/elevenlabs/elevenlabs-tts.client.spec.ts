@@ -25,13 +25,16 @@ const axiosNoResponse = (): AxiosError => new AxiosError('Network Error');
 
 describe('ElevenLabsTtsClient', () => {
   let postSpy: jest.SpyInstance;
+  let getSpy: jest.SpyInstance;
 
   beforeEach(() => {
     postSpy = jest.spyOn(httpClient, 'post');
+    getSpy = jest.spyOn(httpClient, 'get');
   });
 
   afterEach(() => {
     postSpy.mockRestore();
+    getSpy.mockRestore();
   });
 
   const drain = async (stream: AsyncIterable<Buffer>): Promise<Buffer[]> => {
@@ -128,5 +131,63 @@ describe('ElevenLabsTtsClient', () => {
       drain(client.synthesizeStream({ text: 'x', voiceId: 'v' })),
     ).rejects.toThrow(/network_error/);
     expect(postSpy).toHaveBeenCalledTimes(1);
+  });
+
+  describe('listVoices', () => {
+    it('GETs /v1/voices with xi-api-key and normalizes { voice_id, name, labels.language } to domain shape', async () => {
+      getSpy.mockResolvedValue({
+        status: 200,
+        data: {
+          voices: [
+            {
+              voice_id: 'v1',
+              name: 'Rachel',
+              labels: { language: 'en', gender: 'female' },
+            },
+            {
+              voice_id: 'v2',
+              name: 'Carlos',
+              labels: { language: 'pt' },
+            },
+            {
+              voice_id: 'v3',
+              name: 'NoLabels',
+            },
+          ],
+        },
+      });
+
+      const client = new ElevenLabsTtsClient();
+      const voices = await client.listVoices();
+
+      expect(voices).toEqual([
+        { voiceId: 'v1', name: 'Rachel', language: 'en' },
+        { voiceId: 'v2', name: 'Carlos', language: 'pt' },
+        { voiceId: 'v3', name: 'NoLabels' },
+      ]);
+
+      expect(getSpy).toHaveBeenCalledTimes(1);
+      const calls = getSpy.mock.calls as unknown as [
+        [string, { headers: Record<string, string> }],
+      ];
+      const [url, config] = calls[0];
+      expect(url).toBe('https://api.elevenlabs.io/v1/voices');
+      expect(config.headers['xi-api-key']).toBeDefined();
+      expect(config.headers['xi-api-key'].length).toBeGreaterThan(0);
+    });
+
+    it('propagates HTTP errors with wrapped status message', async () => {
+      getSpy.mockRejectedValue(axios4xx(401));
+
+      const client = new ElevenLabsTtsClient();
+      await expect(client.listVoices()).rejects.toThrow(/401/);
+    });
+
+    it('propagates network errors as network_error', async () => {
+      getSpy.mockRejectedValue(axiosNoResponse());
+
+      const client = new ElevenLabsTtsClient();
+      await expect(client.listVoices()).rejects.toThrow(/network_error/);
+    });
   });
 });

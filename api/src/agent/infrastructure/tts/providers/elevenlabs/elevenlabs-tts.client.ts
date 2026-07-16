@@ -5,6 +5,7 @@ import type {
   AudioChunk,
   SynthesizeStreamParams,
   TtsClient,
+  TtsVoice,
 } from '~/agent/domain/ports/tts-client';
 import { env } from '~/config/env';
 import { httpClient } from '~/config/http';
@@ -12,8 +13,10 @@ import { httpClient } from '~/config/http';
 import { ELEVENLABS_TTS } from './constants/elevenlabs-tts';
 import type { ElevenLabsTtsClientOptions } from './types/elevenlabs-tts-client-options';
 import { buildStreamUrl } from './utils/build-stream-url';
+import { buildVoicesUrl } from './utils/build-voices-url';
 import { isRetryableAxiosError } from './utils/is-retryable-axios-error';
 import { normalizeAudioChunk } from './utils/normalize-audio-chunk';
+import { normalizeVoice } from './utils/normalize-voice';
 import { sleep } from './utils/sleep';
 import { wrapTtsError } from './utils/wrap-tts-error';
 
@@ -35,6 +38,21 @@ export class ElevenLabsTtsClient implements TtsClient {
     const response = await this.postWithRetry(params);
     for await (const chunk of response.data) {
       yield normalizeAudioChunk(chunk);
+    }
+  }
+
+  async listVoices(): Promise<TtsVoice[]> {
+    try {
+      const response = await httpClient.get<{ voices: unknown[] }>(
+        buildVoicesUrl(),
+        { headers: { 'xi-api-key': env.TTS_API_KEY } },
+      );
+      const raw = response.data.voices as Parameters<
+        typeof normalizeVoice
+      >[0][];
+      return raw.map(normalizeVoice);
+    } catch (err) {
+      throw wrapTtsError(err);
     }
   }
 
