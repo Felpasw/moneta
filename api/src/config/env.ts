@@ -19,6 +19,11 @@ export const envSchema = z.object({
     .default('development'),
   RP_ID: z.string().min(1).default('localhost'),
   RP_NAME: z.string().min(1).default('Moneta'),
+  LLM_BEHAVIOR_ENABLED: z
+    .enum(['0', '1'])
+    .default('0')
+    .transform((v) => v === '1'),
+  LLM_BEHAVIOR_MODEL: z.string().min(1).default('gpt-4o-mini'),
 });
 
 export type Env = z.infer<typeof envSchema>;

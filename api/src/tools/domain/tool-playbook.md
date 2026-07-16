@@ -8,7 +8,7 @@ Sempre **inline no código do tool**, junto da `execute()`. Nunca em banco, conf
 
 1. **Versionamento** = git. Toda mudança tem hash, autor, PR.
 2. **Revisão** passa obrigatoriamente por PR — regra de negócio do assistente não muda em produção sem code review.
-3. **Golden test** (MNT-95) valida contra o playbook do código.
+3. **LLM behavior test** (MNT-95, `test/agent/llm-behavior/`) valida contra o playbook do código.
 4. **Lookup em runtime** é `Map` em memória (O(1), zero I/O).
 
 Para playbooks longos, extrair para constante do próprio módulo do tool (`constants/<tool>-playbook.ts`) é aceitável — desde que a constante seja `string` literal exportada, não computada.
@@ -52,4 +52,4 @@ Se houver tools irmãs (`add_transaction` / `remove_transaction`), cite os nomes
 - [ ] Nenhuma menção a outras tools além da lista opcional final.
 - [ ] Nenhum dado sensível.
 - [ ] `npm test` verde (inclui o lint de playbooks).
-- [ ] Se houver golden test de conversação para a tool (MNT-95), atualizado com o novo cenário.
+- [ ] Se houver fixture de comportamento (LLM behavior test) para a tool (MNT-95, em `test/agent/llm-behavior/`), atualizada com o novo cenário.

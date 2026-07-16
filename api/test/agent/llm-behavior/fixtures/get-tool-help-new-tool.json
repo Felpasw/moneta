@@ -1,0 +1,56 @@
+{
+  "scenario": "new-tool",
+  "description": "Tool never invoked before in this session — model must call get_tool_help first",
+  "treatmentStyle": "informal",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "adiciona uma transação de R$ 50 gasto no iFood ontem"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_tool_help",
+        "description": "Retorna o playbook de uma tool específica (regras de uso, exemplos, edge cases). Chame antes da primeira invocação de qualquer tool.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "toolName": {
+              "type": "string",
+              "description": "Nome da tool cujo playbook deve ser carregado."
+            }
+          },
+          "required": ["toolName"],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "add_transaction",
+        "description": "Registra uma transação financeira do usuário.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "amountBrl": { "type": "number" },
+            "description": { "type": "string" },
+            "occurredAt": { "type": "string", "format": "date" }
+          },
+          "required": ["amountBrl", "description"],
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "expected": {
+    "firstToolCall": {
+      "name": "get_tool_help",
+      "argsMatch": {
+        "toolName": "add_transaction"
+      }
+    }
+  }
+}

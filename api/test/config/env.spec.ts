@@ -91,4 +91,25 @@ describe('envSchema', () => {
   it('throws when PORT is not a positive integer', () => {
     expect(() => envSchema.parse({ ...FULL_ENV, PORT: '-1' })).toThrow(/PORT/);
   });
+
+  it('defaults LLM_BEHAVIOR_ENABLED to false when omitted', () => {
+    const parsed = envSchema.parse(FULL_ENV);
+    expect(parsed.LLM_BEHAVIOR_ENABLED).toBe(false);
+  });
+
+  it('parses LLM_BEHAVIOR_ENABLED="1" as true', () => {
+    const parsed = envSchema.parse({ ...FULL_ENV, LLM_BEHAVIOR_ENABLED: '1' });
+    expect(parsed.LLM_BEHAVIOR_ENABLED).toBe(true);
+  });
+
+  it('throws when LLM_BEHAVIOR_ENABLED has an unsupported value', () => {
+    expect(() =>
+      envSchema.parse({ ...FULL_ENV, LLM_BEHAVIOR_ENABLED: 'yes' }),
+    ).toThrow(/LLM_BEHAVIOR_ENABLED/);
+  });
+
+  it('defaults LLM_BEHAVIOR_MODEL to gpt-4o-mini when omitted', () => {
+    const parsed = envSchema.parse(FULL_ENV);
+    expect(parsed.LLM_BEHAVIOR_MODEL).toBe('gpt-4o-mini');
+  });
 });
