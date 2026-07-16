@@ -3,6 +3,7 @@ export type AudioChunk = Buffer;
 export interface SynthesizeStreamParams {
   readonly text: string;
   readonly voiceId: string;
+  readonly signal?: AbortSignal;
 }
 
 export interface TtsVoice {

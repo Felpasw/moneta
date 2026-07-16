@@ -10,15 +10,20 @@ import type { WebSocket } from 'ws';
 import {
   TOKEN_SERVICE,
   type TokenService,
-} from '../../../auth/domain/services/token-service';
+} from '~/auth/domain/services/token-service';
 import {
   REALTIME_UPSTREAM_FACTORY,
   type RealtimeUpstream,
   type RealtimeUpstreamFactory,
-} from '../../domain/ports/realtime-upstream';
+} from '~/agent/domain/ports/realtime-upstream';
+import type { TtsClient } from '~/agent/domain/ports/tts-client';
+import { TTS_CLIENT } from '~/agent/infrastructure/tts/tts.tokens';
+import { env } from '~/config/env';
+
 import { CLOSE_UNAUTHORIZED } from './constants/close-codes';
 import { extractHandshakeToken } from './utils/extract-handshake-token';
 import { wireRelay } from './utils/wire-relay';
+import { wireTtsTap } from './utils/wire-tts-tap';
 
 @WebSocketGateway({ path: '/agent/ws' })
 export class AgentRealtimeGateway
@@ -31,6 +36,7 @@ export class AgentRealtimeGateway
     @Inject(TOKEN_SERVICE) private readonly tokens: TokenService,
     @Inject(REALTIME_UPSTREAM_FACTORY)
     private readonly upstreamFactory: RealtimeUpstreamFactory,
+    @Inject(TTS_CLIENT) private readonly tts: TtsClient,
   ) {}
 
   handleConnection(client: WebSocket, req: IncomingMessage): void {
@@ -43,6 +49,12 @@ export class AgentRealtimeGateway
     const upstream = this.upstreamFactory.connect(userId);
     this.upstreams.set(client, upstream);
     wireRelay({ client, upstream, logger: this.logger, userId });
+    wireTtsTap({
+      client,
+      upstream,
+      tts: this.tts,
+      voiceId: env.TTS_DEFAULT_VOICE_ID,
+    });
   }
 
   handleDisconnect(client: WebSocket): void {

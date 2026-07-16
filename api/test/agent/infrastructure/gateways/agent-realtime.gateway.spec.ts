@@ -5,6 +5,11 @@ import type {
   RealtimeUpstream,
   RealtimeUpstreamFactory,
 } from '~/agent/domain/ports/realtime-upstream';
+import type {
+  SynthesizeStreamParams,
+  TtsClient,
+  TtsVoice,
+} from '~/agent/domain/ports/tts-client';
 import type { TokenService } from '~/auth/domain/services/token-service';
 
 type Listener<T extends unknown[]> = (...args: T) => void;
@@ -100,6 +105,61 @@ const makeFactory = (upstream: FakeUpstream): FakeFactory => {
   return { connect, asPort: { connect } };
 };
 
+interface ControllableTts {
+  tts: TtsClient;
+  handles: Array<{
+    yield: (chunk: Buffer) => void;
+    end: () => void;
+    fail: (err: Error) => void;
+    signal(): AbortSignal | undefined;
+  }>;
+}
+
+const makeNoopTts = (): TtsClient => ({
+  synthesizeStream: async function* () {
+    /* no-op — never yields */
+  },
+  listVoices: (): Promise<TtsVoice[]> => Promise.resolve([]),
+});
+
+const makeControllableTts = (): ControllableTts => {
+  const handles: ControllableTts['handles'] = [];
+  const tts: TtsClient = {
+    async *synthesizeStream(params: SynthesizeStreamParams) {
+      const queue: Array<Buffer | 'end' | Error> = [];
+      let resolvePending: (() => void) | null = null;
+      const push = (item: Buffer | 'end' | Error): void => {
+        queue.push(item);
+        if (resolvePending) {
+          const r = resolvePending;
+          resolvePending = null;
+          r();
+        }
+      };
+      handles.push({
+        yield: (chunk) => push(chunk),
+        end: () => push('end'),
+        fail: (err) => push(err),
+        signal: () => params.signal,
+      });
+      for (;;) {
+        while (queue.length === 0) {
+          await new Promise<void>((resolve) => {
+            resolvePending = resolve;
+          });
+        }
+        const item = queue.shift();
+        if (item === 'end') return;
+        if (item instanceof Error) throw item;
+        if (params.signal?.aborted) return;
+        yield item as Buffer;
+      }
+    },
+    listVoices: (): Promise<TtsVoice[]> => Promise.resolve([]),
+  };
+  return { tts, handles };
+};
+
 const makeReq = (opts: { token?: string; proto?: string }): IncomingMessage => {
   const query = opts.token ? `?token=${encodeURIComponent(opts.token)}` : '';
   const headers = opts.proto ? { 'sec-websocket-protocol': opts.proto } : {};
@@ -117,7 +177,11 @@ describe('AgentRealtimeGateway', () => {
         throw new Error('should not verify');
       });
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -135,7 +199,11 @@ describe('AgentRealtimeGateway', () => {
         throw new Error('invalid');
       });
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -151,7 +219,11 @@ describe('AgentRealtimeGateway', () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-42' }));
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -167,7 +239,11 @@ describe('AgentRealtimeGateway', () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-9' }));
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -184,7 +260,11 @@ describe('AgentRealtimeGateway', () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -202,7 +282,11 @@ describe('AgentRealtimeGateway', () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -219,7 +303,11 @@ describe('AgentRealtimeGateway', () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
       client.readyState = 3;
 
@@ -239,7 +327,11 @@ describe('AgentRealtimeGateway', () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -255,7 +347,11 @@ describe('AgentRealtimeGateway', () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -272,7 +368,11 @@ describe('AgentRealtimeGateway', () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -289,7 +389,11 @@ describe('AgentRealtimeGateway', () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
-      const gateway = new AgentRealtimeGateway(tokens, factory.asPort);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+      );
       const client = makeClient();
 
       gateway.handleConnection(
@@ -301,6 +405,119 @@ describe('AgentRealtimeGateway', () => {
       );
 
       expect(upstream.closed).toBe(true);
+    });
+  });
+
+  describe('TTS pipeline integration', () => {
+    const findTtsEvent = (
+      client: FakeClient,
+      type: string,
+    ): Record<string, unknown> | undefined => {
+      for (const [payload] of client.send.mock.calls as Array<[unknown]>) {
+        if (typeof payload !== 'string') continue;
+        try {
+          const parsed = JSON.parse(payload) as Record<string, unknown>;
+          if (parsed.type === type) return parsed;
+        } catch {
+          /* not JSON, ignore */
+        }
+      }
+      return undefined;
+    };
+
+    const flushMicrotasks = (): Promise<void> =>
+      new Promise((resolve) => setImmediate(resolve));
+
+    it('synthesizes assistant text on response.text.done and streams tts.audio.delta + tts.audio.done to the client', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-1' }));
+      const factory = makeFactory(upstream);
+      const { tts, handles } = makeControllableTts();
+      const gateway = new AgentRealtimeGateway(tokens, factory.asPort, tts);
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitMessage(
+        JSON.stringify({ type: 'response.text.done', text: 'olá mundo' }),
+      );
+      await flushMicrotasks();
+      handles[0].yield(Buffer.from([0xaa, 0xbb]));
+      handles[0].end();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      const delta = findTtsEvent(client, 'tts.audio.delta');
+      expect(delta).toBeDefined();
+      expect(delta?.audio).toBe(Buffer.from([0xaa, 0xbb]).toString('base64'));
+      expect(findTtsEvent(client, 'tts.audio.done')).toBeDefined();
+    });
+
+    it('cancels in-flight synthesis on input_audio_buffer.speech_started (barge-in) and emits tts.audio.canceled', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-1' }));
+      const factory = makeFactory(upstream);
+      const { tts, handles } = makeControllableTts();
+      const gateway = new AgentRealtimeGateway(tokens, factory.asPort, tts);
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitMessage(
+        JSON.stringify({ type: 'response.text.done', text: 'oi' }),
+      );
+      await flushMicrotasks();
+      handles[0].yield(Buffer.from([1]));
+      upstream.emitMessage(
+        JSON.stringify({ type: 'input_audio_buffer.speech_started' }),
+      );
+      handles[0].end();
+      await flushMicrotasks();
+
+      expect(findTtsEvent(client, 'tts.audio.canceled')).toBeDefined();
+      expect(handles[0].signal()?.aborted).toBe(true);
+    });
+
+    it('ignores non-JSON upstream frames without triggering TTS', () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-1' }));
+      const factory = makeFactory(upstream);
+      const { tts, handles } = makeControllableTts();
+      const gateway = new AgentRealtimeGateway(tokens, factory.asPort, tts);
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitMessage(Buffer.from('not-json'));
+      upstream.emitMessage(JSON.stringify({ type: 'response.audio.delta' }));
+
+      expect(handles).toHaveLength(0);
+    });
+
+    it('does not synthesize when response.text.done has an empty text', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-1' }));
+      const factory = makeFactory(upstream);
+      const { tts, handles } = makeControllableTts();
+      const gateway = new AgentRealtimeGateway(tokens, factory.asPort, tts);
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitMessage(
+        JSON.stringify({ type: 'response.text.done', text: '' }),
+      );
+      await flushMicrotasks();
+
+      expect(handles).toHaveLength(0);
     });
   });
 });

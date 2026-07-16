@@ -37,6 +37,7 @@ export class ElevenLabsTtsClient implements TtsClient {
   ): AsyncIterable<AudioChunk> {
     const response = await this.postWithRetry(params);
     for await (const chunk of response.data) {
+      if (params.signal?.aborted) return;
       yield normalizeAudioChunk(chunk);
     }
   }
@@ -70,6 +71,7 @@ export class ElevenLabsTtsClient implements TtsClient {
           },
           {
             responseType: 'stream',
+            signal: params.signal,
             headers: {
               'xi-api-key': env.TTS_API_KEY,
               accept: 'audio/mpeg',

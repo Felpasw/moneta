@@ -1,0 +1,56 @@
+import type { WebSocket } from 'ws';
+
+import { TtsPipeline } from '~/agent/application/tts-pipeline';
+import type { RealtimeUpstream } from '~/agent/domain/ports/realtime-upstream';
+import type { TtsClient } from '~/agent/domain/ports/tts-client';
+
+import { REALTIME_EVENT_TYPE } from '../constants/realtime-event-types';
+import { TTS_EVENT_TYPE } from '../constants/tts-event-types';
+import { parseRealtimeEvent } from './parse-realtime-event';
+import { sendTtsEvent } from './send-tts-event';
+
+interface TtsTapContext {
+  readonly client: WebSocket;
+  readonly upstream: RealtimeUpstream;
+  readonly tts: TtsClient;
+  readonly voiceId: string;
+}
+
+export const wireTtsTap = (ctx: TtsTapContext): void => {
+  const pipeline = new TtsPipeline(ctx.tts, {
+    onAudio: (chunk) => {
+      sendTtsEvent(ctx.client, {
+        type: TTS_EVENT_TYPE.audioDelta,
+        audio: chunk.toString('base64'),
+      });
+    },
+    onDone: () => {
+      sendTtsEvent(ctx.client, { type: TTS_EVENT_TYPE.audioDone });
+    },
+    onCanceled: () => {
+      sendTtsEvent(ctx.client, { type: TTS_EVENT_TYPE.audioCanceled });
+    },
+    onError: (err) => {
+      sendTtsEvent(ctx.client, {
+        type: TTS_EVENT_TYPE.audioError,
+        message: err.message,
+      });
+    },
+  });
+
+  ctx.upstream.onMessage((data) => {
+    const event = parseRealtimeEvent(data);
+    if (!event) return;
+    if (
+      event.type === REALTIME_EVENT_TYPE.responseTextDone &&
+      typeof event.text === 'string' &&
+      event.text.length > 0
+    ) {
+      void pipeline.speak({ text: event.text, voiceId: ctx.voiceId });
+      return;
+    }
+    if (event.type === REALTIME_EVENT_TYPE.inputAudioBufferSpeechStarted) {
+      pipeline.cancel();
+    }
+  });
+};

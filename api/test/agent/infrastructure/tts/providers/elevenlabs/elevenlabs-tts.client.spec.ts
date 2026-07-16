@@ -133,6 +133,31 @@ describe('ElevenLabsTtsClient', () => {
     expect(postSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('stops yielding chunks when the AbortSignal is aborted mid-stream', async () => {
+    const chunks = [
+      Buffer.from([1]),
+      Buffer.from([2]),
+      Buffer.from([3]),
+      Buffer.from([4]),
+    ];
+    postSpy.mockResolvedValue(streamOf(chunks));
+
+    const controller = new AbortController();
+    const client = new ElevenLabsTtsClient();
+    const received: Buffer[] = [];
+    for await (const chunk of client.synthesizeStream({
+      text: 'x',
+      voiceId: 'v',
+      signal: controller.signal,
+    })) {
+      received.push(chunk);
+      if (received.length === 2) controller.abort();
+    }
+
+    expect(received.length).toBeLessThan(chunks.length);
+    expect(received.length).toBeGreaterThanOrEqual(2);
+  });
+
   describe('listVoices', () => {
     it('GETs /v1/voices with xi-api-key and normalizes { voice_id, name, labels.language } to domain shape', async () => {
       getSpy.mockResolvedValue({
