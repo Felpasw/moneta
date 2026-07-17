@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AgentModule } from './agent/agent.module';
 import { AuthModule } from './auth/auth.module';
+import { BanksModule } from './banks/banks.module';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { ToolsModule } from './tools/tools.module';
@@ -22,6 +23,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     ToolsModule,
     AgentModule,
+    BanksModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

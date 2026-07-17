@@ -30,14 +30,14 @@ Mesmas do resto dos specs. Bundle onde faz sentido (várias tools do mesmo domí
 
 ## Fase 0 — Schema base
 
-- [ ] **MNT-122** [T][S] Migration `financial_core`: cria em uma leva `banks` (catálogo global), `user_bank_accounts` (com `close_day`, `due_day`, `credit_limit`, `overdraft_limit`, `nickname NOT NULL`), `categories` (user_id nullable — NULL = default global), `transactions` (com `invoice_id` FK opcional pra amarrar cartão), `transfers`, `credit_card_invoices`. FKs, checks e índices conforme modelo aprovado (ver `specs/000-product-brief/spec.md` — modelo financeiro)
-- [ ] **MNT-123** [T][S] Seed: (a) top ~20 bancos BR com nome, código COMPE, logo_url; (b) categorias default globais (Alimentação, Transporte, Moradia, Lazer, Saúde, Educação, Assinaturas, Salário, Investimentos, Outros). Seed roda idempotente (INSERT ... ON CONFLICT DO NOTHING)
+- [x] **MNT-122** [T][S] Migration `financial_core`: cria em uma leva `banks` (catálogo global), `user_bank_accounts` (com `close_day`, `due_day`, `credit_limit`, `overdraft_limit`, `nickname NOT NULL`), `categories` (user_id nullable — NULL = default global), `transactions` (com `invoice_id` FK opcional pra amarrar cartão), `transfers`, `credit_card_invoices`. FKs, checks e índices conforme modelo aprovado (ver `specs/000-product-brief/spec.md` — modelo financeiro) ✅ commit `db9652c` (schema only; migration SQL + CHECK constraints ficam pra rodar em ambiente com DB)
+- [x] **MNT-123** [T][S] Seed: (a) top ~20 bancos BR com nome, código COMPE, logo_url; (b) categorias default globais (Alimentação, Transporte, Moradia, Lazer, Saúde, Educação, Assinaturas, Salário, Investimentos, Outros). Seed roda idempotente (INSERT ... ON CONFLICT DO NOTHING) ✅ commit `db9652c` (logoUrl null nos bancos — assets pendentes)
 
 ---
 
 ## Fase 1 — Bancos & contas
 
-- [ ] **MNT-124** [T][S] Módulo `banks/` (Clean Arch): use-cases `ListBanks` (catálogo público), repository read-only sobre a tabela seedada. Endpoint `GET /banks`
+- [x] **MNT-124** [T][S] Módulo `banks/` (Clean Arch): use-cases `ListBanks` (catálogo público), repository read-only sobre a tabela seedada. Endpoint `GET /banks` ✅ commit `<pendente>` (tool `list_banks` fica em MNT-126)
 - [ ] **MNT-125** [T][S] Módulo `accounts/`: `UserBankAccountRepository` + use-cases `ListMyAccounts`, `AddBankAccount({ bankId, nickname, initialBalance?, creditLimit?, closeDay?, dueDay? })`, `UpdateBankAccount`, `DeleteBankAccount`, `SetBalance({ accountId, amount })`. Endpoints REST equivalentes. Ownership: filtro `user_id` obrigatório em todos
 - [ ] **MNT-126** [T][S] Tools do assistente (bundle) — cada um com playbook inline:
   - `list_banks` — lista o catálogo (só read)
