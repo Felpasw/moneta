@@ -5,6 +5,7 @@ import { ClockModule } from './@common/infrastructure/clock/clock.module';
 import { EphemeralStoreModule } from './@common/infrastructure/ephemeral-store/ephemeral-store.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AccountsModule } from './accounts/accounts.module';
 import { AgentModule } from './agent/agent.module';
 import { AuthModule } from './auth/auth.module';
 import { BanksModule } from './banks/banks.module';
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module';
     ToolsModule,
     AgentModule,
     BanksModule,
+    AccountsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
