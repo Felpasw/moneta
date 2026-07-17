@@ -21,6 +21,10 @@ model User {
   passkeyCredentials PasskeyCredential[]
   authAuditLogs      AuthAuditLog[]
   assistantProfile   AssistantProfile?
+  bankAccounts       UserBankAccount[]
+  categories         Category[]
+  transactions       Transaction[]
+  transfers          Transfer[]
 
   @@map("users")
 }
@@ -147,4 +151,148 @@ model PasskeyCredential {
 
   @@index([userId])
   @@map("passkey_credentials")
+}
+
+enum TransactionType {
+  expense
+  income
+
+  @@map("transaction_type")
+}
+
+enum InvoiceStatus {
+  open
+  closed
+  paid
+  overdue
+
+  @@map("invoice_status")
+}
+
+model Bank {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(100)
+  compeCode String   @unique @map("compe_code") @db.VarChar(10)
+  logoUrl   String?  @map("logo_url") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  accounts UserBankAccount[]
+
+  @@map("banks")
+}
+
+model UserBankAccount {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  bankId         String   @map("bank_id") @db.Uuid
+  nickname       String   @db.VarChar(80)
+  balance        Decimal  @default(0) @db.Decimal(15, 2)
+  creditLimit    Decimal? @map("credit_limit") @db.Decimal(15, 2)
+  overdraftLimit Decimal? @map("overdraft_limit") @db.Decimal(15, 2)
+  closeDay       Int?     @map("close_day") @db.SmallInt
+  dueDay         Int?     @map("due_day") @db.SmallInt
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bank Bank @relation(fields: [bankId], references: [id], onDelete: Restrict)
+
+  transactions  Transaction[]
+  transfersFrom Transfer[]          @relation("TransferFromAccount")
+  transfersTo   Transfer[]          @relation("TransferToAccount")
+  invoices      CreditCardInvoice[]
+
+  @@index([userId])
+  @@index([bankId])
+  @@map("user_bank_accounts")
+}
+
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  name      String   @db.VarChar(80)
+  icon      String?  @db.VarChar(50)
+  color     String?  @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
+  @@map("categories")
+}
+
+model Transaction {
+  id          String          @id @default(uuid()) @db.Uuid
+  userId      String          @map("user_id") @db.Uuid
+  accountId   String          @map("account_id") @db.Uuid
+  categoryId  String?         @map("category_id") @db.Uuid
+  invoiceId   String?         @map("invoice_id") @db.Uuid
+  type        TransactionType
+  amount      Decimal         @db.Decimal(15, 2)
+  description String?         @db.VarChar(255)
+  occurredAt  DateTime        @map("occurred_at") @db.Timestamptz
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  UserBankAccount    @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  invoice  CreditCardInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, occurredAt])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([invoiceId])
+  @@map("transactions")
+}
+
+model Transfer {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  fromAccountId String   @map("from_account_id") @db.Uuid
+  toAccountId   String   @map("to_account_id") @db.Uuid
+  amount        Decimal  @db.Decimal(15, 2)
+  description   String?  @db.VarChar(255)
+  occurredAt    DateTime @map("occurred_at") @db.Timestamptz
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromAccount UserBankAccount @relation("TransferFromAccount", fields: [fromAccountId], references: [id], onDelete: Restrict)
+  toAccount   UserBankAccount @relation("TransferToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
+
+  invoicesPaid CreditCardInvoice[]
+
+  @@index([userId, occurredAt])
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@map("transfers")
+}
+
+model CreditCardInvoice {
+  id                String        @id @default(uuid()) @db.Uuid
+  accountId         String        @map("account_id") @db.Uuid
+  status            InvoiceStatus @default(open)
+  cycleStart        DateTime      @map("cycle_start") @db.Date
+  cycleEnd          DateTime      @map("cycle_end") @db.Date
+  dueDate           DateTime      @map("due_date") @db.Date
+  totalAmount       Decimal       @default(0) @map("total_amount") @db.Decimal(15, 2)
+  closedAt          DateTime?     @map("closed_at") @db.Timestamptz
+  paidAt            DateTime?     @map("paid_at") @db.Timestamptz
+  paidViaTransferId String?       @unique @map("paid_via_transfer_id") @db.Uuid
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  account         UserBankAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  paidViaTransfer Transfer?       @relation(fields: [paidViaTransferId], references: [id], onDelete: SetNull)
+
+  transactions Transaction[]
+
+  @@unique([accountId, cycleStart])
+  @@index([accountId, status])
+  @@index([status])
+  @@map("credit_card_invoices")
 }
