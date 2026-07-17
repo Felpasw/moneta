@@ -1,4 +1,6 @@
-# Notificações push proativas (MNT-183 … MNT-191)
+# Notificações push proativas — backend (MNT-183..185, MNT-187..190)
+
+> UI (MNT-186 hook `usePushRegistration`, MNT-191 `/settings/notifications`) migrada pra `specs/009-ui-shell/tasks.md`.
 
 ## Decisões (inline)
 
@@ -33,7 +35,7 @@ Mesmas do resto.
 ## Fase 1 — Registro de devices
 
 - [ ] **MNT-185** [T][S] Entity `push_tokens` (id UUID PK, user_id FK ON DELETE CASCADE, platform ENUM `ios`|`android`|`web`, token VARCHAR unique, device_name nullable, last_seen_at, created_at). Endpoints: `POST /notifications/register-device` (auth, body `{ token, platform, deviceName? }` — upsert), `DELETE /notifications/register-device/:id` (logout do device)
-- [ ] **MNT-186** [T][S] Cliente Capacitor: hook `usePushRegistration()` — no `AppShell` do `/web`, roda em background: pede permissão via `@capacitor/push-notifications`, pega token do FCM, envia pro backend. Refresh do token: listener em `pushNotificationsRegistration` re-envia. Tratamento de negação (user pode ativar depois em settings)
+- MNT-186 (hook `usePushRegistration()` Capacitor no `AppShell` do `/web`) migrou pra `specs/009-ui-shell/tasks.md`.
 
 ## Fase 2 — Rules de disparo
 
@@ -44,7 +46,7 @@ Mesmas do resto.
 ## Fase 3 — Preferências e UI
 
 - [ ] **MNT-190** [T][S] Entity `notification_preferences` (id, user_id FK unique, invoice_reminder BOOL default true, spending_alert BOOL default true, session_reminder BOOL default true, quiet_hours_start TIME default 22:00, quiet_hours_end TIME default 08:00, updated_at). Use-cases `GetPrefs`/`UpdatePrefs`. Endpoint `GET`/`PATCH /notifications/preferences`. Rules checam prefs + quiet hours antes de disparar
-- [ ] **MNT-191** [S] UI `/settings/notifications` — toggles pra cada rule + range de quiet hours (TimeRangePicker do shadcn se existir ou custom). Lista de devices registrados (`GET /notifications/devices`) com botão "revogar" — útil se perder o celular
+- MNT-191 (UI `/settings/notifications` com toggles por rule + range de quiet hours + lista de devices com revogar) migrou pra `specs/009-ui-shell/tasks.md`.
 
 ---
 
