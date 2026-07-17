@@ -1,4 +1,6 @@
-# Onboarding conversacional (MNT-80 … MNT-87)
+# Onboarding conversacional — backend (MNT-80..83, MNT-86..87)
+
+> UI (MNT-84 modal `/onboarding`, MNT-85 dismiss + endpoint 1:1) migrada pra `specs/009-ui-shell/tasks.md`.
 
 ## Decisões (inline)
 
@@ -50,8 +52,7 @@ Mesmas do `specs/002-auth/tasks.md`.
 
 ## Fase 3 — UX web
 
-- [ ] **MNT-84** [T][S] Web: primeiro carregamento pós-login checa `GET /onboarding/state`. Se `!completed`, abre modal/página `/onboarding` que já inicia sessão do assistente em modo onboarding (usa `POST /assistant/session` de MNT-50 com flag/hint)
-- [ ] **MNT-85** [S] Botão "pular por enquanto" — chama endpoint `POST /onboarding/dismiss` (que seta `users.dismissed_onboarding_at`). Não conclui onboarding, mas some da UI até próximo login. Badge discreto no header lembra ("Complete seu setup")
+MNT-84 (checagem de `GET /onboarding/state` no primeiro carregamento + modal `/onboarding`) e MNT-85 (botão "pular por enquanto" + endpoint `POST /onboarding/dismiss` + coluna `users.dismissed_onboarding_at` + badge no header) migraram pra `specs/009-ui-shell/tasks.md`. O endpoint dismiss fica junto da task de UI já que é 1:1 acoplado ao botão.
 
 ## Fase 4 — Robustez
 

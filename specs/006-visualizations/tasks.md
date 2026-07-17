@@ -1,8 +1,10 @@
-# Visualizações dinâmicas (MNT-72..79, MNT-88..92)
+# Visualizações dinâmicas — backend (MNT-73..75, MNT-78..79, MNT-88..90, MNT-92)
+
+> UI (MNT-72 chart shadcn, MNT-76 `<DynamicChart>`, MNT-77 integração no chat, MNT-91 `/charts`) migrada pra `specs/009-ui-shell/tasks.md`.
 
 ## Decisões (inline)
 
-- **UI kit**: **shadcn/ui** (init em MNT-71 no `specs/002-auth`) — usa o `<Chart>` do shadcn, que é wrapper de **Recharts**. Ganhamos tema/dark mode automático + tooltip customizado alinhado com o resto da UI
+- **UI kit**: **shadcn/ui** (init em MNT-71 no `specs/009-ui-shell`) — usa o `<Chart>` do shadcn, que é wrapper de **Recharts**. Ganhamos tema/dark mode automático + tooltip customizado alinhado com o resto da UI
 - **Padrão LLM ↔ dados**: LLM preenche schema estruturado (`ChartSpec`, Zod-validado), backend traduz pra chamada Prisma tipada (Client API `findMany`/`groupBy`/`aggregate`; `$queryRaw` só onde a API estruturada não cobre, sempre parametrizado). **Zero SQL do LLM, zero código do LLM, zero shell.**
 - **Segurança**:
   - `userId` **sempre** vem do contexto de auth da sessão (nunca do payload da tool)
@@ -18,10 +20,10 @@
 
 | Item | Onde | Necessário pra |
 |------|------|----------------|
-| Init shadcn (MNT-71) | `specs/002-auth/tasks.md` Fase 1.5 | Todas as tasks de UI aqui (MNT-76+) |
 | ToolRegistry + ToolDispatcher (MNT-52..54) | `specs/003-assistant/tasks.md` Fase 2 | Registrar `create_visualization` (MNT-75) |
-| Entidade `Transaction` + schema | `specs/004-transactions/tasks.md` (a criar) | ChartQueryBuilder (MNT-74) — sem a entidade, não tem campo pra consultar |
-| Chat UI (a definir) | provavelmente `specs/003-assistant` Fase 5+ | Renderizar chart inline no thread (MNT-77) |
+| Entidade `Transaction` + schema | `specs/004-transactions/tasks.md` | ChartQueryBuilder (MNT-74) — sem a entidade, não tem campo pra consultar |
+
+Consumidores de UI (`<DynamicChart>` no chat, página `/charts`, componente `chart` do shadcn) vivem em `specs/009-ui-shell/tasks.md` — Fases 4 e 7.
 
 ## Convenções
 
@@ -31,7 +33,7 @@ Mesmas do `specs/002-auth/tasks.md` (`[T]`, `[S]`, `[P]`, `[HUMANO]`, `🛑`, `[
 
 ## Fase 0 — Setup
 
-- [ ] **MNT-72** [S] Adicionar componente `chart` do shadcn: `pnpm dlx shadcn@latest add chart`. Instala Recharts como peer dep, cria `/web/src/components/ui/chart.tsx` com `<ChartContainer>`, `<ChartTooltip>`, `<ChartTooltipContent>`, `<ChartLegend>`, `<ChartLegendContent>` + type `ChartConfig`
+Componente `chart` do shadcn (MNT-72) migrou pra `specs/009-ui-shell/tasks.md` — vive junto com a foundation UI.
 
 ---
 
@@ -64,12 +66,7 @@ Mesmas do `specs/002-auth/tasks.md` (`[T]`, `[S]`, `[P]`, `[HUMANO]`, `🛑`, `[
 
 ## Fase 2 — Frontend
 
-- [ ] **MNT-76** [T][S] `<DynamicChart spec data />` (`/web/src/components/dynamic-chart.tsx`):
-  - `switch (spec.chartType)` — delega pro componente Recharts wrappado pelo shadcn (`BarChart`, `LineChart`, `PieChart`, etc)
-  - Formatação BR de eixos (currency, date, número), via `Intl.NumberFormat('pt-BR')` e `date-fns/locale/pt-BR`
-  - `ChartConfig` gerado a partir do `spec.title` + `spec.seriesLabel` + palette do design system
-  - Placeholder quando `data.length === 0`
-- [ ] **MNT-77** [T][S] Integração no chat: `<MessageBubble>` do assistente renderiza `<DynamicChart>` inline quando `message.toolResults[i].name === 'create_visualization'`. Áudio TTS toca em paralelo com a renderização. Chart tem `<Card>` do shadcn envolvendo, com botão "expandir" pra full-screen (opcional)
+`<DynamicChart>` (MNT-76) e integração no `<MessageBubble>` (MNT-77) migraram pra `specs/009-ui-shell/tasks.md`.
 
 ---
 
@@ -88,7 +85,7 @@ Mesmas do `specs/002-auth/tasks.md` (`[T]`, `[S]`, `[P]`, `[HUMANO]`, `🛑`, `[
 
 ## Fase 4 — Saved charts (persistir e reexecutar)
 
-Assistente sugere salvar quando o gráfico tem valor recorrente ("Quer salvar esse gráfico pra consultar depois?"). User acessa depois via chat ("mostra meu gráfico de gastos por categoria salvo") ou UI (`/charts`).
+Assistente sugere salvar quando o gráfico tem valor recorrente ("Quer salvar esse gráfico pra consultar depois?"). User acessa depois via chat ("mostra meu gráfico de gastos por categoria salvo") ou UI (`/charts`, MNT-91 em `specs/009-ui-shell/tasks.md`).
 
 - [ ] **MNT-88** [T][S] Entity `saved_charts` + migration:
   - `id UUID PK`
@@ -109,7 +106,6 @@ Assistente sugere salvar quando o gráfico tem valor recorrente ("Quer salvar es
   - `toggle_pin_saved_chart({ id })`
   - Todas registradas via `@AssistantTool()` (MNT-52)
 - [ ] **MNT-90** [T][S] Assistant follow-up: snippet de prompt adicionado em `treatment/*` (composição MNT-62) — "**depois** de executar `create_visualization`, se o gráfico tem valor recorrente óbvio (visão de mês, comparativo temporal, breakdown por categoria/banco), ofereça salvar com sugestão de nome ('Gastos mensais por categoria'). NUNCA salve sem confirmação do user". Golden test garante que assistente não chama `save_chart` sem OK explícito
-- [ ] **MNT-91** [T][S] Web: página `/charts` — grid de saved charts (usa `list_saved_charts`); cada card mostra thumb + nome + botões pin/rename/delete/open-in-chat. Click no card abre modal fullscreen com `<DynamicChart>` (chama `run_saved_chart`). "Open in chat" abre nova conversa com contexto ("O usuário quer perguntar sobre o gráfico X salvo — spec: ...")
 - [ ] **MNT-92** [SEC] Suite de saved charts: user só vê/edita/deleta os próprios (filtro por `user_id` da sessão), spec salvo passa pelo mesmo whitelist (impede envenenar spec por API direta), `name` sanitizado (max 100 chars, trim, sem HTML)
 
 ---

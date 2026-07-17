@@ -1,4 +1,6 @@
-# Transações, contas, transferências e faturas (MNT-122..148, MNT-154..157)
+# Transações, contas, transferências e faturas — backend (MNT-122..140, MNT-146..148, MNT-154..157)
+
+> UI (MNT-141..145: páginas `/transactions`, `/banks`, dashboard KPI, `/invoices/:id`, histórico de faturas) migrada pra `specs/009-ui-shell/tasks.md`.
 
 ## Decisões (inline)
 
@@ -18,8 +20,7 @@
 | ToolRegistry + Dispatcher | 003-assistant Fase 2 | Registrar as ~15 tools novas |
 | `get_tool_help` (MNT-94) | 003-assistant Fase 2.5 | Playbooks on-demand |
 | Postgres + Prisma | 002-auth Fase 0 | Migrations |
-| UI shell (MNT-98..99) | 009-ui-shell | Onde montar `/transactions`, `/banks`, `/invoices` |
-| shadcn (MNT-71) | 002-auth Fase 1.5 | Componentes das páginas |
+| UI shell (MNT-98..99) + shadcn foundation (MNT-71) | 009-ui-shell | Onde montar `/transactions`, `/banks`, `/invoices` |
 
 ## Convenções
 
@@ -112,11 +113,7 @@ Essencial pra V1 — cartão é o meio principal e parcelamento é onipresente n
 
 ## Fase 6 — UI
 
-- [ ] **MNT-141** [T][S] Página `/transactions` (MNT-102 do 009-ui-shell) — lista virtualizada + filtros + FAB. Row de transaction em cartão mostra badge "Fatura {mês}" pequeno. Click em row abre `<TransactionDetail>` sheet
-- [ ] **MNT-142** [T][S] Página `/banks` (MNT-103) — grid de cards. Cartão de crédito tem card com layout diferente: mostra "fatura atual: R$X | fecha em N dias | vencimento: DD/MM". Click abre `/banks/:id` com extrato daquela conta
-- [ ] **MNT-143** [T][S] Dashboard (`MNT-100`): quando user tem cartão, KPI card "Fatura atual" no topo (só o cartão de mais gasto, ou soma se múltiplos). Botão "pagar" navega pra `/invoices/:id`
-- [ ] **MNT-144** [T][S] Página `/invoices/:id` — detail da fatura: lista das transactions daquele ciclo (readonly), total, cycle_start/end, due_date, status. Botão "pagar fatura" abre modal pra escolher `fromAccountId` (contas não-cartão do user) e confirma
-- [ ] **MNT-145** [T][S] Histórico de faturas em `/banks/:id` (se conta é cartão) — lista das últimas N invoices `closed` / `paid` / `overdue` com badge de status
+Tarefas de UI (MNT-141, 142, 143, 144, 145) migraram pra `specs/009-ui-shell/tasks.md`. Contexto de domínio (badge de fatura, layout de cartão de crédito, `<TransactionDetail>`, histórico de invoices) preservado no texto migrado.
 
 ---
 

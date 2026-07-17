@@ -1,4 +1,6 @@
-# Autenticação (MNT-1..44, MNT-71)
+# Autenticação — backend (MNT-1..43)
+
+> UI (MNT-44 páginas forgot/reset, MNT-71 init shadcn) migrada pra `specs/009-ui-shell/tasks.md`.
 
 ## Decisões (inline, sem ADR separado a pedido do Felipe)
 
@@ -78,15 +80,13 @@ Bundle grande — commitar em 2 partes: (a) infra de token/hash, (b) use-cases +
 
 Depende da Fase 1. Ativa a possibilidade de recuperar senha esquecida — parte essencial da UX de login por senha, por isso vem antes de OAuth/Passkey.
 
-**Prereq cross-cutting de UI:** `MNT-71` (abaixo) precisa ser feito antes de `MNT-44`. Também bloqueia `MNT-66` (`specs/003-assistant`) e `specs/006-visualizations` inteiro. É a foundation frontend do projeto.
+Tarefas de UI (init do shadcn/ui e páginas web de reset de senha) migraram pra `specs/009-ui-shell/tasks.md`: **MNT-71** (foundation shadcn — bloqueia toda UI do projeto) e **MNT-44** (páginas `/forgot-password` e `/reset-password`).
 
-- [ ] **MNT-71** [S] Init shadcn/ui em `/web`: `pnpm dlx shadcn@latest init` (base color neutral, react-server-components on, path `@/components`); adicionar componentes base já esperados — `button`, `input`, `label`, `form`, `dialog`, `radio-group`, `select`, `card`, `avatar`, `tabs`, `scroll-area`, `sonner`. Ajustar `tailwind.config` e `globals.css` conforme output do CLI. Verificar que build passa
 - [ ] **MNT-40** 🛑 [HUMANO] Escolher SMTP provider e criar conta. Recomendação: **Resend** (free 3k emails/mês, DX ótima, HTTP API — evita SMTP direto). Alternativas: SendGrid, Mailgun, Amazon SES. Salvar `RESEND_API_KEY` (ou equivalente) e `MAIL_FROM` no `.env`
 - [ ] **MNT-41** [T][S] `MailerModule` no `/api` — port `EmailSender` no `domain/`, adapter Resend/SMTP no `infrastructure/`. Config via `ConfigService`. Teste com adapter mock
 - [ ] **MNT-42** [T][S] Template "reset de senha" (HTML + fallback texto) — engine simples (Handlebars ou template string tipado). Renderização testável isolada
 - [ ] **MNT-36** [T][S] Use-case `ForgotPassword(email)` — idempotente e **sem revelar existência** (retorna 200 mesmo pra email inexistente); gera token aleatório 32B, armazena `password_reset:{sha256(token)}` → `{ userId }` no Redis com TTL 15min. Use-case `ResetPassword(token, newPassword)` — `GETDEL` a chave (atomicamente single-use), valida existência, atualiza `Credential`, **revoga todas as `Session`** do user. Endpoints `POST /auth/forgot`, `POST /auth/reset`
 - [ ] **MNT-43** [T][P] Rate limit em `/auth/forgot`: 3 tentativas / 15min por email + 10 / hora por IP (impede enumeration e spam)
-- [ ] **MNT-44** [S] Web UI no `/web`: link "Esqueci minha senha" na tela de login; página `/forgot-password` com input de email e mensagem neutra pós-submit; página `/reset-password?token=...` com form de nova senha + confirmação
 
 ---
 
