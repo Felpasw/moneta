@@ -6,6 +6,35 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.3.0](https://github.com/Felpasw/moneta/compare/api-v0.2.0...api-v0.3.0) (2026-07-17)
+
+
+### ✨ Features
+
+* **agent:** CRUD do assistant_profile com validação avatar RPM [MNT-61] ([d5eeb3b](https://github.com/Felpasw/moneta/commit/d5eeb3b3f71682f5c97e06c956d47fd41ef05e48))
+* **agent:** endpoint POST /agent/voices/:voiceId/preview com cache 24h ([5f8efeb](https://github.com/Felpasw/moneta/commit/5f8efeb3916a8089d0a7251df0a4d1a737e402a2))
+* **agent:** flag preloadPlaybook opcional em AssistantTool + getPreloadedPlaybooks no registry ([af55737](https://github.com/Felpasw/moneta/commit/af55737cec38264d1beb030d9c88a574fc243051))
+* **agent:** gateway WebSocket /agent/ws relay OpenAI Realtime [MNT-50] ([dcf1e47](https://github.com/Felpasw/moneta/commit/dcf1e47f6309b704f9fe286567f648de656cd724))
+* **agent:** injeta system prompt no gateway realtime via session.update ([0a91ab6](https://github.com/Felpasw/moneta/commit/0a91ab6df1d3e184bea4d2d1518670aecf19108b))
+* **agent:** listVoices no TtsClient + use-case com cache 5min + endpoint [MNT-56] ([93b6fdf](https://github.com/Felpasw/moneta/commit/93b6fdf601cac7fda14b4f7e00f598a6e176c347))
+* **agent:** pipeline TTS→client com barge-in no gateway Realtime [MNT-57] ([88d18c8](https://github.com/Felpasw/moneta/commit/88d18c8fc0eb026fe3edc4adc7e659bcd2fd6a63))
+* **agent:** registry versionado de system prompt com composição base+treatment ([98cb2fa](https://github.com/Felpasw/moneta/commit/98cb2fa2d7b57a34ab2b074bcdb23136e8478be4))
+* **agent:** snippet get_tool_help no system prompt base + scaffold de LLM behavior tests ([58e8045](https://github.com/Felpasw/moneta/commit/58e8045e1e680c55ab3717442e7b16110851ff7c))
+* **agent:** submódulo personality com assistant_profile + evento signup [MNT-60] ([b62ed2c](https://github.com/Felpasw/moneta/commit/b62ed2c2f965c52973a4f91964ea6f9ce63aea6d))
+* **agent:** submódulos llm/tts, health check e httpClient compartilhado [MNT-47] ([b1433d9](https://github.com/Felpasw/moneta/commit/b1433d9fcfdbb61904160500863a2d37f0abc8be))
+* **agent:** TtsClient port + ElevenLabs adapter com streaming HTTP [MNT-55] ([62f2077](https://github.com/Felpasw/moneta/commit/62f20775709e98fff3af61333efa263d9349e7a5))
+* **config:** env schema com LLM_API_KEY, TTS_API_KEY, TTS_DEFAULT_VOICE_ID required [MNT-48] ([c48c37d](https://github.com/Felpasw/moneta/commit/c48c37d0a0ba62bd5b86d1f0e7ed9dccd5fa4ef0))
+* **tools:** guia + linter build-time de playbooks [MNT-93] ([b9567df](https://github.com/Felpasw/moneta/commit/b9567df676cf9a387d5dc65e1aca856617ee4ec0))
+* **tools:** linter cross-ref de playbooks entre tools [MNT-96] ([94b624d](https://github.com/Felpasw/moneta/commit/94b624dcb05326a33b50988770e2cab8ba715c62))
+* **tools:** meta-tool get_tool_help com bypass explícito ao dispatcher [MNT-94] ([b5423aa](https://github.com/Felpasw/moneta/commit/b5423aabbf14e46c6c2f8e80a9a0e5d4abd9c663))
+* **tools:** ToolDispatcher com timeout e guard de contexto [MNT-53] ([37841e7](https://github.com/Felpasw/moneta/commit/37841e7d221de96b9ffeeeb2924d0205d9e086a5))
+* **tools:** ToolRegistry global com descoberta via DiscoveryModule [MNT-52] ([71c9e64](https://github.com/Felpasw/moneta/commit/71c9e643ac0d7665db0eb0b7bce2c47a24f8b119))
+
+
+### 🔨 Refactoring
+
+* **agent:** rename assistant → agent [MNT-47] ([4b3030b](https://github.com/Felpasw/moneta/commit/4b3030bbada2b2b4a75cc23529888a2e70916f4e))
+
 ## [0.2.0](https://github.com/Felpasw/moneta/compare/api-v0.1.0...api-v0.2.0) (2026-07-15)
 
 
