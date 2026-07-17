@@ -2,22 +2,31 @@ import { Module } from '@nestjs/common';
 import { WebSocket, type ClientOptions } from 'ws';
 
 import { REALTIME_UPSTREAM_FACTORY } from '../../domain/ports/realtime-upstream';
-import { LlmService } from './llm.service';
+import {
+  REALTIME_UPSTREAM_PROVIDER,
+  type RealtimeUpstreamProvider,
+} from '../../domain/ports/realtime-upstream-provider';
 import { OpenAiLlmHealthIndicator } from './providers/openai/openai-llm-health.indicator';
-import { OpenAiRealtimeUpstreamFactory } from './providers/openai/openai-realtime-upstream.factory';
+import { OpenAiRealtimeProvider } from './providers/openai/openai-realtime.provider';
+import { WsRealtimeUpstreamFactory } from './ws-realtime-upstream.factory';
 
 @Module({
   providers: [
-    LlmService,
     OpenAiLlmHealthIndicator,
     {
+      provide: REALTIME_UPSTREAM_PROVIDER,
+      useClass: OpenAiRealtimeProvider,
+    },
+    {
       provide: REALTIME_UPSTREAM_FACTORY,
-      useFactory: () =>
-        new OpenAiRealtimeUpstreamFactory(
+      useFactory: (provider: RealtimeUpstreamProvider) =>
+        new WsRealtimeUpstreamFactory(
+          provider,
           (url: string, options: ClientOptions) => new WebSocket(url, options),
         ),
+      inject: [REALTIME_UPSTREAM_PROVIDER],
     },
   ],
-  exports: [LlmService, OpenAiLlmHealthIndicator, REALTIME_UPSTREAM_FACTORY],
+  exports: [OpenAiLlmHealthIndicator, REALTIME_UPSTREAM_FACTORY],
 })
 export class LlmModule {}

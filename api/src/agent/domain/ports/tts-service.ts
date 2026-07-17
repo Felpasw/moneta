@@ -12,7 +12,7 @@ export interface TtsVoice {
   readonly language?: string;
 }
 
-export interface TtsClient {
+export interface TtsService {
   synthesizeStream(params: SynthesizeStreamParams): AsyncIterable<AudioChunk>;
   listVoices(): Promise<TtsVoice[]>;
 }

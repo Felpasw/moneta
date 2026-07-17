@@ -1,18 +1,18 @@
 import { FixedClock } from '~/@common/infrastructure/clock/fixed-clock';
 import { ListAvailableVoicesUseCase } from '~/agent/application/use-cases/list-available-voices.use-case';
-import type { TtsClient, TtsVoice } from '~/agent/domain/ports/tts-client';
+import type { TtsService, TtsVoice } from '~/agent/domain/ports/tts-service';
 
 const buildTts = (
   list: TtsVoice[] | Error,
 ): {
   listSpy: jest.Mock;
-  tts: TtsClient;
+  tts: TtsService;
 } => {
   const listSpy = jest.fn(() => {
     if (list instanceof Error) return Promise.reject(list);
     return Promise.resolve(list);
   });
-  const tts: TtsClient = {
+  const tts: TtsService = {
     // eslint-disable-next-line require-yield, @typescript-eslint/require-await
     synthesizeStream: async function* () {
       throw new Error('unused');
@@ -77,7 +77,7 @@ describe('ListAvailableVoicesUseCase', () => {
       .fn<Promise<TtsVoice[]>, []>()
       .mockRejectedValueOnce(new Error('boom'))
       .mockResolvedValueOnce(voices);
-    const tts: TtsClient = {
+    const tts: TtsService = {
       // eslint-disable-next-line require-yield, @typescript-eslint/require-await
       synthesizeStream: async function* () {
         throw new Error('unused');

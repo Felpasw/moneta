@@ -1,4 +1,4 @@
-import type { TtsVoice } from '~/agent/domain/ports/tts-client';
+import type { TtsVoice } from '~/agent/domain/ports/tts-service';
 
 interface RawElevenLabsVoice {
   readonly voice_id: string;

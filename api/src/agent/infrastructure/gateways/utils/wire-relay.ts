@@ -1,6 +1,7 @@
 import type { Logger } from '@nestjs/common';
 import type { WebSocket } from 'ws';
 
+import { WsEvent } from '../../../../@common/infrastructure/websocket/ws-event';
 import type { RealtimeUpstream } from '../../../domain/ports/realtime-upstream';
 import { CLOSE_UPSTREAM_ERROR } from '../constants/close-codes';
 
@@ -32,6 +33,6 @@ export const wireRelay = (ctx: RelayContext): void => {
     if (isOpen(client)) client.close(CLOSE_UPSTREAM_ERROR, 'upstream_error');
   });
 
-  client.on('message', (raw: Buffer) => upstream.send(raw));
-  client.on('close', () => upstream.close());
+  client.on(WsEvent.Message, (raw: Buffer) => upstream.send(raw));
+  client.on(WsEvent.Close, () => upstream.close());
 };

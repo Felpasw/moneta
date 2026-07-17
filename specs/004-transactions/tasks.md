@@ -51,8 +51,8 @@ Mesmas do resto dos specs. Bundle onde faz sentido (várias tools do mesmo domí
 
 ## Fase 2 — Categorias
 
-- [x] **MNT-127** [T][S] `CategoryRepository` + use-cases `ListCategories(userId)` (retorna defaults globais + custom do user), `AddCategory({ name, icon?, color? })`, `RenameCategory`, `DeleteCategory` (só custom; defaults globais não deletáveis). Endpoints REST ✅ commit `<pendente>` (defaults globais protegidos pelo WHERE userId=X — não match, retorna null; RenameCategory limitado a name — icon/color por tool separada depois se necessário)
-- [x] **MNT-128** [T][S] Tools (bundle): `list_categories`, `add_category`, `rename_category`, `delete_category`. Playbooks curtas — categoria é conceito simples ✅ commit `<pendente>` (playbooks orientam a checar existentes antes de criar; global vs custom explicado sem cross-reference)
+- [x] **MNT-127** [T][S] `CategoryRepository` + use-cases `ListCategories(userId)` (retorna defaults globais + custom do user), `AddCategory({ name, icon?, color? })`, `RenameCategory`, `DeleteCategory` (só custom; defaults globais não deletáveis). Endpoints REST ✅ commit `b18ba3e` (defaults globais protegidos pelo WHERE userId=X — não match, retorna null; RenameCategory limitado a name — icon/color por tool separada depois se necessário)
+- [x] **MNT-128** [T][S] Tools (bundle): `list_categories`, `add_category`, `rename_category`, `delete_category`. Playbooks curtas — categoria é conceito simples ✅ commit `b18ba3e` (playbooks orientam a checar existentes antes de criar; global vs custom explicado sem cross-reference)
 
 ---
 

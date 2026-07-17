@@ -6,9 +6,9 @@ import {
   VOICE_PREVIEW_CACHE_TTL_MS,
   VOICE_PREVIEW_PHRASE_PT_BR,
 } from '~/agent/domain/constants/voice-preview';
-import type { TtsClient } from '~/agent/domain/ports/tts-client';
+import type { TtsService } from '~/agent/domain/ports/tts-service';
 import type { PreviewVoiceUseCaseOptions } from '~/agent/domain/types/preview-voice';
-import { TTS_CLIENT } from '~/agent/infrastructure/tts/tts.tokens';
+import { TTS_SERVICE } from '~/agent/infrastructure/tts/tts.tokens';
 
 import type { VoicePreviewCacheEntry } from '../types/voice-preview-cache-entry';
 
@@ -19,7 +19,7 @@ export class PreviewVoiceUseCase {
   private readonly phrase: string;
 
   constructor(
-    @Inject(TTS_CLIENT) private readonly tts: TtsClient,
+    @Inject(TTS_SERVICE) private readonly tts: TtsService,
     @Inject(CLOCK) private readonly clock: Clock,
     options: PreviewVoiceUseCaseOptions = {},
   ) {

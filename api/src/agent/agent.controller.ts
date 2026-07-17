@@ -14,7 +14,7 @@ import { JwtAuthGuard } from '~/auth/infrastructure/guards/jwt-auth.guard';
 import { ListAvailableVoicesUseCase } from './application/use-cases/list-available-voices.use-case';
 import { PreviewVoiceUseCase } from './application/use-cases/preview-voice.use-case';
 import { VOICE_ID_PATTERN } from './domain/constants/voice-preview';
-import type { TtsVoice } from './domain/ports/tts-client';
+import type { TtsVoice } from './domain/ports/tts-service';
 
 @Controller('agent')
 export class AgentController {

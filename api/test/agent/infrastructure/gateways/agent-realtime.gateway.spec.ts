@@ -1,5 +1,7 @@
 import type { IncomingMessage } from 'node:http';
 
+import { WsEvent } from '~/@common/infrastructure/websocket/ws-event';
+
 import { AgentRealtimeGateway } from '~/agent/infrastructure/gateways/agent-realtime.gateway';
 import type {
   RealtimeUpstream,
@@ -7,9 +9,9 @@ import type {
 } from '~/agent/domain/ports/realtime-upstream';
 import type {
   SynthesizeStreamParams,
-  TtsClient,
+  TtsService,
   TtsVoice,
-} from '~/agent/domain/ports/tts-client';
+} from '~/agent/domain/ports/tts-service';
 import { TreatmentStyle } from '~/agent/personality/domain/constants/treatment-style';
 import type { AssistantProfileRepository } from '~/agent/personality/domain/ports/assistant-profile-repository';
 import type { AssistantProfile } from '~/agent/personality/domain/types/assistant-profile';
@@ -112,7 +114,7 @@ const makeFactory = (upstream: FakeUpstream): FakeFactory => {
 };
 
 interface ControllableTts {
-  tts: TtsClient;
+  tts: TtsService;
   handles: Array<{
     yield: (chunk: Buffer) => void;
     end: () => void;
@@ -121,7 +123,7 @@ interface ControllableTts {
   }>;
 }
 
-const makeNoopTts = (): TtsClient => ({
+const makeNoopTts = (): TtsService => ({
   synthesizeStream: async function* () {
     /* no-op — never yields */
   },
@@ -157,7 +159,7 @@ const makeFailingProfileRepo = (err: Error): AssistantProfileRepository => ({
 
 const makeControllableTts = (): ControllableTts => {
   const handles: ControllableTts['handles'] = [];
-  const tts: TtsClient = {
+  const tts: TtsService = {
     async *synthesizeStream(params: SynthesizeStreamParams) {
       const queue: Array<Buffer | 'end' | Error> = [];
       let resolvePending: (() => void) | null = null;
@@ -311,7 +313,7 @@ describe('AgentRealtimeGateway', () => {
       );
 
       const payload = Buffer.from('client->openai');
-      client.emit('message', payload);
+      client.emit(WsEvent.Message, payload);
 
       expect(upstream.sent).toEqual([payload]);
     });
@@ -379,7 +381,7 @@ describe('AgentRealtimeGateway', () => {
         client as unknown as Parameters<typeof gateway.handleConnection>[0],
         makeReq({ token: 'ok' }),
       );
-      client.emit('close', Buffer.alloc(0));
+      client.emit(WsEvent.Close, Buffer.alloc(0));
 
       expect(upstream.closed).toBe(true);
     });

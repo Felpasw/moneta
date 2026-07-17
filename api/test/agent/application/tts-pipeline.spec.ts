@@ -1,8 +1,8 @@
 import { TtsPipeline } from '~/agent/application/tts-pipeline';
 import type {
   SynthesizeStreamParams,
-  TtsClient,
-} from '~/agent/domain/ports/tts-client';
+  TtsService,
+} from '~/agent/domain/ports/tts-service';
 
 interface Listeners {
   onAudio: jest.Mock;
@@ -26,11 +26,11 @@ interface StreamHandle {
 }
 
 const makeControllableTts = (): {
-  tts: TtsClient;
+  tts: TtsService;
   handles: StreamHandle[];
 } => {
   const handles: StreamHandle[] = [];
-  const tts: TtsClient = {
+  const tts: TtsService = {
     async *synthesizeStream(params: SynthesizeStreamParams) {
       const queue: Array<Buffer | 'end' | Error> = [];
       let resolvePending: (() => void) | null = null;

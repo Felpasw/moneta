@@ -1,6 +1,8 @@
 import type { ClientOptions, WebSocket as WsWebSocket } from 'ws';
 
-import { OpenAiRealtimeUpstreamFactory } from '~/agent/infrastructure/llm/providers/openai/openai-realtime-upstream.factory';
+import { WsEvent } from '~/@common/infrastructure/websocket/ws-event';
+import type { RealtimeUpstreamProvider } from '~/agent/domain/ports/realtime-upstream-provider';
+import { WsRealtimeUpstreamFactory } from '~/agent/infrastructure/llm/ws-realtime-upstream.factory';
 
 type Handler = (...args: unknown[]) => void;
 
@@ -17,29 +19,33 @@ class FakeWs {
   }
 }
 
-describe('OpenAiRealtimeUpstreamFactory', () => {
-  it('opens WebSocket to the realtime URL with model query and required headers', () => {
+const buildProvider = (): RealtimeUpstreamProvider => ({
+  buildConnectionConfig: () => ({
+    url: 'wss://provider.test/stream',
+    headers: { 'x-token': 'stub' },
+  }),
+});
+
+describe('WsRealtimeUpstreamFactory', () => {
+  it('opens WebSocket using the provider config (url + headers)', () => {
     const fakeWs = new FakeWs();
     const ctor: jest.Mock<WsWebSocket, [string, ClientOptions]> = jest.fn(
       () => fakeWs as unknown as WsWebSocket,
     );
-    const factory = new OpenAiRealtimeUpstreamFactory(ctor);
+    const factory = new WsRealtimeUpstreamFactory(buildProvider(), ctor);
 
     factory.connect();
 
     expect(ctor).toHaveBeenCalledTimes(1);
     const [url, options] = ctor.mock.calls[0];
-    expect(url).toBe(
-      'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview',
-    );
-    const headers = options.headers as Record<string, string>;
-    expect(headers['Authorization']).toMatch(/^Bearer /);
-    expect(headers['OpenAI-Beta']).toBe('realtime=v1');
+    expect(url).toBe('wss://provider.test/stream');
+    expect((options.headers as Record<string, string>)['x-token']).toBe('stub');
   });
 
   it('send() and close() delegate to the underlying WebSocket', () => {
     const fakeWs = new FakeWs();
-    const factory = new OpenAiRealtimeUpstreamFactory(
+    const factory = new WsRealtimeUpstreamFactory(
+      buildProvider(),
       () => fakeWs as unknown as WsWebSocket,
     );
 
@@ -53,7 +59,8 @@ describe('OpenAiRealtimeUpstreamFactory', () => {
 
   it('normalizes ws message events (Buffer, ArrayBuffer, Buffer[]) to Buffer', () => {
     const fakeWs = new FakeWs();
-    const factory = new OpenAiRealtimeUpstreamFactory(
+    const factory = new WsRealtimeUpstreamFactory(
+      buildProvider(),
       () => fakeWs as unknown as WsWebSocket,
     );
     const upstream = factory.connect();
@@ -64,9 +71,9 @@ describe('OpenAiRealtimeUpstreamFactory', () => {
     const ab = new Uint8Array([116, 119, 111]).buffer;
     const arr = [Buffer.from('th'), Buffer.from('ree')];
 
-    fakeWs.emit('message', b);
-    fakeWs.emit('message', ab);
-    fakeWs.emit('message', arr);
+    fakeWs.emit(WsEvent.Message, b);
+    fakeWs.emit(WsEvent.Message, ab);
+    fakeWs.emit(WsEvent.Message, arr);
 
     expect(seen).toHaveLength(3);
     expect((seen[0] as Buffer).toString('utf8')).toBe('one');
@@ -76,7 +83,8 @@ describe('OpenAiRealtimeUpstreamFactory', () => {
 
   it('wires close/error/open listeners onto the ws events', () => {
     const fakeWs = new FakeWs();
-    const factory = new OpenAiRealtimeUpstreamFactory(
+    const factory = new WsRealtimeUpstreamFactory(
+      buildProvider(),
       () => fakeWs as unknown as WsWebSocket,
     );
     const upstream = factory.connect();
@@ -88,9 +96,9 @@ describe('OpenAiRealtimeUpstreamFactory', () => {
     upstream.onError(onError);
     upstream.onOpen(onOpen);
 
-    fakeWs.emit('close', 1011, Buffer.from('nope'));
-    fakeWs.emit('error', new Error('kaboom'));
-    fakeWs.emit('open');
+    fakeWs.emit(WsEvent.Close, 1011, Buffer.from('nope'));
+    fakeWs.emit(WsEvent.Error, new Error('kaboom'));
+    fakeWs.emit(WsEvent.Open);
 
     expect(onClose).toHaveBeenCalledWith(1011, Buffer.from('nope'));
     expect(onError).toHaveBeenCalledWith(expect.any(Error));

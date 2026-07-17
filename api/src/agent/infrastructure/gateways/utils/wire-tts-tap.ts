@@ -2,7 +2,7 @@ import type { WebSocket } from 'ws';
 
 import { TtsPipeline } from '~/agent/application/tts-pipeline';
 import type { RealtimeUpstream } from '~/agent/domain/ports/realtime-upstream';
-import type { TtsClient } from '~/agent/domain/ports/tts-client';
+import type { TtsService } from '~/agent/domain/ports/tts-service';
 
 import { REALTIME_EVENT_TYPE } from '../constants/realtime-event-types';
 import { TTS_EVENT_TYPE } from '../constants/tts-event-types';
@@ -12,7 +12,7 @@ import { sendTtsEvent } from './send-tts-event';
 interface TtsTapContext {
   readonly client: WebSocket;
   readonly upstream: RealtimeUpstream;
-  readonly tts: TtsClient;
+  readonly tts: TtsService;
   readonly voiceId: string;
 }
 

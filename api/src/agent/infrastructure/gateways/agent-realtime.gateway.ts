@@ -16,8 +16,8 @@ import {
   type RealtimeUpstream,
   type RealtimeUpstreamFactory,
 } from '~/agent/domain/ports/realtime-upstream';
-import type { TtsClient } from '~/agent/domain/ports/tts-client';
-import { TTS_CLIENT } from '~/agent/infrastructure/tts/tts.tokens';
+import type { TtsService } from '~/agent/domain/ports/tts-service';
+import { TTS_SERVICE } from '~/agent/infrastructure/tts/tts.tokens';
 import {
   ASSISTANT_PROFILE_REPOSITORY,
   type AssistantProfileRepository,
@@ -41,7 +41,7 @@ export class AgentRealtimeGateway
     @Inject(TOKEN_SERVICE) private readonly tokens: TokenService,
     @Inject(REALTIME_UPSTREAM_FACTORY)
     private readonly upstreamFactory: RealtimeUpstreamFactory,
-    @Inject(TTS_CLIENT) private readonly tts: TtsClient,
+    @Inject(TTS_SERVICE) private readonly tts: TtsService,
     @Inject(ASSISTANT_PROFILE_REPOSITORY)
     private readonly profiles: AssistantProfileRepository,
   ) {}

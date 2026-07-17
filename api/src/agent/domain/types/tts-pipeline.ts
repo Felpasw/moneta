@@ -1,4 +1,4 @@
-import type { AudioChunk } from '~/agent/domain/ports/tts-client';
+import type { AudioChunk } from '~/agent/domain/ports/tts-service';
 
 export interface TtsPipelineListeners {
   readonly onAudio: (chunk: AudioChunk) => void;
