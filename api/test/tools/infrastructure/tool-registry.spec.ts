@@ -124,6 +124,62 @@ describe('ToolRegistry', () => {
     await expect(buildModule([NoPlaybookTool])).rejects.toThrow(/playbook/i);
   });
 
+  it('getPreloadedPlaybooks returns only tools that opted in via preloadPlaybook=true', async () => {
+    @RegisterAssistantTool()
+    class CriticalTool implements AssistantTool {
+      readonly name = 'add_transaction';
+      readonly description = 'Adds a transaction';
+      readonly jsonSchema = {};
+      readonly playbook = 'Always confirm amount and description.';
+      readonly preloadPlaybook = true;
+      execute = makeExecute();
+    }
+
+    @RegisterAssistantTool()
+    class OptedOutTool implements AssistantTool {
+      readonly name = 'list_banks';
+      readonly description = 'Lists banks';
+      readonly jsonSchema = {};
+      readonly playbook = 'List all user banks.';
+      readonly preloadPlaybook = false;
+      execute = makeExecute();
+    }
+
+    const module = await buildModule([
+      CriticalTool,
+      OptedOutTool,
+      BalanceTool,
+      TransferTool,
+    ]);
+    const registry = module.get(ToolRegistry);
+
+    const preloaded = registry.getPreloadedPlaybooks();
+
+    expect(preloaded).toEqual([
+      {
+        name: 'add_transaction',
+        playbook: 'Always confirm amount and description.',
+      },
+    ]);
+  });
+
+  it('getPreloadedPlaybooks returns empty when no tool opted in', async () => {
+    const module = await buildModule([BalanceTool, TransferTool]);
+    const registry = module.get(ToolRegistry);
+
+    expect(registry.getPreloadedPlaybooks()).toEqual([]);
+  });
+
+  it('getPreloadedPlaybooks never includes meta tools even if flag were set', async () => {
+    const module = await buildModule([BalanceTool]);
+    const registry = module.get(ToolRegistry);
+
+    const preloaded = registry.getPreloadedPlaybooks();
+    for (const entry of preloaded) {
+      expect(RESERVED_META_NAMES).not.toContain(entry.name);
+    }
+  });
+
   it('throws on duplicate tool names', async () => {
     @RegisterAssistantTool()
     class DupA implements AssistantTool {

@@ -4,6 +4,7 @@ import { DiscoveryService, Reflector } from '@nestjs/core';
 import type { AssistantTool } from '../domain/assistant-tool';
 import { MetaToolName } from '../domain/constants/meta-tool-name';
 import { ToolHelpErrorCode } from '../domain/constants/tool-help-error-code';
+import type { PreloadedPlaybook } from '../domain/types/preloaded-playbook';
 import type { ToolHelpResult } from '../domain/types/tool-help-result';
 import { ASSISTANT_TOOL_METADATA } from './constants/metadata-keys';
 import { GetToolHelpMetaTool } from './meta/get-tool-help.meta-tool';
@@ -46,6 +47,13 @@ export class ToolRegistry implements OnModuleInit {
       description: tool.description,
       parameters: tool.jsonSchema,
     }));
+  }
+
+  getPreloadedPlaybooks(): PreloadedPlaybook[] {
+    return this.getAll()
+      .filter((tool) => tool.preloadPlaybook === true)
+      .filter((tool) => !RESERVED_META_NAMES.includes(tool.name))
+      .map((tool) => ({ name: tool.name, playbook: tool.playbook }));
   }
 
   getToolHelp(toolName: string): ToolHelpResult {

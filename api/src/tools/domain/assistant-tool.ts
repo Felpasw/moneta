@@ -15,5 +15,6 @@ export interface AssistantTool<TInput = unknown> {
   readonly description: string;
   readonly jsonSchema: Record<string, unknown>;
   readonly playbook: string;
+  readonly preloadPlaybook?: boolean;
   execute(input: TInput, ctx: AssistantContext): Promise<AssistantToolResult>;
 }
