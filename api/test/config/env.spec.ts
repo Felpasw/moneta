@@ -5,6 +5,9 @@ const FULL_ENV = {
   REDIS_URL: 'redis://h:6379',
   JWT_ACCESS_SECRET: 'access-secret',
   JWT_REFRESH_SECRET: 'refresh-secret',
+  LLM_API_KEY: 'llm-key-test',
+  TTS_API_KEY: 'tts-key-test',
+  TTS_DEFAULT_VOICE_ID: 'voice-default-test',
   WEB_ORIGIN: 'http://localhost:3000',
   PORT: '3333',
 };
@@ -22,6 +25,9 @@ describe('envSchema', () => {
     expect(parsed.REDIS_URL).toBe(FULL_ENV.REDIS_URL);
     expect(parsed.JWT_ACCESS_SECRET).toBe(FULL_ENV.JWT_ACCESS_SECRET);
     expect(parsed.JWT_REFRESH_SECRET).toBe(FULL_ENV.JWT_REFRESH_SECRET);
+    expect(parsed.LLM_API_KEY).toBe(FULL_ENV.LLM_API_KEY);
+    expect(parsed.TTS_API_KEY).toBe(FULL_ENV.TTS_API_KEY);
+    expect(parsed.TTS_DEFAULT_VOICE_ID).toBe(FULL_ENV.TTS_DEFAULT_VOICE_ID);
     expect(parsed.WEB_ORIGIN).toBe(FULL_ENV.WEB_ORIGIN);
     expect(parsed.PORT).toBe(3333);
   });
@@ -62,6 +68,20 @@ describe('envSchema', () => {
     );
   });
 
+  it('throws when LLM_API_KEY is missing', () => {
+    expect(() => envSchema.parse(omit('LLM_API_KEY'))).toThrow(/LLM_API_KEY/);
+  });
+
+  it('throws when TTS_API_KEY is missing', () => {
+    expect(() => envSchema.parse(omit('TTS_API_KEY'))).toThrow(/TTS_API_KEY/);
+  });
+
+  it('throws when TTS_DEFAULT_VOICE_ID is missing', () => {
+    expect(() => envSchema.parse(omit('TTS_DEFAULT_VOICE_ID'))).toThrow(
+      /TTS_DEFAULT_VOICE_ID/,
+    );
+  });
+
   it('throws when WEB_ORIGIN is not a valid URL', () => {
     expect(() =>
       envSchema.parse({ ...FULL_ENV, WEB_ORIGIN: 'not-a-url' }),
@@ -70,5 +90,26 @@ describe('envSchema', () => {
 
   it('throws when PORT is not a positive integer', () => {
     expect(() => envSchema.parse({ ...FULL_ENV, PORT: '-1' })).toThrow(/PORT/);
+  });
+
+  it('defaults LLM_BEHAVIOR_ENABLED to false when omitted', () => {
+    const parsed = envSchema.parse(FULL_ENV);
+    expect(parsed.LLM_BEHAVIOR_ENABLED).toBe(false);
+  });
+
+  it('parses LLM_BEHAVIOR_ENABLED="1" as true', () => {
+    const parsed = envSchema.parse({ ...FULL_ENV, LLM_BEHAVIOR_ENABLED: '1' });
+    expect(parsed.LLM_BEHAVIOR_ENABLED).toBe(true);
+  });
+
+  it('throws when LLM_BEHAVIOR_ENABLED has an unsupported value', () => {
+    expect(() =>
+      envSchema.parse({ ...FULL_ENV, LLM_BEHAVIOR_ENABLED: 'yes' }),
+    ).toThrow(/LLM_BEHAVIOR_ENABLED/);
+  });
+
+  it('defaults LLM_BEHAVIOR_MODEL to gpt-4o-mini when omitted', () => {
+    const parsed = envSchema.parse(FULL_ENV);
+    expect(parsed.LLM_BEHAVIOR_MODEL).toBe('gpt-4o-mini');
   });
 });

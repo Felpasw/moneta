@@ -50,9 +50,9 @@ Após commit: `[ ]` → `[x] ✅ commit \`<hash>\``.
 
 - [ ] **MNT-45** 🛑 [HUMANO][SEC] Criar conta OpenAI, habilitar acesso ao Realtime API (`gpt-4o-realtime`), gerar API key, salvar `OPENAI_API_KEY` no `.env` do `/api`. Documentar rate limits do plano
 - [ ] **MNT-46** 🛑 [HUMANO][SEC] Criar conta ElevenLabs, gerar API key, escolher **default voice ID** (voz padrão do assistente), salvar `ELEVENLABS_API_KEY` e `ELEVENLABS_DEFAULT_VOICE_ID` no `.env`
-- [ ] **MNT-47** [S] Skeleton do módulo `src/assistant/` em Clean Arch (`domain/`, `application/use-cases/`, `infrastructure/providers/openai/`, `infrastructure/providers/elevenlabs/`, DTOs, controller)
+- [x] **MNT-47** [S] ✅ commit `b1433d9` — Skeleton do módulo `src/assistant/` em Clean Arch (`domain/`, `application/use-cases/`, `infrastructure/providers/openai/`, `infrastructure/providers/elevenlabs/`, DTOs, controller)
 - [ ] **MNT-48** [T][S] Env schema validation (Joi ou Zod) — `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_DEFAULT_VOICE_ID` obrigatórios; app não sobe sem eles
-- [ ] **MNT-49** [T][S] Health check `/health/assistant` — ping OpenAI (`GET /v1/models`) e ElevenLabs (`GET /v1/voices`); retorna 503 se algum tá down
+- [x] **MNT-49** [T][S] ✅ commit `b1433d9` — Health check `/health/agent` — ping OpenAI (`GET /v1/models`) e ElevenLabs (`GET /v1/voices`); retorna 503 se algum tá down
 
 ---
 
@@ -65,9 +65,9 @@ Após commit: `[ ]` → `[x] ✅ commit \`<hash>\``.
 - [ ] **MNT-50** [T][S] Endpoint `POST /assistant/session` (auth obrigatório) — cria ephemeral token via OpenAI (`POST /v1/realtime/sessions`), injeta system prompt do `AssistantProfile` (MNT-60), retorna `{ clientSecret, sessionId, expiresAt }`
 - [ ] **MNT-51** [T][S] Web/Capacitor: hook `useRealtimeSession()` — pega token, abre WebRTC/WS, gerencia estado (idle/listening/thinking/speaking)
 
-### Se ADR-05 = B (Proxy WebSocket)
+### Se ADR-05 = B (Proxy WebSocket) — decidido no MNT-47
 
-- [ ] **MNT-50** [T][S] Gateway WebSocket em `/assistant/ws` (auth via JWT no handshake); mantém par de WS (client↔NestJS + NestJS↔OpenAI); relaya frames
+- [x] **MNT-50** [T][S] ✅ commit `dcf1e47` — Gateway WebSocket em `/agent/ws` (auth via JWT no handshake via `?token=` ou `Sec-WebSocket-Protocol: bearer.<token>`); mantém par de WS (client↔NestJS + NestJS↔OpenAI) via port `RealtimeUpstreamFactory` + adapter `OpenAiRealtimeUpstreamFactory`; relaya frames. Validação end-to-end real (`wss://api.openai.com/v1/realtime`) pendente de MNT-45 [HUMANO]
 - [ ] **MNT-51** [T][S] Client: cliente WS puro (não precisa lib OpenAI); mesma UX de estados
 
 ---
@@ -76,9 +76,9 @@ Após commit: `[ ]` → `[x] ✅ commit \`<hash>\``.
 
 Independente de ADR-05.
 
-- [ ] **MNT-52** [T][S] `ToolRegistry` — interface `AssistantTool { name, description, jsonSchema, playbook, execute(input, ctx): result }`. `playbook: string` é **obrigatório** — texto com regras de uso, exemplos, edge cases; carregado sob demanda via `get_tool_help` (MNT-94), não vai no system prompt base. Registry por DI (`@AssistantTool()` decorator); publica lista de tools no formato do OpenAI Realtime (só name/description/schema — sem playbook)
-- [ ] **MNT-53** [T][S] `ToolDispatcher` — recebe `tool_call` event (do relay client ou do proxy), resolve o tool, executa dentro do contexto de auth do user, retorna result serializável. Timeout global (default 10s) + erro estruturado
-- [ ] **MNT-54** [SEC] Tool execution context: `AssistantContext { userId, requestId, conversationId }` — nunca aceita `userId` do payload da tool, sempre da sessão autenticada
+- [x] **MNT-52** [T][S] ✅ commit `71c9e64` — `ToolRegistry` — interface `AssistantTool { name, description, jsonSchema, playbook, execute(input, ctx): result }`. `playbook: string` é **obrigatório** — texto com regras de uso, exemplos, edge cases; carregado sob demanda via `get_tool_help` (MNT-94), não vai no system prompt base. Registry por DI (`@RegisterAssistantTool()` decorator — renomeado do spec `@AssistantTool` pra evitar colisão com nome da interface); publica lista de tools no formato do OpenAI Realtime (só name/description/schema — sem playbook)
+- [x] **MNT-53** [T][S] ✅ commit `37841e7` — `ToolDispatcher` — resolve tool via `ToolRegistry`, executa com `AssistantContext` da sessão, retorna `ToolDispatchResult` estruturado com `callId`. Timeout injetável via `TOOL_DISPATCHER_OPTIONS` (default 10s) mapeia pra `error.code = 'timeout'`; exceção do tool → `tool_error`; `ok:false` do tool → `tool_error`; tool desconhecido → `tool_not_found`
+- [x] **MNT-54** [SEC] ✅ commit `37841e7` — Guard de contexto no `ToolDispatcher`: rejeita com `error.code = 'invalid_input'` qualquer payload que traga `userId`, `requestId` ou `conversationId`. `AssistantContext` só chega da sessão autenticada; nunca é derivado do input do LLM. Interface `AssistantContext { userId, requestId, conversationId? }` já existia em `src/tools/domain/assistant-tool.ts` (MNT-52) — MNT-54 fecha o loop de enforcement
 
 ---
 
@@ -92,10 +92,10 @@ Independente de ADR-05.
 
 Solução: cada tool carrega **seu próprio playbook** (regras, exemplos, edge cases), carregado sob demanda quando o LLM decide usar aquela tool pela primeira vez na sessão.
 
-- [ ] **MNT-93** [T][S] Playbook infra — extensão de `AssistantTool` (MNT-52) já contempla `playbook: string`. **Playbook vive inline no código do tool** (arquivo TS, junto da `execute()`), NUNCA em banco/config: (a) versionamento = git, (b) mudança passa por PR review, (c) golden test (MNT-95) valida contra o playbook do código, (d) lookup em runtime é `Map` em memória (O(1), zero I/O). Adicionar convenção de escrita em `src/assistant/domain/tool-playbook.md` (guia interno): estrutura recomendada (Propósito / Quando usar / Exemplos concretos / Edge cases / Regras invioláveis / Tools relacionadas). Linter simples que checa se todo tool exportado tem `playbook` não-vazio
-- [ ] **MNT-94** [T][S] Meta-tool `get_tool_help({ toolName: string })` — auto-registrada em toda sessão (não usa `@AssistantTool()` normal, é injetada pelo `ToolRegistry`). Busca no registry, retorna `{ name, description, playbook }` do tool. Erro estruturado `{ error: 'tool_not_found', toolName }` se nome inválido. Não faz side-effect no user, só leitura — não passa pelo `ToolDispatcher` de auth (bypass explícito)
+- [x] **MNT-93** [T][S] ✅ commit `b9567df` — Guia `src/tools/domain/tool-playbook.md` (7 seções: propósito, quando usar/não usar, exemplos, edge cases, regras invioláveis, tools relacionadas) + linter build-time em `test/tools/lint-playbooks/` (scanner regex + spec de fixtures + spec que roda contra `src/` real; roda como parte de `npm test`). Módulo renomeado do path original `src/assistant/...` pra `src/tools/...` (Fase 2 já vive em tools/). Regras runtime (`ToolRegistry.assertValidTool`) continuam ativas — o linter só puxa o feedback pra build-time
+- [x] **MNT-94** [T][S] ✅ commit `b5423aa` — Meta-tool `get_tool_help({ toolName: string })` auto-registrada pelo `ToolRegistry` (após discovery, sem decorator). Enum `MetaToolName` reserva o nome `get_tool_help` — user tool com esse nome quebra o boot. `ToolRegistry.getToolHelp(name)` é o bypass explícito ao `ToolDispatcher`: retorna `{ found: true, entry: { name, description, playbook } }` ou `{ found: false, error: { error: 'tool_not_found', toolName } }`. `GetToolHelpMetaTool.execute()` delega pro registry e serializa data conforme MNT-94 spec
 - [ ] **MNT-95** [T][S] Snippet no system prompt base (`prompts/base.ts`, MNT-62): "Você tem acesso a uma lista de tools (nome + descrição curta + parâmetros). Se você **nunca chamou** um tool nesta sessão e vai invocá-lo agora, chame `get_tool_help({ toolName })` **primeiro** pra receber as regras específicas de uso. Depois de carregado uma vez, você já tem o playbook em memória — não precisa chamar de novo pra mesma tool nesta sessão." Golden test: cenário com tool novo, LLM chama `get_tool_help` primeiro em ≥90% dos casos; cenário com tool já usado, LLM chama direto sem `get_tool_help`
-- [ ] **MNT-96** [SEC] Isolamento: playbook de um tool NÃO pode referenciar/instruir sobre outro tool (evita que `add_transaction` playbook diga "e depois chama `delete_all_transactions`"). Test garante que playbook mencionando outros tools é flaggado. Playbooks são **conteúdo curado por nós** (não user input) — não passam pelo processo de "prompt injection defense" que outros textos passam
+- [x] **MNT-96** [SEC] ✅ commit `94b624d` — Isolamento: linter de playbooks (`test/tools/lint-playbooks/scan-tool-playbook-violations.ts`) agora coleta todas as declarações `@RegisterAssistantTool` em duas passagens e flagga com `reason: "playbook references another tool: <nome>"` sempre que um `readonly playbook = 'literal'` mencionar (via word-boundary regex) o `name` literal de outro tool decorado. Cross-check preserva self-reference (playbook pode citar próprio nome) e ignora playbooks não-literais (identifier/member access seguem "trust the type system" — cobertura limitada, documentada no guia). Fixtures cobrem: cross-ref mesmo arquivo, cross-ref entre arquivos, self-reference OK, substring/word-boundary, playbook via `const`. Playbooks são **conteúdo curado por nós** (não user input) — não passam pelo processo de "prompt injection defense" que outros textos passam
 - [ ] **MNT-97** [P] Flag `preloadPlaybook: boolean` (default false) na interface do tool — tools críticos/muito frequentes (ex: `add_transaction`) podem opt-in pra ter o playbook injetado no system prompt inicial. No V1 ninguém usa; hook fica pra otimização de latência quando dados de uso mostrarem que faz sentido
 
 ---

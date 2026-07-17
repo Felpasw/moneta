@@ -1,0 +1,99 @@
+{
+  "scenario": "already-used",
+  "description": "Tool add_transaction was already invoked earlier in this session — model must call it directly, without get_tool_help",
+  "treatmentStyle": "informal",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "adiciona R$ 30 de padaria de hoje"
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "tool_calls": [
+        {
+          "id": "call_prev_help",
+          "type": "function",
+          "function": {
+            "name": "get_tool_help",
+            "arguments": "{\"toolName\":\"add_transaction\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_prev_help",
+      "content": "{\"name\":\"add_transaction\",\"playbook\":\"Registra transação. Sempre confirme se falta descrição ou valor.\"}"
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "tool_calls": [
+        {
+          "id": "call_prev_add",
+          "type": "function",
+          "function": {
+            "name": "add_transaction",
+            "arguments": "{\"amountBrl\":30,\"description\":\"padaria\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_prev_add",
+      "content": "{\"ok\":true,\"id\":\"tx-1\"}"
+    },
+    {
+      "role": "assistant",
+      "content": "Registrei R$ 30 de padaria."
+    },
+    {
+      "role": "user",
+      "content": "agora adiciona R$ 45 de gasolina de hoje também"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_tool_help",
+        "description": "Retorna o playbook de uma tool específica (regras de uso, exemplos, edge cases). Chame antes da primeira invocação de qualquer tool.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "toolName": { "type": "string" }
+          },
+          "required": ["toolName"],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "add_transaction",
+        "description": "Registra uma transação financeira do usuário.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "amountBrl": { "type": "number" },
+            "description": { "type": "string" },
+            "occurredAt": { "type": "string", "format": "date" }
+          },
+          "required": ["amountBrl", "description"],
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "expected": {
+    "firstToolCall": {
+      "name": "add_transaction",
+      "argsMatch": {
+        "description": "gasolina"
+      }
+    }
+  }
+}

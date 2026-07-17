@@ -64,6 +64,6 @@ import { SimpleWebAuthnService } from './infrastructure/webauthn/simple-webauthn
     JwtAuthGuard,
     IpEmailThrottlerGuard,
   ],
-  exports: [JwtAuthGuard],
+  exports: [JwtAuthGuard, TOKEN_SERVICE],
 })
 export class AuthModule {}

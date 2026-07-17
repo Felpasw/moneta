@@ -1,4 +1,5 @@
 import { SignupWithPasswordUseCase } from '~/auth/application/use-cases/signup-with-password.use-case';
+import { USER_SIGNED_UP_EVENT } from '~/auth/domain/events/user-signed-up.event';
 import { InvalidNameError } from '~/auth/domain/errors/invalid-name.error';
 import { EmailAlreadyRegisteredError } from '~/users/domain/errors/email-already-registered.error';
 import type { CreateUserWithPasswordCredentialInput } from '~/users/domain/ports/users-repository';
@@ -22,8 +23,15 @@ const buildUseCase = () => {
     findByEmail: jest.fn(),
     findById: jest.fn(),
   };
-  const useCase = new SignupWithPasswordUseCase(hasher, repo);
-  return { useCase, hasher, repo };
+  const events = { emit: jest.fn() };
+  const useCase = new SignupWithPasswordUseCase(
+    hasher,
+    repo,
+    events as unknown as ConstructorParameters<
+      typeof SignupWithPasswordUseCase
+    >[2],
+  );
+  return { useCase, hasher, repo, events };
 };
 
 describe('SignupWithPasswordUseCase', () => {
@@ -116,5 +124,37 @@ describe('SignupWithPasswordUseCase', () => {
       }),
     ).rejects.toThrow(InvalidNameError);
     expect(hasher.hash).not.toHaveBeenCalled();
+  });
+
+  it('emits USER_SIGNED_UP with the created user payload on success', async () => {
+    const { useCase, events } = buildUseCase();
+
+    await useCase.execute({
+      email: 'Alice@Example.com',
+      password: 'plaintext',
+      name: 'Alice',
+    });
+
+    expect(events.emit).toHaveBeenCalledWith(USER_SIGNED_UP_EVENT, {
+      userId: 'user-1',
+      email: 'alice@example.com',
+      name: 'Alice',
+    });
+  });
+
+  it('does not emit USER_SIGNED_UP when creation fails', async () => {
+    const { useCase, repo, events } = buildUseCase();
+    repo.createWithPasswordCredential.mockRejectedValue(
+      new EmailAlreadyRegisteredError('alice@example.com'),
+    );
+
+    await expect(
+      useCase.execute({
+        email: 'alice@example.com',
+        password: 'p',
+        name: 'Alice',
+      }),
+    ).rejects.toThrow(EmailAlreadyRegisteredError);
+    expect(events.emit).not.toHaveBeenCalled();
   });
 });

@@ -9,6 +9,9 @@ export const envSchema = z.object({
   REDIS_URL: z.string().min(1),
   JWT_ACCESS_SECRET: z.string().min(1),
   JWT_REFRESH_SECRET: z.string().min(1),
+  LLM_API_KEY: z.string().min(1),
+  TTS_API_KEY: z.string().min(1),
+  TTS_DEFAULT_VOICE_ID: z.string().min(1),
   WEB_ORIGIN: z.url().default('http://localhost:3000'),
   PORT: z.coerce.number().int().positive().default(3333),
   NODE_ENV: z
@@ -16,6 +19,11 @@ export const envSchema = z.object({
     .default('development'),
   RP_ID: z.string().min(1).default('localhost'),
   RP_NAME: z.string().min(1).default('Moneta'),
+  LLM_BEHAVIOR_ENABLED: z
+    .enum(['0', '1'])
+    .default('0')
+    .transform((v) => v === '1'),
+  LLM_BEHAVIOR_MODEL: z.string().min(1).default('gpt-4o-mini'),
 });
 
 export type Env = z.infer<typeof envSchema>;
