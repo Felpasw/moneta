@@ -11,6 +11,8 @@ import { AgentModule } from './agent/agent.module';
 import { AuthModule } from './auth/auth.module';
 import { BanksModule } from './banks/banks.module';
 import { BanksToolsModule } from './banks/tools/banks-tools.module';
+import { CategoriesModule } from './categories/categories.module';
+import { CategoriesToolsModule } from './categories/tools/categories-tools.module';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { ToolsModule } from './tools/tools.module';
@@ -30,6 +32,8 @@ import { UsersModule } from './users/users.module';
     BanksToolsModule,
     AccountsModule,
     AccountsToolsModule,
+    CategoriesModule,
+    CategoriesToolsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

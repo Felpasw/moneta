@@ -39,7 +39,7 @@ Mesmas do resto dos specs. Bundle onde faz sentido (várias tools do mesmo domí
 
 - [x] **MNT-124** [T][S] Módulo `banks/` (Clean Arch): use-cases `ListBanks` (catálogo público), repository read-only sobre a tabela seedada. Endpoint `GET /banks` ✅ commit `2df01a4` (tool `list_banks` fica em MNT-126)
 - [x] **MNT-125** [T][S] Módulo `accounts/`: `UserBankAccountRepository` + use-cases `ListMyAccounts`, `AddBankAccount({ bankId, nickname, initialBalance?, creditLimit?, closeDay?, dueDay? })`, `UpdateBankAccount`, `DeleteBankAccount`, `SetBalance({ accountId, amount })`. Endpoints REST equivalentes. Ownership: filtro `user_id` obrigatório em todos ✅ commit `c9d37dd` (regra "delete só se sem transactions" fica delegada ao FK Restrict do Postgres por ora; validação de UpdateBankAccount ↔ credit card fields fica pra quando o módulo credit-cards existir; tools em MNT-126)
-- [x] **MNT-126** [T][S] Tools do assistente (bundle) — cada um com playbook inline: ✅ commit `<pendente>` (6 tools registradas via @RegisterAssistantTool; validação de input via zod dentro do execute; erros de domínio viram ok:false)
+- [x] **MNT-126** [T][S] Tools do assistente (bundle) — cada um com playbook inline: ✅ commit `5940181` (6 tools registradas via @RegisterAssistantTool em sub-módulos <domain>-tools.module.ts dedicados; validação de input via zod dentro do execute; erros de domínio viram ok:false)
   - `list_banks` — lista o catálogo (só read)
   - `list_my_accounts` — lista as contas do user com saldo e limite
   - `add_bank_account({ bankId, nickname, initialBalance?, creditLimit?, closeDay?, dueDay? })` — playbook enfatiza: confirme com user antes; se `creditLimit` presente, `closeDay` e `dueDay` obrigatórios
@@ -51,8 +51,8 @@ Mesmas do resto dos specs. Bundle onde faz sentido (várias tools do mesmo domí
 
 ## Fase 2 — Categorias
 
-- [ ] **MNT-127** [T][S] `CategoryRepository` + use-cases `ListCategories(userId)` (retorna defaults globais + custom do user), `AddCategory({ name, icon?, color? })`, `RenameCategory`, `DeleteCategory` (só custom; defaults globais não deletáveis). Endpoints REST
-- [ ] **MNT-128** [T][S] Tools (bundle): `list_categories`, `add_category`, `rename_category`, `delete_category`. Playbooks curtas — categoria é conceito simples
+- [x] **MNT-127** [T][S] `CategoryRepository` + use-cases `ListCategories(userId)` (retorna defaults globais + custom do user), `AddCategory({ name, icon?, color? })`, `RenameCategory`, `DeleteCategory` (só custom; defaults globais não deletáveis). Endpoints REST ✅ commit `<pendente>` (defaults globais protegidos pelo WHERE userId=X — não match, retorna null; RenameCategory limitado a name — icon/color por tool separada depois se necessário)
+- [x] **MNT-128** [T][S] Tools (bundle): `list_categories`, `add_category`, `rename_category`, `delete_category`. Playbooks curtas — categoria é conceito simples ✅ commit `<pendente>` (playbooks orientam a checar existentes antes de criar; global vs custom explicado sem cross-reference)
 
 ---
 
