@@ -38,8 +38,8 @@ Mesmas do resto dos specs. Bundle onde faz sentido (várias tools do mesmo domí
 ## Fase 1 — Bancos & contas
 
 - [x] **MNT-124** [T][S] Módulo `banks/` (Clean Arch): use-cases `ListBanks` (catálogo público), repository read-only sobre a tabela seedada. Endpoint `GET /banks` ✅ commit `2df01a4` (tool `list_banks` fica em MNT-126)
-- [x] **MNT-125** [T][S] Módulo `accounts/`: `UserBankAccountRepository` + use-cases `ListMyAccounts`, `AddBankAccount({ bankId, nickname, initialBalance?, creditLimit?, closeDay?, dueDay? })`, `UpdateBankAccount`, `DeleteBankAccount`, `SetBalance({ accountId, amount })`. Endpoints REST equivalentes. Ownership: filtro `user_id` obrigatório em todos ✅ commit `<pendente>` (regra "delete só se sem transactions" fica delegada ao FK Restrict do Postgres por ora; validação de UpdateBankAccount ↔ credit card fields fica pra quando o módulo credit-cards existir; tools em MNT-126)
-- [ ] **MNT-126** [T][S] Tools do assistente (bundle) — cada um com playbook inline:
+- [x] **MNT-125** [T][S] Módulo `accounts/`: `UserBankAccountRepository` + use-cases `ListMyAccounts`, `AddBankAccount({ bankId, nickname, initialBalance?, creditLimit?, closeDay?, dueDay? })`, `UpdateBankAccount`, `DeleteBankAccount`, `SetBalance({ accountId, amount })`. Endpoints REST equivalentes. Ownership: filtro `user_id` obrigatório em todos ✅ commit `c9d37dd` (regra "delete só se sem transactions" fica delegada ao FK Restrict do Postgres por ora; validação de UpdateBankAccount ↔ credit card fields fica pra quando o módulo credit-cards existir; tools em MNT-126)
+- [x] **MNT-126** [T][S] Tools do assistente (bundle) — cada um com playbook inline: ✅ commit `<pendente>` (6 tools registradas via @RegisterAssistantTool; validação de input via zod dentro do execute; erros de domínio viram ok:false)
   - `list_banks` — lista o catálogo (só read)
   - `list_my_accounts` — lista as contas do user com saldo e limite
   - `add_bank_account({ bankId, nickname, initialBalance?, creditLimit?, closeDay?, dueDay? })` — playbook enfatiza: confirme com user antes; se `creditLimit` presente, `closeDay` e `dueDay` obrigatórios

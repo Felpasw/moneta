@@ -6,9 +6,11 @@ import { EphemeralStoreModule } from './@common/infrastructure/ephemeral-store/e
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AccountsModule } from './accounts/accounts.module';
+import { AccountsToolsModule } from './accounts/tools/accounts-tools.module';
 import { AgentModule } from './agent/agent.module';
 import { AuthModule } from './auth/auth.module';
 import { BanksModule } from './banks/banks.module';
+import { BanksToolsModule } from './banks/tools/banks-tools.module';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { ToolsModule } from './tools/tools.module';
@@ -25,7 +27,9 @@ import { UsersModule } from './users/users.module';
     ToolsModule,
     AgentModule,
     BanksModule,
+    BanksToolsModule,
     AccountsModule,
+    AccountsToolsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

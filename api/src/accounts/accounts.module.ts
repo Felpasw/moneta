@@ -24,5 +24,12 @@ import { PrismaUserBankAccountsRepository } from './infrastructure/repositories/
     DeleteBankAccountUseCase,
     SetBalanceUseCase,
   ],
+  exports: [
+    ListMyAccountsUseCase,
+    AddBankAccountUseCase,
+    UpdateBankAccountUseCase,
+    DeleteBankAccountUseCase,
+    SetBalanceUseCase,
+  ],
 })
 export class AccountsModule {}
