@@ -20,7 +20,7 @@ export class PrismaUsersRepository implements UsersRepository {
     input: CreateUserWithPasswordCredentialInput,
   ): Promise<UserSnapshot> {
     try {
-      const user = await this.prisma.user.create({
+      return await this.prisma.user.create({
         data: {
           email: input.email,
           name: input.name,
@@ -28,8 +28,8 @@ export class PrismaUsersRepository implements UsersRepository {
             create: { type: CredentialType.password, hash: input.passwordHash },
           },
         },
+        select: { id: true, email: true, name: true },
       });
-      return { id: user.id, email: user.email, name: user.name };
     } catch (e) {
       if (
         e instanceof Prisma.PrismaClientKnownRequestError &&
@@ -42,15 +42,17 @@ export class PrismaUsersRepository implements UsersRepository {
   }
 
   async findById(id: string): Promise<UserSnapshot | null> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) return null;
-    return { id: user.id, email: user.email, name: user.name };
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, name: true },
+    });
   }
 
   async findByEmail(email: string): Promise<UserSnapshot | null> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) return null;
-    return { id: user.id, email: user.email, name: user.name };
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, name: true },
+    });
   }
 
   async findByEmailWithPasswordCredential(
@@ -58,18 +60,23 @@ export class PrismaUsersRepository implements UsersRepository {
   ): Promise<UserWithPasswordCredential | null> {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: {
-        credentials: { where: { type: CredentialType.password }, take: 1 },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        credentials: {
+          where: { type: CredentialType.password },
+          select: { hash: true },
+          take: 1,
+        },
       },
     });
-    if (!user) return null;
-    const [credential] = user.credentials;
-    if (!credential) return null;
+    if (!user || user.credentials.length === 0) return null;
     return {
       id: user.id,
       email: user.email,
       name: user.name,
-      passwordHash: credential.hash,
+      passwordHash: user.credentials[0].hash,
     };
   }
 }

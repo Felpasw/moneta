@@ -11,14 +11,9 @@ export class PrismaBanksRepository implements BanksRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async listAll(): Promise<Bank[]> {
-    const rows = await this.prisma.bank.findMany({
+    return this.prisma.bank.findMany({
       orderBy: { name: 'asc' },
+      select: { id: true, name: true, compeCode: true, logoUrl: true },
     });
-    return rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      compeCode: row.compeCode,
-      logoUrl: row.logoUrl,
-    }));
   }
 }

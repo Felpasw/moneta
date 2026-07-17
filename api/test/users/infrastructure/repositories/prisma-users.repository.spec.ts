@@ -8,10 +8,6 @@ const CREATED_USER = {
   id: 'user-1',
   email: 'alice@example.com',
   name: 'Alice',
-  nickname: null,
-  onboardedAt: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
 };
 
 const makePrismaWithCreate = (createImpl: jest.Mock): PrismaService =>
@@ -45,6 +41,7 @@ describe('PrismaUsersRepository', () => {
             create: { type: 'password', hash: 'hashed' },
           },
         },
+        select: { id: true, email: true, name: true },
       });
     });
 
@@ -89,7 +86,7 @@ describe('PrismaUsersRepository', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
-        credentials: [{ type: 'password', hash: 'stored-hash' }],
+        credentials: [{ hash: 'stored-hash' }],
       });
       const repo = new PrismaUsersRepository(
         makePrismaWithFindUnique(findUnique),
@@ -106,8 +103,15 @@ describe('PrismaUsersRepository', () => {
       });
       expect(findUnique).toHaveBeenCalledWith({
         where: { email: 'alice@example.com' },
-        include: {
-          credentials: { where: { type: 'password' }, take: 1 },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          credentials: {
+            where: { type: 'password' },
+            select: { hash: true },
+            take: 1,
+          },
         },
       });
     });

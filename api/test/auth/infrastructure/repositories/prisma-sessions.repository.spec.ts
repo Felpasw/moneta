@@ -8,12 +8,15 @@ const NEW_EXPIRES = new Date('2026-09-13T12:00:00Z');
 const CREATED_SESSION = {
   id: 'session-1',
   userId: 'user-1',
-  refreshTokenHash: 'hash',
-  userAgent: 'jest',
-  ip: '127.0.0.1',
-  expiresAt: EXPIRES,
-  revokedAt: null,
   createdAt: NOW,
+  expiresAt: EXPIRES,
+};
+
+const SESSION_SELECT = {
+  id: true,
+  userId: true,
+  createdAt: true,
+  expiresAt: true,
 };
 
 const makePrisma = (methods: {
@@ -61,15 +64,12 @@ describe('PrismaSessionsRepository', () => {
           ip: '127.0.0.1',
           expiresAt: EXPIRES,
         },
+        select: SESSION_SELECT,
       });
     });
 
     it('accepts optional userAgent and ip as undefined', async () => {
-      const create = jest.fn().mockResolvedValue({
-        ...CREATED_SESSION,
-        userAgent: null,
-        ip: null,
-      });
+      const create = jest.fn().mockResolvedValue(CREATED_SESSION);
       const repo = new PrismaSessionsRepository(makePrisma({ create }));
 
       await repo.create({
@@ -86,6 +86,7 @@ describe('PrismaSessionsRepository', () => {
           ip: undefined,
           expiresAt: EXPIRES,
         },
+        select: SESSION_SELECT,
       });
     });
   });
@@ -120,7 +121,13 @@ describe('PrismaSessionsRepository', () => {
       });
       expect(findUnique).toHaveBeenCalledWith({
         where: { refreshTokenHash: 'abcdef' },
-        include: { user: { select: { id: true, email: true, name: true } } },
+        select: {
+          id: true,
+          userId: true,
+          revokedAt: true,
+          expiresAt: true,
+          user: { select: { id: true, email: true, name: true } },
+        },
       });
     });
 
@@ -162,12 +169,8 @@ describe('PrismaSessionsRepository', () => {
       const create = jest.fn().mockResolvedValue({
         id: 'session-new',
         userId: 'user-1',
-        refreshTokenHash: 'new-hash',
-        userAgent: 'jest',
-        ip: '127.0.0.1',
-        expiresAt: NEW_EXPIRES,
-        revokedAt: null,
         createdAt: NOW,
+        expiresAt: NEW_EXPIRES,
       });
       const transaction = jest
         .fn()
@@ -203,6 +206,7 @@ describe('PrismaSessionsRepository', () => {
           ip: '127.0.0.1',
           expiresAt: NEW_EXPIRES,
         },
+        select: SESSION_SELECT,
       });
       expect(result).toEqual({
         id: 'session-new',
