@@ -22,6 +22,7 @@ export interface AddTransactionInput {
   categoryId?: string;
   description?: string;
   occurredAt: Date;
+  invoiceId?: string;
 }
 
 export interface EditTransactionInput {

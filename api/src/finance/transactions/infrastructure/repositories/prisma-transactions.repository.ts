@@ -137,6 +137,7 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
         userId: input.userId,
         accountId: input.accountId,
         categoryId: input.categoryId,
+        invoiceId: input.invoiceId,
         type: input.type,
         amount: input.amount,
         description: input.description,
@@ -144,6 +145,14 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       },
       select: TRANSACTION_SELECT,
     });
+    if (input.invoiceId !== undefined) {
+      // invoice.total_amount tracks what the user owes:
+      // expense increases the invoice, income (refund) decreases it — opposite sign of balance delta
+      await tx.creditCardInvoice.updateMany({
+        where: { id: input.invoiceId },
+        data: { totalAmount: { increment: -delta } },
+      });
+    }
     return toDomain(row);
   }
 

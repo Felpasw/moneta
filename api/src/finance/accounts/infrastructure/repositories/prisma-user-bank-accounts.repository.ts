@@ -45,6 +45,14 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
     return rows.map(toDomain);
   }
 
+  async findById(id: string, userId: string): Promise<UserBankAccount | null> {
+    const row = await this.prisma.userBankAccount.findFirst({
+      where: { id, userId },
+      select: ACCOUNT_SELECT,
+    });
+    return row ? toDomain(row) : null;
+  }
+
   async add(input: AddUserBankAccountInput): Promise<UserBankAccount> {
     const row = await this.prisma.userBankAccount.create({
       data: {

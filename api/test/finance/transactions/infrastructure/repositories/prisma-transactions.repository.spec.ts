@@ -16,6 +16,9 @@ interface MockTx {
   userBankAccount: {
     updateMany: jest.Mock;
   };
+  creditCardInvoice: {
+    updateMany: jest.Mock;
+  };
 }
 
 const buildPrisma = (): { prisma: PrismaService; tx: MockTx } => {
@@ -27,6 +30,9 @@ const buildPrisma = (): { prisma: PrismaService; tx: MockTx } => {
       delete: jest.fn(),
     },
     userBankAccount: {
+      updateMany: jest.fn(),
+    },
+    creditCardInvoice: {
       updateMany: jest.fn(),
     },
   };
@@ -103,6 +109,70 @@ describe('PrismaTransactionsRepository', () => {
         where: { id: ACCOUNT_A, userId: CURRENT_USER },
         data: { balance: { increment: 200 } },
       });
+    });
+
+    it('sets invoice_id and increments invoice.total_amount when invoiceId is provided (card expense)', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.creditCardInvoice.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.create.mockResolvedValue({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        categoryId: null,
+        invoiceId: 'inv-1',
+        type: TransactionType.Expense,
+        amount: decimal(100),
+        description: null,
+        occurredAt: new Date(),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.add({
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: 100,
+        occurredAt: new Date(),
+        invoiceId: 'inv-1',
+      });
+
+      const [createArg] = tx.transaction.create.mock.calls[0] as unknown as [
+        { data: Record<string, unknown> },
+      ];
+      expect(createArg.data.invoiceId).toBe('inv-1');
+      // expense of 100 → invoice.total_amount increments by +100 (what user owes)
+      expect(tx.creditCardInvoice.updateMany).toHaveBeenCalledWith({
+        where: { id: 'inv-1' },
+        data: { totalAmount: { increment: 100 } },
+      });
+    });
+
+    it('does not touch invoices when invoiceId is absent (debit expense)', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.create.mockResolvedValue({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        categoryId: null,
+        invoiceId: null,
+        type: TransactionType.Expense,
+        amount: decimal(100),
+        description: null,
+        occurredAt: new Date(),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.add({
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: 100,
+        occurredAt: new Date(),
+      });
+
+      expect(tx.creditCardInvoice.updateMany).not.toHaveBeenCalled();
     });
 
     it('throws AccountNotFoundError when the account does not belong to the user', async () => {

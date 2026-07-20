@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 
-import { AuthModule } from '../auth/auth.module';
+import { AccountsModule } from '../accounts/accounts.module';
+import { AuthModule } from '../../auth/auth.module';
+import { CardBillingModule } from '../card-billing/card-billing.module';
 import { AddManyTransactionsUseCase } from './application/use-cases/add-many-transactions.use-case';
 import { AddTransactionUseCase } from './application/use-cases/add-transaction.use-case';
 import { DeleteTransactionUseCase } from './application/use-cases/delete-transaction.use-case';
@@ -12,7 +14,7 @@ import { PrismaTransactionsRepository } from './infrastructure/repositories/pris
 import { TransactionsController } from './transactions.controller';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AccountsModule, CardBillingModule],
   controllers: [TransactionsController],
   providers: [
     {
