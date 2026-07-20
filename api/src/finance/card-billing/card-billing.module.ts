@@ -8,6 +8,7 @@ import { MarkInvoicePaidUseCase } from './application/use-cases/mark-invoice-pai
 import { PayInvoiceUseCase } from './application/use-cases/pay-invoice.use-case';
 import { CreditCardCycleService } from './domain/services/credit-card-cycle.service';
 import { INVOICES_REPOSITORY } from './domain/ports/invoices-repository';
+import { TransferCreatedListener } from './infrastructure/events/transfer-created.listener';
 import { PrismaInvoicesRepository } from './infrastructure/repositories/prisma-invoices.repository';
 
 @Module({
@@ -22,6 +23,7 @@ import { PrismaInvoicesRepository } from './infrastructure/repositories/prisma-i
     ListInvoicesUseCase,
     PayInvoiceUseCase,
     MarkInvoicePaidUseCase,
+    TransferCreatedListener,
   ],
   exports: [
     INVOICES_REPOSITORY,
