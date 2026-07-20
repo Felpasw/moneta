@@ -30,4 +30,9 @@ export interface InvoicesRepository {
     cycleStart: Date,
   ): Promise<Invoice | null>;
   listByAccount(accountId: string, status?: InvoiceStatus): Promise<Invoice[]>;
+  // Fetch an invoice by id, enforcing ownership via the parent account.
+  findByIdForUser(id: string, userId: string): Promise<Invoice | null>;
+  // Flip an invoice to PAID. paidViaTransferId is optional — omitted means
+  // the payment happened outside a tracked transfer (manual mark).
+  markPaid(id: string, paidAt: Date, paidViaTransferId?: string): Promise<void>;
 }

@@ -16,7 +16,11 @@ const buildPrisma = (): {
   prisma: PrismaService;
   tx: MockTx;
   root: {
-    creditCardInvoice: { findFirst: jest.Mock; findMany: jest.Mock };
+    creditCardInvoice: {
+      findFirst: jest.Mock;
+      findMany: jest.Mock;
+      update: jest.Mock;
+    };
   };
 } => {
   const tx: MockTx = {
@@ -27,7 +31,11 @@ const buildPrisma = (): {
   };
   const $transaction = jest.fn((cb: (t: MockTx) => Promise<unknown>) => cb(tx));
   const root = {
-    creditCardInvoice: { findFirst: jest.fn(), findMany: jest.fn() },
+    creditCardInvoice: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+    },
   };
   const prisma = {
     $transaction,
@@ -198,6 +206,71 @@ describe('PrismaInvoicesRepository', () => {
           where: { accountId: ACCOUNT_ID, status: InvoiceStatus.Closed },
         }),
       );
+    });
+  });
+
+  describe('findByIdForUser', () => {
+    it('joins on account.userId to enforce ownership', async () => {
+      const { prisma, root } = buildPrisma();
+      root.creditCardInvoice.findFirst.mockResolvedValue(invoiceRow());
+      const repo = new PrismaInvoicesRepository(prisma);
+
+      const result = await repo.findByIdForUser('inv-1', 'user-1');
+
+      expect(root.creditCardInvoice.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'inv-1', account: { userId: 'user-1' } },
+        }),
+      );
+      expect(result?.id).toBe(INVOICE_ID);
+    });
+
+    it('returns null when no invoice matches the id/user pair', async () => {
+      const { prisma, root } = buildPrisma();
+      root.creditCardInvoice.findFirst.mockResolvedValue(null);
+      const repo = new PrismaInvoicesRepository(prisma);
+
+      const result = await repo.findByIdForUser('ghost', 'user-1');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('markPaid', () => {
+    it('sets status=paid and stores paidAt + optional paidViaTransferId', async () => {
+      const { prisma, root } = buildPrisma();
+      root.creditCardInvoice.update.mockResolvedValue(undefined);
+      const repo = new PrismaInvoicesRepository(prisma);
+
+      const paidAt = new Date('2026-07-20T18:00:00Z');
+      await repo.markPaid('inv-1', paidAt, 'tr-1');
+
+      expect(root.creditCardInvoice.update).toHaveBeenCalledWith({
+        where: { id: 'inv-1' },
+        data: {
+          status: InvoiceStatus.Paid,
+          paidAt,
+          paidViaTransferId: 'tr-1',
+        },
+      });
+    });
+
+    it('leaves paidViaTransferId undefined for manual marks', async () => {
+      const { prisma, root } = buildPrisma();
+      root.creditCardInvoice.update.mockResolvedValue(undefined);
+      const repo = new PrismaInvoicesRepository(prisma);
+
+      const paidAt = new Date('2026-07-20T18:00:00Z');
+      await repo.markPaid('inv-1', paidAt);
+
+      expect(root.creditCardInvoice.update).toHaveBeenCalledWith({
+        where: { id: 'inv-1' },
+        data: {
+          status: InvoiceStatus.Paid,
+          paidAt,
+          paidViaTransferId: undefined,
+        },
+      });
     });
   });
 });

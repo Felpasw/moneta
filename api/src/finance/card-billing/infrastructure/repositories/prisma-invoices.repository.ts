@@ -90,4 +90,27 @@ export class PrismaInvoicesRepository implements InvoicesRepository {
     });
     return rows.map(toDomain);
   }
+
+  async findByIdForUser(id: string, userId: string): Promise<Invoice | null> {
+    const row = await this.prisma.creditCardInvoice.findFirst({
+      where: { id, account: { userId } },
+      select: INVOICE_SELECT,
+    });
+    return row ? toDomain(row) : null;
+  }
+
+  async markPaid(
+    id: string,
+    paidAt: Date,
+    paidViaTransferId?: string,
+  ): Promise<void> {
+    await this.prisma.creditCardInvoice.update({
+      where: { id },
+      data: {
+        status: InvoiceStatus.Paid,
+        paidAt,
+        paidViaTransferId,
+      },
+    });
+  }
 }
