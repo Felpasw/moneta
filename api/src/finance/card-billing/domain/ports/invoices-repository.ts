@@ -29,4 +29,5 @@ export interface InvoicesRepository {
     accountId: string,
     cycleStart: Date,
   ): Promise<Invoice | null>;
+  listByAccount(accountId: string, status?: InvoiceStatus): Promise<Invoice[]>;
 }

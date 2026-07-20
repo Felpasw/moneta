@@ -15,7 +15,9 @@ interface MockTx {
 const buildPrisma = (): {
   prisma: PrismaService;
   tx: MockTx;
-  root: { creditCardInvoice: { findFirst: jest.Mock } };
+  root: {
+    creditCardInvoice: { findFirst: jest.Mock; findMany: jest.Mock };
+  };
 } => {
   const tx: MockTx = {
     creditCardInvoice: {
@@ -24,7 +26,9 @@ const buildPrisma = (): {
     },
   };
   const $transaction = jest.fn((cb: (t: MockTx) => Promise<unknown>) => cb(tx));
-  const root = { creditCardInvoice: { findFirst: jest.fn() } };
+  const root = {
+    creditCardInvoice: { findFirst: jest.fn(), findMany: jest.fn() },
+  };
   const prisma = {
     $transaction,
     creditCardInvoice: root.creditCardInvoice,
@@ -159,6 +163,41 @@ describe('PrismaInvoicesRepository', () => {
       );
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('listByAccount', () => {
+    it('lists invoices for the account ordered by cycleStart desc', async () => {
+      const { prisma, root } = buildPrisma();
+      root.creditCardInvoice.findMany.mockResolvedValue([
+        invoiceRow({ id: 'inv-1' }),
+        invoiceRow({ id: 'inv-2' }),
+      ]);
+      const repo = new PrismaInvoicesRepository(prisma);
+
+      const result = await repo.listByAccount(ACCOUNT_ID);
+
+      expect(root.creditCardInvoice.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { accountId: ACCOUNT_ID, status: undefined },
+          orderBy: { cycleStart: 'desc' },
+        }),
+      );
+      expect(result).toHaveLength(2);
+    });
+
+    it('narrows to the given status when provided', async () => {
+      const { prisma, root } = buildPrisma();
+      root.creditCardInvoice.findMany.mockResolvedValue([]);
+      const repo = new PrismaInvoicesRepository(prisma);
+
+      await repo.listByAccount(ACCOUNT_ID, InvoiceStatus.Closed);
+
+      expect(root.creditCardInvoice.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { accountId: ACCOUNT_ID, status: InvoiceStatus.Closed },
+        }),
+      );
     });
   });
 });
