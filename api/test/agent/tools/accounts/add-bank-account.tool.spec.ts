@@ -1,5 +1,5 @@
 import { AddBankAccountTool } from '~/agent/tools/accounts/add-bank-account.tool';
-import { InvalidCreditCardConfigError } from '~/accounts/domain/errors/invalid-credit-card-config.error';
+import { InvalidCreditCardConfigError } from '~/finance/accounts/domain/errors/invalid-credit-card-config.error';
 
 const CTX = { userId: 'user-1', requestId: 'req-1' };
 const BANK_ID = 'a4b1c1e0-0000-4000-8000-000000000001';

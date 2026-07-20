@@ -1,4 +1,4 @@
-import { TransferNotFoundError } from '~/transfers/domain/errors/transfer-not-found.error';
+import { TransferNotFoundError } from '~/finance/transfers/domain/errors/transfer-not-found.error';
 import { DeleteTransferTool } from '~/agent/tools/transfers/delete-transfer.tool';
 
 const CTX = { userId: 'user-1', requestId: 'req-1' };

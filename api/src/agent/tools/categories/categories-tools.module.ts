@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { CategoriesModule } from '../../../categories/categories.module';
+import { CategoriesModule } from '../../../finance/categories/categories.module';
 import { AddCategoryTool } from './add-category.tool';
 import { DeleteCategoryTool } from './delete-category.tool';
 import { ListCategoriesTool } from './list-categories.tool';

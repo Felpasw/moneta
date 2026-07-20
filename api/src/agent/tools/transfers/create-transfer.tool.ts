@@ -1,13 +1,13 @@
-import { AccountNotFoundError } from '../../../accounts/domain/errors/account-not-found.error';
+import { AccountNotFoundError } from '../../../finance/accounts/domain/errors/account-not-found.error';
 import type {
   AssistantContext,
   AssistantTool,
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { CreateTransferUseCase } from '../../../transfers/application/use-cases/create-transfer.use-case';
-import { SameAccountTransferError } from '../../../transfers/domain/errors/same-account-transfer.error';
-import { createTransferSchema } from '../../../transfers/dto/create-transfer.dto';
+import { CreateTransferUseCase } from '../../../finance/transfers/application/use-cases/create-transfer.use-case';
+import { SameAccountTransferError } from '../../../finance/transfers/domain/errors/same-account-transfer.error';
+import { createTransferSchema } from '../../../finance/transfers/dto/create-transfer.dto';
 
 @RegisterAssistantTool()
 export class CreateTransferTool implements AssistantTool {

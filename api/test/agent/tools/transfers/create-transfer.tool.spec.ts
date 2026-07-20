@@ -1,5 +1,5 @@
-import { AccountNotFoundError } from '~/accounts/domain/errors/account-not-found.error';
-import { SameAccountTransferError } from '~/transfers/domain/errors/same-account-transfer.error';
+import { AccountNotFoundError } from '~/finance/accounts/domain/errors/account-not-found.error';
+import { SameAccountTransferError } from '~/finance/transfers/domain/errors/same-account-transfer.error';
 import { CreateTransferTool } from '~/agent/tools/transfers/create-transfer.tool';
 
 const CTX = { userId: 'user-1', requestId: 'req-1' };

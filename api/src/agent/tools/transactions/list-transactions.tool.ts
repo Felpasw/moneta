@@ -4,8 +4,8 @@ import type {
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { ListTransactionsUseCase } from '../../../transactions/application/use-cases/list-transactions.use-case';
-import { listTransactionsSchema } from '../../../transactions/dto/list-transactions.dto';
+import { ListTransactionsUseCase } from '../../../finance/transactions/application/use-cases/list-transactions.use-case';
+import { listTransactionsSchema } from '../../../finance/transactions/dto/list-transactions.dto';
 
 @RegisterAssistantTool()
 export class ListTransactionsTool implements AssistantTool {

@@ -1,4 +1,4 @@
-import { TransactionType } from '~/transactions/domain/constants/transaction-type';
+import { TransactionType } from '~/finance/transactions/domain/constants/transaction-type';
 import { ListTransactionsTool } from '~/agent/tools/transactions/list-transactions.tool';
 
 const CTX = { userId: 'user-1', requestId: 'req-1' };

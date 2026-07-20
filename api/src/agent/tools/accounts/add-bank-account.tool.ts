@@ -4,9 +4,9 @@ import type {
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { AddBankAccountUseCase } from '../../../accounts/application/use-cases/add-bank-account.use-case';
-import { InvalidCreditCardConfigError } from '../../../accounts/domain/errors/invalid-credit-card-config.error';
-import { addBankAccountSchema } from '../../../accounts/dto/add-bank-account.dto';
+import { AddBankAccountUseCase } from '../../../finance/accounts/application/use-cases/add-bank-account.use-case';
+import { InvalidCreditCardConfigError } from '../../../finance/accounts/domain/errors/invalid-credit-card-config.error';
+import { addBankAccountSchema } from '../../../finance/accounts/dto/add-bank-account.dto';
 
 @RegisterAssistantTool()
 export class AddBankAccountTool implements AssistantTool {

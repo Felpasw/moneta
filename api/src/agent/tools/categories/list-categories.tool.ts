@@ -4,7 +4,7 @@ import type {
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { ListCategoriesUseCase } from '../../../categories/application/use-cases/list-categories.use-case';
+import { ListCategoriesUseCase } from '../../../finance/categories/application/use-cases/list-categories.use-case';
 
 @RegisterAssistantTool()
 export class ListCategoriesTool implements AssistantTool {

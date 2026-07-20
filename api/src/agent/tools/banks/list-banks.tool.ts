@@ -3,7 +3,7 @@ import type {
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { ListBanksUseCase } from '../../../banks/application/use-cases/list-banks.use-case';
+import { ListBanksUseCase } from '../../../finance/banks/application/use-cases/list-banks.use-case';
 
 @RegisterAssistantTool()
 export class ListBanksTool implements AssistantTool {

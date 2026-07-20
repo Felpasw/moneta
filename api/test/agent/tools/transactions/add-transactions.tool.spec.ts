@@ -1,5 +1,5 @@
-import { AccountNotFoundError } from '~/accounts/domain/errors/account-not-found.error';
-import { TransactionType } from '~/transactions/domain/constants/transaction-type';
+import { AccountNotFoundError } from '~/finance/accounts/domain/errors/account-not-found.error';
+import { TransactionType } from '~/finance/transactions/domain/constants/transaction-type';
 import { AddTransactionsTool } from '~/agent/tools/transactions/add-transactions.tool';
 
 const CTX = { userId: 'user-1', requestId: 'req-1' };

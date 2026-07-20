@@ -6,8 +6,8 @@ import type {
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { DeleteTransferUseCase } from '../../../transfers/application/use-cases/delete-transfer.use-case';
-import { TransferNotFoundError } from '../../../transfers/domain/errors/transfer-not-found.error';
+import { DeleteTransferUseCase } from '../../../finance/transfers/application/use-cases/delete-transfer.use-case';
+import { TransferNotFoundError } from '../../../finance/transfers/domain/errors/transfer-not-found.error';
 
 const inputSchema = z.object({ id: z.uuid() });
 

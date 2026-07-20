@@ -1,15 +1,15 @@
 import { z } from 'zod';
 
-import { AccountNotFoundError } from '../../../accounts/domain/errors/account-not-found.error';
+import { AccountNotFoundError } from '../../../finance/accounts/domain/errors/account-not-found.error';
 import type {
   AssistantContext,
   AssistantTool,
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { EditManyTransactionsUseCase } from '../../../transactions/application/use-cases/edit-many-transactions.use-case';
-import { TransactionNotFoundError } from '../../../transactions/domain/errors/transaction-not-found.error';
-import { editTransactionSchema } from '../../../transactions/dto/edit-transaction.dto';
+import { EditManyTransactionsUseCase } from '../../../finance/transactions/application/use-cases/edit-many-transactions.use-case';
+import { TransactionNotFoundError } from '../../../finance/transactions/domain/errors/transaction-not-found.error';
+import { editTransactionSchema } from '../../../finance/transactions/dto/edit-transaction.dto';
 
 const itemSchema = editTransactionSchema.extend({ id: z.uuid() });
 

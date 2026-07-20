@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
-import { AccountNotFoundError } from '../../../accounts/domain/errors/account-not-found.error';
+import { AccountNotFoundError } from '../../../finance/accounts/domain/errors/account-not-found.error';
 import type {
   AssistantContext,
   AssistantTool,
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { AddManyTransactionsUseCase } from '../../../transactions/application/use-cases/add-many-transactions.use-case';
-import { addTransactionSchema } from '../../../transactions/dto/add-transaction.dto';
+import { AddManyTransactionsUseCase } from '../../../finance/transactions/application/use-cases/add-many-transactions.use-case';
+import { addTransactionSchema } from '../../../finance/transactions/dto/add-transaction.dto';
 
 const inputSchema = z.object({
   transactions: z.array(addTransactionSchema).min(1).max(50),

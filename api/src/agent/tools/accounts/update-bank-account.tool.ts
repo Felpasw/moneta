@@ -6,9 +6,9 @@ import type {
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { UpdateBankAccountUseCase } from '../../../accounts/application/use-cases/update-bank-account.use-case';
-import { AccountNotFoundError } from '../../../accounts/domain/errors/account-not-found.error';
-import { updateBankAccountSchema } from '../../../accounts/dto/update-bank-account.dto';
+import { UpdateBankAccountUseCase } from '../../../finance/accounts/application/use-cases/update-bank-account.use-case';
+import { AccountNotFoundError } from '../../../finance/accounts/domain/errors/account-not-found.error';
+import { updateBankAccountSchema } from '../../../finance/accounts/dto/update-bank-account.dto';
 
 const inputSchema = updateBankAccountSchema.extend({ id: z.uuid() });
 

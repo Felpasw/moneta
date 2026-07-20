@@ -1,12 +1,12 @@
-import { AccountNotFoundError } from '../../../accounts/domain/errors/account-not-found.error';
+import { AccountNotFoundError } from '../../../finance/accounts/domain/errors/account-not-found.error';
 import type {
   AssistantContext,
   AssistantTool,
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { AddTransactionUseCase } from '../../../transactions/application/use-cases/add-transaction.use-case';
-import { addTransactionSchema } from '../../../transactions/dto/add-transaction.dto';
+import { AddTransactionUseCase } from '../../../finance/transactions/application/use-cases/add-transaction.use-case';
+import { addTransactionSchema } from '../../../finance/transactions/dto/add-transaction.dto';
 
 @RegisterAssistantTool()
 export class AddTransactionTool implements AssistantTool {

@@ -1,5 +1,5 @@
 import { UpdateBankAccountTool } from '~/agent/tools/accounts/update-bank-account.tool';
-import { AccountNotFoundError } from '~/accounts/domain/errors/account-not-found.error';
+import { AccountNotFoundError } from '~/finance/accounts/domain/errors/account-not-found.error';
 
 const CTX = { userId: 'user-1', requestId: 'req-1' };
 const ACCOUNT_ID = 'a4b1c1e0-0000-4000-8000-000000000002';

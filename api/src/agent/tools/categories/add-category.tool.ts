@@ -4,8 +4,8 @@ import type {
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { AddCategoryUseCase } from '../../../categories/application/use-cases/add-category.use-case';
-import { addCategorySchema } from '../../../categories/dto/add-category.dto';
+import { AddCategoryUseCase } from '../../../finance/categories/application/use-cases/add-category.use-case';
+import { addCategorySchema } from '../../../finance/categories/dto/add-category.dto';
 
 @RegisterAssistantTool()
 export class AddCategoryTool implements AssistantTool {

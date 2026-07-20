@@ -1,5 +1,5 @@
 import { RenameCategoryTool } from '~/agent/tools/categories/rename-category.tool';
-import { CategoryNotFoundError } from '~/categories/domain/errors/category-not-found.error';
+import { CategoryNotFoundError } from '~/finance/categories/domain/errors/category-not-found.error';
 
 const CTX = { userId: 'user-1', requestId: 'req-1' };
 const CATEGORY_ID = 'b4b1c1e0-0000-4000-8000-000000000003';

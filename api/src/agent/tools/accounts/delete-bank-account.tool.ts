@@ -6,8 +6,8 @@ import type {
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { DeleteBankAccountUseCase } from '../../../accounts/application/use-cases/delete-bank-account.use-case';
-import { AccountNotFoundError } from '../../../accounts/domain/errors/account-not-found.error';
+import { DeleteBankAccountUseCase } from '../../../finance/accounts/application/use-cases/delete-bank-account.use-case';
+import { AccountNotFoundError } from '../../../finance/accounts/domain/errors/account-not-found.error';
 
 const inputSchema = z.object({ id: z.uuid() });
 

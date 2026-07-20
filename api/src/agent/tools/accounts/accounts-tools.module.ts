@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { AccountsModule } from '../../../accounts/accounts.module';
+import { AccountsModule } from '../../../finance/accounts/accounts.module';
 import { AddBankAccountTool } from './add-bank-account.tool';
 import { DeleteBankAccountTool } from './delete-bank-account.tool';
 import { ListMyAccountsTool } from './list-my-accounts.tool';

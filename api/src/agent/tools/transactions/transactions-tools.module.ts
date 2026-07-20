@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { TransactionsModule } from '../../../transactions/transactions.module';
+import { TransactionsModule } from '../../../finance/transactions/transactions.module';
 import { AddTransactionTool } from './add-transaction.tool';
 import { AddTransactionsTool } from './add-transactions.tool';
 import { DeleteTransactionTool } from './delete-transaction.tool';

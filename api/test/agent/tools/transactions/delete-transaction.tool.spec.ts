@@ -1,4 +1,4 @@
-import { TransactionNotFoundError } from '~/transactions/domain/errors/transaction-not-found.error';
+import { TransactionNotFoundError } from '~/finance/transactions/domain/errors/transaction-not-found.error';
 import { DeleteTransactionTool } from '~/agent/tools/transactions/delete-transaction.tool';
 
 const CTX = { userId: 'user-1', requestId: 'req-1' };

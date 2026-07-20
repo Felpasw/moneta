@@ -6,8 +6,8 @@ import type {
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { DeleteCategoryUseCase } from '../../../categories/application/use-cases/delete-category.use-case';
-import { CategoryNotFoundError } from '../../../categories/domain/errors/category-not-found.error';
+import { DeleteCategoryUseCase } from '../../../finance/categories/application/use-cases/delete-category.use-case';
+import { CategoryNotFoundError } from '../../../finance/categories/domain/errors/category-not-found.error';
 
 const inputSchema = z.object({ id: z.uuid() });
 

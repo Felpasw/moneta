@@ -6,8 +6,8 @@ import type {
   AssistantToolResult,
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
-import { DeleteTransactionUseCase } from '../../../transactions/application/use-cases/delete-transaction.use-case';
-import { TransactionNotFoundError } from '../../../transactions/domain/errors/transaction-not-found.error';
+import { DeleteTransactionUseCase } from '../../../finance/transactions/application/use-cases/delete-transaction.use-case';
+import { TransactionNotFoundError } from '../../../finance/transactions/domain/errors/transaction-not-found.error';
 
 const inputSchema = z.object({ id: z.uuid() });
 
