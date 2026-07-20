@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { AccountsModule } from './accounts/accounts.module';
 import { BanksModule } from './banks/banks.module';
+import { CardBillingModule } from './card-billing/card-billing.module';
 import { CategoriesModule } from './categories/categories.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { TransfersModule } from './transfers/transfers.module';
@@ -11,6 +12,7 @@ import { TransfersModule } from './transfers/transfers.module';
     BanksModule,
     AccountsModule,
     CategoriesModule,
+    CardBillingModule,
     TransactionsModule,
     TransfersModule,
   ],
@@ -18,6 +20,7 @@ import { TransfersModule } from './transfers/transfers.module';
     BanksModule,
     AccountsModule,
     CategoriesModule,
+    CardBillingModule,
     TransactionsModule,
     TransfersModule,
   ],
