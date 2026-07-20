@@ -294,4 +294,145 @@ describe('PrismaTransactionsRepository', () => {
       );
     });
   });
+
+  describe('addMany', () => {
+    it('runs all adds inside a single $transaction and returns them in order', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.create
+        .mockResolvedValueOnce({
+          id: 't-1',
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: null,
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(10),
+          description: null,
+          occurredAt: new Date(),
+        })
+        .mockResolvedValueOnce({
+          id: 't-2',
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: null,
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(25),
+          description: null,
+          occurredAt: new Date(),
+        });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const result = await repo.addMany([
+        {
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: 10,
+          occurredAt: new Date(),
+        },
+        {
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: 25,
+          occurredAt: new Date(),
+        },
+      ]);
+
+      expect(result.map((r) => r.id)).toEqual(['t-1', 't-2']);
+      expect(tx.userBankAccount.updateMany).toHaveBeenCalledTimes(2);
+      expect(tx.transaction.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('aborts the batch when any item references an unowned account (Prisma rolls back)', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany
+        .mockResolvedValueOnce({ count: 1 })
+        .mockResolvedValueOnce({ count: 0 });
+      tx.transaction.create.mockResolvedValueOnce({
+        id: 't-1',
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        categoryId: null,
+        invoiceId: null,
+        type: TransactionType.Expense,
+        amount: decimal(10),
+        description: null,
+        occurredAt: new Date(),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await expect(
+        repo.addMany([
+          {
+            userId: CURRENT_USER,
+            accountId: ACCOUNT_A,
+            type: TransactionType.Expense,
+            amount: 10,
+            occurredAt: new Date(),
+          },
+          {
+            userId: CURRENT_USER,
+            accountId: 'foreign',
+            type: TransactionType.Expense,
+            amount: 25,
+            occurredAt: new Date(),
+          },
+        ]),
+      ).rejects.toBeInstanceOf(AccountNotFoundError);
+    });
+  });
+
+  describe('editMany', () => {
+    it('applies each edit inside the same $transaction', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst
+        .mockResolvedValueOnce({
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: decimal(40),
+        })
+        .mockResolvedValueOnce({
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: decimal(20),
+        });
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.update
+        .mockResolvedValueOnce({
+          id: 't-1',
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: null,
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(50),
+          description: null,
+          occurredAt: new Date(),
+        })
+        .mockResolvedValueOnce({
+          id: 't-2',
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: 'cat-1',
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(20),
+          description: null,
+          occurredAt: new Date(),
+        });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const result = await repo.editMany([
+        { id: 't-1', userId: CURRENT_USER, amount: 50 },
+        { id: 't-2', userId: CURRENT_USER, categoryId: 'cat-1' },
+      ]);
+
+      expect(result.map((r) => r.id)).toEqual(['t-1', 't-2']);
+      expect(tx.transaction.findFirst).toHaveBeenCalledTimes(2);
+      expect(tx.transaction.update).toHaveBeenCalledTimes(2);
+    });
+  });
 });

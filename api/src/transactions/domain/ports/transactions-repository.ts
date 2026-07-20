@@ -49,7 +49,9 @@ export interface ListTransactionsFilters {
 
 export interface TransactionsRepository {
   add(input: AddTransactionInput): Promise<Transaction>;
+  addMany(inputs: AddTransactionInput[]): Promise<Transaction[]>;
   edit(input: EditTransactionInput): Promise<Transaction>;
+  editMany(inputs: EditTransactionInput[]): Promise<Transaction[]>;
   delete(id: string, userId: string): Promise<void>;
   list(filters: ListTransactionsFilters): Promise<Transaction[]>;
 }

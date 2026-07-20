@@ -35,89 +35,41 @@ const toDomain = (row: PrismaTransactionRow): Transaction => ({
   amount: row.amount.toNumber(),
 });
 
+type TxClient = Parameters<
+  Parameters<PrismaService['$transaction']>[0] extends (tx: infer T) => unknown
+    ? (tx: T) => void
+    : never
+>[0];
+
 @Injectable()
 export class PrismaTransactionsRepository implements TransactionsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async add(input: AddTransactionInput): Promise<Transaction> {
+    return this.prisma.$transaction((tx) => this.addWithinTx(tx, input));
+  }
+
+  async addMany(inputs: AddTransactionInput[]): Promise<Transaction[]> {
     return this.prisma.$transaction(async (tx) => {
-      const delta = signedAmount(input.type, input.amount);
-      const balanceUpdate = await tx.userBankAccount.updateMany({
-        where: { id: input.accountId, userId: input.userId },
-        data: { balance: { increment: delta } },
-      });
-      if (balanceUpdate.count === 0) {
-        throw new AccountNotFoundError(input.accountId);
+      const results: Transaction[] = [];
+      for (const input of inputs) {
+        results.push(await this.addWithinTx(tx, input));
       }
-      const row = await tx.transaction.create({
-        data: {
-          userId: input.userId,
-          accountId: input.accountId,
-          categoryId: input.categoryId,
-          type: input.type,
-          amount: input.amount,
-          description: input.description,
-          occurredAt: input.occurredAt,
-        },
-        select: TRANSACTION_SELECT,
-      });
-      return toDomain(row);
+      return results;
     });
   }
 
   async edit(input: EditTransactionInput): Promise<Transaction> {
+    return this.prisma.$transaction((tx) => this.editWithinTx(tx, input));
+  }
+
+  async editMany(inputs: EditTransactionInput[]): Promise<Transaction[]> {
     return this.prisma.$transaction(async (tx) => {
-      const current = await tx.transaction.findFirst({
-        where: { id: input.id, userId: input.userId },
-        select: { accountId: true, type: true, amount: true },
-      });
-      if (!current) {
-        throw new TransactionNotFoundError(input.id);
+      const results: Transaction[] = [];
+      for (const input of inputs) {
+        results.push(await this.editWithinTx(tx, input));
       }
-
-      const currentAmount = current.amount.toNumber();
-      const currentType = current.type as TransactionType;
-      const newType = input.type ?? currentType;
-      const newAmount = input.amount ?? currentAmount;
-      const newAccountId = input.accountId ?? current.accountId;
-      const oldEffect = signedAmount(currentType, currentAmount);
-      const newEffect = signedAmount(newType, newAmount);
-
-      if (newAccountId === current.accountId) {
-        const delta = newEffect - oldEffect;
-        if (delta !== 0) {
-          await tx.userBankAccount.updateMany({
-            where: { id: current.accountId, userId: input.userId },
-            data: { balance: { increment: delta } },
-          });
-        }
-      } else {
-        await tx.userBankAccount.updateMany({
-          where: { id: current.accountId, userId: input.userId },
-          data: { balance: { increment: 0 - oldEffect } },
-        });
-        const newAccountUpdate = await tx.userBankAccount.updateMany({
-          where: { id: newAccountId, userId: input.userId },
-          data: { balance: { increment: newEffect } },
-        });
-        if (newAccountUpdate.count === 0) {
-          throw new AccountNotFoundError(newAccountId);
-        }
-      }
-
-      const row = await tx.transaction.update({
-        where: { id: input.id },
-        data: {
-          accountId: input.accountId,
-          type: input.type,
-          amount: input.amount,
-          categoryId: input.categoryId,
-          description: input.description,
-          occurredAt: input.occurredAt,
-        },
-        select: TRANSACTION_SELECT,
-      });
-      return toDomain(row);
+      return results;
     });
   }
 
@@ -166,5 +118,89 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       select: TRANSACTION_SELECT,
     });
     return rows.map(toDomain);
+  }
+
+  private async addWithinTx(
+    tx: TxClient,
+    input: AddTransactionInput,
+  ): Promise<Transaction> {
+    const delta = signedAmount(input.type, input.amount);
+    const balanceUpdate = await tx.userBankAccount.updateMany({
+      where: { id: input.accountId, userId: input.userId },
+      data: { balance: { increment: delta } },
+    });
+    if (balanceUpdate.count === 0) {
+      throw new AccountNotFoundError(input.accountId);
+    }
+    const row = await tx.transaction.create({
+      data: {
+        userId: input.userId,
+        accountId: input.accountId,
+        categoryId: input.categoryId,
+        type: input.type,
+        amount: input.amount,
+        description: input.description,
+        occurredAt: input.occurredAt,
+      },
+      select: TRANSACTION_SELECT,
+    });
+    return toDomain(row);
+  }
+
+  private async editWithinTx(
+    tx: TxClient,
+    input: EditTransactionInput,
+  ): Promise<Transaction> {
+    const current = await tx.transaction.findFirst({
+      where: { id: input.id, userId: input.userId },
+      select: { accountId: true, type: true, amount: true },
+    });
+    if (!current) {
+      throw new TransactionNotFoundError(input.id);
+    }
+
+    const currentAmount = current.amount.toNumber();
+    const currentType = current.type as TransactionType;
+    const newType = input.type ?? currentType;
+    const newAmount = input.amount ?? currentAmount;
+    const newAccountId = input.accountId ?? current.accountId;
+    const oldEffect = signedAmount(currentType, currentAmount);
+    const newEffect = signedAmount(newType, newAmount);
+
+    if (newAccountId === current.accountId) {
+      const delta = newEffect - oldEffect;
+      if (delta !== 0) {
+        await tx.userBankAccount.updateMany({
+          where: { id: current.accountId, userId: input.userId },
+          data: { balance: { increment: delta } },
+        });
+      }
+    } else {
+      await tx.userBankAccount.updateMany({
+        where: { id: current.accountId, userId: input.userId },
+        data: { balance: { increment: 0 - oldEffect } },
+      });
+      const newAccountUpdate = await tx.userBankAccount.updateMany({
+        where: { id: newAccountId, userId: input.userId },
+        data: { balance: { increment: newEffect } },
+      });
+      if (newAccountUpdate.count === 0) {
+        throw new AccountNotFoundError(newAccountId);
+      }
+    }
+
+    const row = await tx.transaction.update({
+      where: { id: input.id },
+      data: {
+        accountId: input.accountId,
+        type: input.type,
+        amount: input.amount,
+        categoryId: input.categoryId,
+        description: input.description,
+        occurredAt: input.occurredAt,
+      },
+      select: TRANSACTION_SELECT,
+    });
+    return toDomain(row);
   }
 }

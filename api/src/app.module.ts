@@ -17,6 +17,7 @@ import { HealthController } from './health/health.controller';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { ToolsModule } from './tools/tools.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { TransactionsToolsModule } from './transactions/tools/transactions-tools.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -36,6 +37,7 @@ import { UsersModule } from './users/users.module';
     CategoriesModule,
     CategoriesToolsModule,
     TransactionsModule,
+    TransactionsToolsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
