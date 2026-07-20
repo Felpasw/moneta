@@ -34,6 +34,11 @@ export interface EditTransactionInput {
   categoryId?: string | null;
   description?: string | null;
   occurredAt?: Date;
+  // Target invoice for the edited transaction. Computed by the use-case:
+  //   null   → detach any invoice (card→debit move, or the edit stays on a debit)
+  //   string → attach to this invoice (card scenario, may equal current invoice or a different one)
+  //   undefined (legacy) → repo does not touch invoice_id, leaves current state as-is
+  newInvoiceId?: string | null;
 }
 
 export interface ListTransactionsFilters {
@@ -54,5 +59,6 @@ export interface TransactionsRepository {
   edit(input: EditTransactionInput): Promise<Transaction>;
   editMany(inputs: EditTransactionInput[]): Promise<Transaction[]>;
   delete(id: string, userId: string): Promise<void>;
+  findById(id: string, userId: string): Promise<Transaction | null>;
   list(filters: ListTransactionsFilters): Promise<Transaction[]>;
 }

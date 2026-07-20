@@ -20,7 +20,7 @@ export const listTransactionsSchema = z.object({
   accountIds: asArray(z.uuid()).optional(),
   categoryIds: asArray(z.uuid()).optional(),
   types: asArray(z.enum(TransactionType)).optional(),
-  textSearch: z.string().max(255).optional(),
+  textSearch: z.string().min(1).max(255).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });

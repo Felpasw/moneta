@@ -101,23 +101,26 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
     });
   }
 
+  async findById(id: string, userId: string): Promise<Transaction | null> {
+    const row = await this.prisma.transaction.findFirst({
+      where: { id, userId },
+      select: TRANSACTION_SELECT,
+    });
+    return row ? toDomain(row) : null;
+  }
+
   async list(filters: ListTransactionsFilters): Promise<Transaction[]> {
-    const dateRange =
-      filters.dateFrom || filters.dateTo
-        ? { gte: filters.dateFrom, lte: filters.dateTo }
-        : undefined;
     const rows = await this.prisma.transaction.findMany({
       where: {
         userId: filters.userId,
-        occurredAt: dateRange,
-        accountId: filters.accountIds ? { in: filters.accountIds } : undefined,
-        categoryId: filters.categoryIds
-          ? { in: filters.categoryIds }
-          : undefined,
-        type: filters.types ? { in: filters.types } : undefined,
-        description: filters.textSearch
-          ? { contains: filters.textSearch, mode: 'insensitive' }
-          : undefined,
+        occurredAt: { gte: filters.dateFrom, lte: filters.dateTo },
+        accountId: filters.accountIds && { in: filters.accountIds },
+        categoryId: filters.categoryIds && { in: filters.categoryIds },
+        type: filters.types && { in: filters.types },
+        description: filters.textSearch && {
+          contains: filters.textSearch,
+          mode: 'insensitive',
+        },
       },
       orderBy: { occurredAt: 'desc' },
       take: filters.limit,
@@ -169,7 +172,12 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
   ): Promise<Transaction> {
     const current = await tx.transaction.findFirst({
       where: { id: input.id, userId: input.userId },
-      select: { accountId: true, type: true, amount: true },
+      select: {
+        accountId: true,
+        type: true,
+        amount: true,
+        invoiceId: true,
+      },
     });
     if (!current) {
       throw new TransactionNotFoundError(input.id);
@@ -205,6 +213,38 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       }
     }
 
+    if (input.newInvoiceId !== undefined) {
+      const oldInvoiceId = current.invoiceId ?? null;
+      const finalInvoiceId = input.newInvoiceId;
+      // invoice.total_amount tracks what the user owes:
+      // Add's contribution was -signedAmount, so revert = +signedAmount (=oldEffect)
+      // and re-apply on the target = -newSignedAmount (=-newEffect)
+      const sameInvoice =
+        oldInvoiceId !== null && oldInvoiceId === finalInvoiceId;
+      if (sameInvoice) {
+        const invoiceDelta = oldEffect - newEffect;
+        if (invoiceDelta !== 0) {
+          await tx.creditCardInvoice.updateMany({
+            where: { id: oldInvoiceId },
+            data: { totalAmount: { increment: invoiceDelta } },
+          });
+        }
+      } else {
+        if (oldInvoiceId !== null) {
+          await tx.creditCardInvoice.updateMany({
+            where: { id: oldInvoiceId },
+            data: { totalAmount: { increment: oldEffect } },
+          });
+        }
+        if (finalInvoiceId !== null) {
+          await tx.creditCardInvoice.updateMany({
+            where: { id: finalInvoiceId },
+            data: { totalAmount: { increment: -newEffect } },
+          });
+        }
+      }
+    }
+
     const row = await tx.transaction.update({
       where: { id: input.id },
       data: {
@@ -214,6 +254,7 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
         categoryId: input.categoryId,
         description: input.description,
         occurredAt: input.occurredAt,
+        invoiceId: input.newInvoiceId,
       },
       select: TRANSACTION_SELECT,
     });

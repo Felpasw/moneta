@@ -88,23 +88,14 @@ export class PrismaTransfersRepository implements TransfersRepository {
   }
 
   async list(filters: ListTransfersFilters): Promise<Transfer[]> {
-    const dateRange =
-      filters.dateFrom || filters.dateTo
-        ? { gte: filters.dateFrom, lte: filters.dateTo }
-        : undefined;
-    const accountFilter = filters.accountIds
-      ? {
-          OR: [
-            { fromAccountId: { in: filters.accountIds } },
-            { toAccountId: { in: filters.accountIds } },
-          ],
-        }
-      : {};
     const rows = await this.prisma.transfer.findMany({
       where: {
         userId: filters.userId,
-        occurredAt: dateRange,
-        ...accountFilter,
+        occurredAt: { gte: filters.dateFrom, lte: filters.dateTo },
+        OR: filters.accountIds && [
+          { fromAccountId: { in: filters.accountIds } },
+          { toAccountId: { in: filters.accountIds } },
+        ],
       },
       orderBy: { occurredAt: 'desc' },
       take: filters.limit,
