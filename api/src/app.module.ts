@@ -18,6 +18,8 @@ import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { ToolsModule } from './tools/tools.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { TransactionsToolsModule } from './transactions/tools/transactions-tools.module';
+import { TransfersModule } from './transfers/transfers.module';
+import { TransfersToolsModule } from './transfers/tools/transfers-tools.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -38,6 +40,8 @@ import { UsersModule } from './users/users.module';
     CategoriesToolsModule,
     TransactionsModule,
     TransactionsToolsModule,
+    TransfersModule,
+    TransfersToolsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
