@@ -67,4 +67,15 @@ export class PrismaInvoicesRepository implements InvoicesRepository {
     });
     return row ? toDomain(row) : null;
   }
+
+  async findByAccountAndCycle(
+    accountId: string,
+    cycleStart: Date,
+  ): Promise<Invoice | null> {
+    const row = await this.prisma.creditCardInvoice.findFirst({
+      where: { accountId, cycleStart },
+      select: INVOICE_SELECT,
+    });
+    return row ? toDomain(row) : null;
+  }
 }

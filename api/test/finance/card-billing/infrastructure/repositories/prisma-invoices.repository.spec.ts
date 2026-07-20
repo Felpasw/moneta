@@ -128,4 +128,37 @@ describe('PrismaInvoicesRepository', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('findByAccountAndCycle', () => {
+    it('queries by the unique (accountId, cycleStart) tuple', async () => {
+      const { prisma, root } = buildPrisma();
+      const cycleStart = new Date('2026-07-11T00:00:00Z');
+      root.creditCardInvoice.findFirst.mockResolvedValue(
+        invoiceRow({ cycleStart }),
+      );
+      const repo = new PrismaInvoicesRepository(prisma);
+
+      const result = await repo.findByAccountAndCycle(ACCOUNT_ID, cycleStart);
+
+      expect(root.creditCardInvoice.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { accountId: ACCOUNT_ID, cycleStart },
+        }),
+      );
+      expect(result?.id).toBe(INVOICE_ID);
+    });
+
+    it('returns null when no invoice matches that cycle', async () => {
+      const { prisma, root } = buildPrisma();
+      root.creditCardInvoice.findFirst.mockResolvedValue(null);
+      const repo = new PrismaInvoicesRepository(prisma);
+
+      const result = await repo.findByAccountAndCycle(
+        ACCOUNT_ID,
+        new Date('2026-07-11T00:00:00Z'),
+      );
+
+      expect(result).toBeNull();
+    });
+  });
 });

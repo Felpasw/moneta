@@ -25,4 +25,8 @@ export interface CreateInvoiceInput {
 export interface InvoicesRepository {
   create(input: CreateInvoiceInput): Promise<Invoice>;
   findOpenForAccount(accountId: string): Promise<Invoice | null>;
+  findByAccountAndCycle(
+    accountId: string,
+    cycleStart: Date,
+  ): Promise<Invoice | null>;
 }
