@@ -77,7 +77,7 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
     return this.prisma.$transaction(async (tx) => {
       const current = await tx.transaction.findFirst({
         where: { id, userId },
-        select: { accountId: true, type: true, amount: true },
+        select: { accountId: true, type: true, amount: true, invoiceId: true },
       });
       if (!current) {
         throw new TransactionNotFoundError(id);
@@ -90,6 +90,13 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
         where: { id: current.accountId, userId },
         data: { balance: { increment: 0 - oldEffect } },
       });
+      if (current.invoiceId !== null) {
+        // reverse the invoice.total_amount contribution (opposite of Add)
+        await tx.creditCardInvoice.updateMany({
+          where: { id: current.invoiceId },
+          data: { totalAmount: { increment: oldEffect } },
+        });
+      }
       await tx.transaction.delete({ where: { id } });
     });
   }
