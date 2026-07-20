@@ -25,6 +25,7 @@ model User {
   categories         Category[]
   transactions       Transaction[]
   transfers          Transfer[]
+  installmentGroups  InstallmentGroup[]
 
   @@map("users")
 }
@@ -198,10 +199,11 @@ model UserBankAccount {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   bank Bank @relation(fields: [bankId], references: [id], onDelete: Restrict)
 
-  transactions  Transaction[]
-  transfersFrom Transfer[]          @relation("TransferFromAccount")
-  transfersTo   Transfer[]          @relation("TransferToAccount")
-  invoices      CreditCardInvoice[]
+  transactions      Transaction[]
+  transfersFrom     Transfer[]          @relation("TransferFromAccount")
+  transfersTo       Transfer[]          @relation("TransferToAccount")
+  invoices          CreditCardInvoice[]
+  installmentGroups InstallmentGroup[]
 
   @@index([userId])
   @@index([bankId])
@@ -217,35 +219,40 @@ model Category {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  user              User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+  installmentGroups InstallmentGroup[]
 
   @@index([userId])
   @@map("categories")
 }
 
 model Transaction {
-  id          String          @id @default(uuid()) @db.Uuid
-  userId      String          @map("user_id") @db.Uuid
-  accountId   String          @map("account_id") @db.Uuid
-  categoryId  String?         @map("category_id") @db.Uuid
-  invoiceId   String?         @map("invoice_id") @db.Uuid
-  type        TransactionType
-  amount      Decimal         @db.Decimal(15, 2)
-  description String?         @db.VarChar(255)
-  occurredAt  DateTime        @map("occurred_at") @db.Timestamptz
-  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  id                  String          @id @default(uuid()) @db.Uuid
+  userId              String          @map("user_id") @db.Uuid
+  accountId           String          @map("account_id") @db.Uuid
+  categoryId          String?         @map("category_id") @db.Uuid
+  invoiceId           String?         @map("invoice_id") @db.Uuid
+  installmentGroupId  String?         @map("installment_group_id") @db.Uuid
+  installmentNumber   Int?            @map("installment_number") @db.SmallInt
+  type                TransactionType
+  amount              Decimal         @db.Decimal(15, 2)
+  description         String?         @db.VarChar(255)
+  occurredAt          DateTime        @map("occurred_at") @db.Timestamptz
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz
 
-  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account  UserBankAccount    @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  category Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  invoice  CreditCardInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account          UserBankAccount    @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category         Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  invoice          CreditCardInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  installmentGroup InstallmentGroup?  @relation(fields: [installmentGroupId], references: [id], onDelete: Restrict)
 
   @@index([userId, occurredAt])
   @@index([accountId])
   @@index([categoryId])
   @@index([invoiceId])
+  @@index([installmentGroupId])
   @@map("transactions")
 }
 
@@ -295,4 +302,36 @@ model CreditCardInvoice {
   @@index([accountId, status])
   @@index([status])
   @@map("credit_card_invoices")
+}
+
+// Represents a purchase split into N installments on a credit card.
+// Materializes N Transaction rows (one per parcel), each linked back via
+// installmentGroupId + installmentNumber. Cancellation deletes them all
+// atomically via the app layer (see MNT-156).
+// Invariants enforced at DB level (deferred SQL): if either
+// installment_group_id OR installment_number is NOT NULL on transactions,
+// the other must be too; installments_count >= 2 (a single-parcel
+// "purchase" is a regular transaction, not an installment plan).
+model InstallmentGroup {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  accountId         String   @map("account_id") @db.Uuid
+  categoryId        String?  @map("category_id") @db.Uuid
+  totalAmount       Decimal  @map("total_amount") @db.Decimal(15, 2)
+  installmentsCount Int      @map("installments_count") @db.SmallInt
+  installmentAmount Decimal  @map("installment_amount") @db.Decimal(15, 2)
+  description       String?  @db.VarChar(255)
+  purchaseDate      DateTime @map("purchase_date") @db.Timestamptz
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  UserBankAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  installments Transaction[]
+
+  @@index([userId])
+  @@index([accountId])
+  @@map("installment_groups")
 }
