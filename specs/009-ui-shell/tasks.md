@@ -36,6 +36,7 @@ Referências cruzadas apontam pros specs backend correspondentes.
   - `/web/src/api.ts` — instância `axios` com `withCredentials: true` + interceptor de resposta pra 401/419
   - `/web/src/globals.ts` — `API_URL` e constantes de env
   - **Stack complementar**: `axios` + `@tanstack/react-query` + `react-hook-form` + `@hookform/resolvers` (zod). Sem estado global "manual" — TanStack Query é fonte única de verdade pros dados remotos, `userManager` (util) é o único ponto que persiste user localmente
+  - **Naming de arquivo**: **todo** componente React (`.tsx` que exporta JSX) usa **PascalCase** — incluindo os vendored pelo shadcn em `src/components/ui/*` (ex: `Button.tsx`, `DropdownMenu.tsx`, `RadioGroup.tsx`). Módulos/services/hooks/utils (`.ts` sem JSX) usam **camelCase** (ex: `queryClient.ts`, `useAuth.ts`, `userManager.ts`). Services e interfaces com escopo de domínio no filename usam ponto (`auth.service.ts`, `auth.interface.ts`). Next.js special files (`layout.tsx`, `page.tsx`, `middleware.ts`, `globals.css`) seguem o padrão do framework. **Atenção**: `shadcn add` cria arquivos em kebab-case por default — após rodar, renomear pra PascalCase (`git mv`) e ajustar imports internos entre os componentes recém-adicionados
 
 ## Depende de
 
