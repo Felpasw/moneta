@@ -1,7 +1,7 @@
 # UI shell e arquitetura de telas
 
 Casa canônica de **toda UI/frontend** do projeto. Includes:
-- MNT-98..MNT-111 (nativos)
+- MNT-98..MNT-111, MNT-193 (nativos)
 - MNT-51, MNT-63..MNT-64, MNT-66..MNT-70 (migradas de 003-assistant)
 - MNT-71, MNT-44 (migradas de 002-auth)
 - MNT-141..MNT-145 (migradas de 004-transactions)
@@ -23,6 +23,19 @@ Referências cruzadas apontam pros specs backend correspondentes.
   - `middleware.ts` decide o grupo baseado na sessão.
 - **shadcn/ui** como base (MNT-71). Componentes: `Tabs`, `Sheet`, `Card`, `Skeleton`, `Sonner`, `Dialog`, `Dropdown`, `Avatar`, `Button`.
 - **Empty states não são opcionais** — toda lista/grid tem um estado vazio explícito com CTA (geralmente "peça pelo chat").
+- **Padrão de estrutura e contratos**: `/web` espelha o layout de `../selling-front-master` (referência local ao lado do repo) — mesma organização de pastas e mesmos contratos de camadas. **Única diferença: UI usa `shadcn/ui`, não HeroUI**. Toast via `sonner` (do shadcn) no lugar de `@heroui/toast`. Layout:
+  - `/web/src/app/` — App Router com route groups `(auth)/` e `(app)/`, `providers.tsx` (agrupa `QueryClientProvider` + tema + `<Toaster />`) e `layout.tsx` root
+  - `/web/src/services/<dominio>.service.ts` — classe `implements I<Dominio>Service`; usa o `api` (axios) singleton; encapsula chamadas HTTP e dispara toast de sucesso/erro
+  - `/web/src/services/interfaces/<dominio>.interface.ts` — DTOs de request/response + interface do service
+  - `/web/src/hooks/use<Dominio>.ts` — TanStack Query (`useQuery`/`useMutation`) consumindo os services; `queryKey` factory por domínio (ex: `authKeys.profile()`); invalida/seta cache no `onSuccess`
+  - `/web/src/components/` — componentes compartilhados (não-página)
+  - `/web/src/lib/queryClient.ts` — `QueryClient` configurado (retry só em 5xx/408, `staleTime` 30s, `refetchOnWindowFocus: false`)
+  - `/web/src/utils/` — helpers puros (`errorHandler`, `formatters`, `userManager`)
+  - `/web/src/types/` — types globais
+  - `/web/src/config/` — config (fontes, etc)
+  - `/web/src/api.ts` — instância `axios` com `withCredentials: true` + interceptor de resposta pra 401/419
+  - `/web/src/globals.ts` — `API_URL` e constantes de env
+  - **Stack complementar**: `axios` + `@tanstack/react-query` + `react-hook-form` + `@hookform/resolvers` (zod). Sem estado global "manual" — TanStack Query é fonte única de verdade pros dados remotos, `userManager` (util) é o único ponto que persiste user localmente
 
 ## Depende de
 
@@ -31,6 +44,7 @@ Toda a UI listada aqui depende dos backends terminados nos specs abaixo. Bloquei
 | Item | Spec backend | Necessário pra |
 |------|--------------|----------------|
 | Auth JWT + refresh (Fase 1 do 002) | 002-auth | Middleware + rotas protegidas |
+| `POST /auth/signup` + `POST /auth/login` (MNT-13) | 002-auth | MNT-193 (páginas login/signup) |
 | `POST /auth/forgot` + `POST /auth/reset` (MNT-36) | 002-auth | MNT-44 (páginas forgot/reset password) |
 | Gateway WS `/agent/ws` (MNT-50) | 003-assistant | MNT-51 (client WS), MNT-101 (`/chat`) |
 | CRUD `/agent/profile` (MNT-61) | 003-assistant | MNT-66 (`/settings/assistant`), MNT-67 (wizard RPM) |
@@ -140,6 +154,7 @@ Pré-requisito de toda UI. Precisa acontecer **antes** de qualquer outra task de
 
 ## Fase 5 — Auth (UI) — migrada de 002-auth
 
+- [ ] **MNT-193** [T][S] Páginas `/login` e `/signup` em `/web/src/app/(auth)/` — casca principal da UI. Consomem `POST /auth/login` e `POST /auth/signup` (MNT-13). Segue **integralmente** o padrão descrito em "Decisões" (`services/auth.service.ts` + `services/interfaces/auth.interface.ts` + `hooks/useAuth.ts` com `useLogin`/`useRegister`/`useLogout`/`useGetProfile` via TanStack Query). Form via `react-hook-form` + zod resolver. UI com shadcn (`Card`, `Input`, `Label`, `Button`, `Form`). Toast de erro/sucesso via `sonner`. Link "Esqueci minha senha" já presente (aponta pra `/forgot-password` — página real vem no MNT-44). Redirect pós-sucesso pra `/` (middleware do MNT-99 depois cuida do desvio pra `/onboarding` quando `onboarded_at IS NULL`)
 - [ ] **MNT-44** [S] Web UI no `/web`: link "Esqueci minha senha" na tela de login; página `/forgot-password` com input de email e mensagem neutra pós-submit; página `/reset-password?token=...` com form de nova senha + confirmação. Consome `POST /auth/forgot` e `POST /auth/reset` (MNT-36 no `specs/002-auth`)
 
 ---
