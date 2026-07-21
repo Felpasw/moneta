@@ -1,4 +1,4 @@
-import type { TtsClient } from '~/agent/domain/ports/tts-client';
+import type { TtsService } from '~/agent/domain/ports/tts-service';
 
 import type {
   SpeakParams,
@@ -9,7 +9,7 @@ export class TtsPipeline {
   private current: AbortController | null = null;
 
   constructor(
-    private readonly tts: TtsClient,
+    private readonly tts: TtsService,
     private readonly listeners: TtsPipelineListeners,
   ) {}
 

@@ -1,1 +1,2 @@
-export const TTS_CLIENT = Symbol('TTS_CLIENT');
+export const TTS_SERVICE = Symbol('TTS_SERVICE');
+export const TTS_PROVIDER = Symbol('TTS_PROVIDER');

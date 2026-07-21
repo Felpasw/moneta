@@ -3,9 +3,9 @@ import { PreviewVoiceUseCase } from '~/agent/application/use-cases/preview-voice
 import { VOICE_PREVIEW_PHRASE_PT_BR } from '~/agent/domain/constants/voice-preview';
 import type {
   SynthesizeStreamParams,
-  TtsClient,
+  TtsService,
   TtsVoice,
-} from '~/agent/domain/ports/tts-client';
+} from '~/agent/domain/ports/tts-service';
 
 interface SynthCall {
   readonly voiceId: string;
@@ -15,11 +15,11 @@ interface SynthCall {
 const buildTts = (
   chunks: Buffer[] | Error,
 ): {
-  tts: TtsClient;
+  tts: TtsService;
   calls: SynthCall[];
 } => {
   const calls: SynthCall[] = [];
-  const tts: TtsClient = {
+  const tts: TtsService = {
     // eslint-disable-next-line @typescript-eslint/require-await
     async *synthesizeStream(params: SynthesizeStreamParams) {
       calls.push({ voiceId: params.voiceId, text: params.text });
@@ -96,7 +96,7 @@ describe('PreviewVoiceUseCase', () => {
   it('does not cache failures — a failed call is retried on the next execute', async () => {
     const clock = new FixedClock(initial);
     let attempt = 0;
-    const tts: TtsClient = {
+    const tts: TtsService = {
       // eslint-disable-next-line @typescript-eslint/require-await
       async *synthesizeStream() {
         attempt += 1;

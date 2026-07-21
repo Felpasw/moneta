@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import type { Clock } from '~/@common/domain/ports/clock';
 import { CLOCK } from '~/@common/domain/ports/clock';
-import type { TtsClient, TtsVoice } from '~/agent/domain/ports/tts-client';
-import { TTS_CLIENT } from '~/agent/infrastructure/tts/tts.tokens';
+import type { TtsService, TtsVoice } from '~/agent/domain/ports/tts-service';
+import { TTS_SERVICE } from '~/agent/infrastructure/tts/tts.tokens';
 
 import type { ListAvailableVoicesUseCaseOptions } from '~/agent/domain/types/list-available-voices';
 
@@ -20,7 +20,7 @@ export class ListAvailableVoicesUseCase {
   private readonly cacheTtlMs: number;
 
   constructor(
-    @Inject(TTS_CLIENT) private readonly tts: TtsClient,
+    @Inject(TTS_SERVICE) private readonly tts: TtsService,
     @Inject(CLOCK) private readonly clock: Clock,
     options: ListAvailableVoicesUseCaseOptions = {},
   ) {

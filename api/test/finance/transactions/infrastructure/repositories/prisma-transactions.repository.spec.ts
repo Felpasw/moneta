@@ -1,0 +1,736 @@
+import { Prisma } from '@prisma/client';
+
+import { AccountNotFoundError } from '~/finance/accounts/domain/errors/account-not-found.error';
+import type { PrismaService } from '~/infrastructure/prisma/prisma.service';
+import { TransactionType } from '~/finance/transactions/domain/constants/transaction-type';
+import { TransactionNotFoundError } from '~/finance/transactions/domain/errors/transaction-not-found.error';
+import { PrismaTransactionsRepository } from '~/finance/transactions/infrastructure/repositories/prisma-transactions.repository';
+
+interface MockTx {
+  transaction: {
+    findFirst: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+  };
+  userBankAccount: {
+    updateMany: jest.Mock;
+  };
+  creditCardInvoice: {
+    updateMany: jest.Mock;
+  };
+}
+
+const buildPrisma = (): { prisma: PrismaService; tx: MockTx } => {
+  const tx: MockTx = {
+    transaction: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    userBankAccount: {
+      updateMany: jest.fn(),
+    },
+    creditCardInvoice: {
+      updateMany: jest.fn(),
+    },
+  };
+  const $transaction = jest.fn((cb: (t: MockTx) => Promise<unknown>) => cb(tx));
+  const prisma = { $transaction } as unknown as PrismaService;
+  return { prisma, tx };
+};
+
+const decimal = (n: number): Prisma.Decimal => new Prisma.Decimal(n);
+
+const CURRENT_USER = 'user-1';
+const ACCOUNT_A = 'acc-a';
+const ACCOUNT_B = 'acc-b';
+const TRANSACTION_ID = 't-1';
+
+describe('PrismaTransactionsRepository', () => {
+  describe('add', () => {
+    it('decrements balance by the amount for expenses and creates the transaction', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.create.mockResolvedValue({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        categoryId: null,
+        invoiceId: null,
+        type: TransactionType.Expense,
+        amount: decimal(100),
+        description: null,
+        occurredAt: new Date('2026-07-15T12:00:00Z'),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const result = await repo.add({
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: 100,
+        occurredAt: new Date('2026-07-15T12:00:00Z'),
+      });
+
+      expect(tx.userBankAccount.updateMany).toHaveBeenCalledWith({
+        where: { id: ACCOUNT_A, userId: CURRENT_USER },
+        data: { balance: { increment: -100 } },
+      });
+      expect(result.amount).toBe(100);
+    });
+
+    it('increments balance by the amount for incomes', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.create.mockResolvedValue({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        categoryId: null,
+        invoiceId: null,
+        type: TransactionType.Income,
+        amount: decimal(200),
+        description: null,
+        occurredAt: new Date(),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.add({
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        type: TransactionType.Income,
+        amount: 200,
+        occurredAt: new Date(),
+      });
+
+      expect(tx.userBankAccount.updateMany).toHaveBeenCalledWith({
+        where: { id: ACCOUNT_A, userId: CURRENT_USER },
+        data: { balance: { increment: 200 } },
+      });
+    });
+
+    it('sets invoice_id and increments invoice.total_amount when invoiceId is provided (card expense)', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.creditCardInvoice.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.create.mockResolvedValue({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        categoryId: null,
+        invoiceId: 'inv-1',
+        type: TransactionType.Expense,
+        amount: decimal(100),
+        description: null,
+        occurredAt: new Date(),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.add({
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: 100,
+        occurredAt: new Date(),
+        invoiceId: 'inv-1',
+      });
+
+      const [createArg] = tx.transaction.create.mock.calls[0] as unknown as [
+        { data: Record<string, unknown> },
+      ];
+      expect(createArg.data.invoiceId).toBe('inv-1');
+      // expense of 100 → invoice.total_amount increments by +100 (what user owes)
+      expect(tx.creditCardInvoice.updateMany).toHaveBeenCalledWith({
+        where: { id: 'inv-1' },
+        data: { totalAmount: { increment: 100 } },
+      });
+    });
+
+    it('does not touch invoices when invoiceId is absent (debit expense)', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.create.mockResolvedValue({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        categoryId: null,
+        invoiceId: null,
+        type: TransactionType.Expense,
+        amount: decimal(100),
+        description: null,
+        occurredAt: new Date(),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.add({
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: 100,
+        occurredAt: new Date(),
+      });
+
+      expect(tx.creditCardInvoice.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('throws AccountNotFoundError when the account does not belong to the user', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 0 });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await expect(
+        repo.add({
+          userId: CURRENT_USER,
+          accountId: 'foreign-account',
+          type: TransactionType.Expense,
+          amount: 50,
+          occurredAt: new Date(),
+        }),
+      ).rejects.toBeInstanceOf(AccountNotFoundError);
+
+      expect(tx.transaction.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('edit', () => {
+    it('applies the delta on the same account when amount changes', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst.mockResolvedValue({
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: decimal(40),
+      });
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.update.mockResolvedValue({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        categoryId: null,
+        invoiceId: null,
+        type: TransactionType.Expense,
+        amount: decimal(55),
+        description: null,
+        occurredAt: new Date(),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.edit({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        amount: 55,
+      });
+
+      // old effect: -40; new effect: -55; delta = -15
+      expect(tx.userBankAccount.updateMany).toHaveBeenCalledWith({
+        where: { id: ACCOUNT_A, userId: CURRENT_USER },
+        data: { balance: { increment: -15 } },
+      });
+    });
+
+    it('does not touch the balance when only description/date change', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst.mockResolvedValue({
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: decimal(40),
+      });
+      tx.transaction.update.mockResolvedValue({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        categoryId: null,
+        invoiceId: null,
+        type: TransactionType.Expense,
+        amount: decimal(40),
+        description: 'Novo',
+        occurredAt: new Date(),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.edit({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        description: 'Novo',
+      });
+
+      expect(tx.userBankAccount.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('moves value between accounts atomically when accountId changes', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst.mockResolvedValue({
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: decimal(30),
+      });
+      tx.userBankAccount.updateMany
+        .mockResolvedValueOnce({ count: 1 })
+        .mockResolvedValueOnce({ count: 1 });
+      tx.transaction.update.mockResolvedValue({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_B,
+        categoryId: null,
+        invoiceId: null,
+        type: TransactionType.Expense,
+        amount: decimal(30),
+        description: null,
+        occurredAt: new Date(),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.edit({
+        id: TRANSACTION_ID,
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_B,
+      });
+
+      // account A: reverse old effect (-(-30) = +30)
+      // account B: apply new effect (-30)
+      expect(tx.userBankAccount.updateMany).toHaveBeenNthCalledWith(1, {
+        where: { id: ACCOUNT_A, userId: CURRENT_USER },
+        data: { balance: { increment: 30 } },
+      });
+      expect(tx.userBankAccount.updateMany).toHaveBeenNthCalledWith(2, {
+        where: { id: ACCOUNT_B, userId: CURRENT_USER },
+        data: { balance: { increment: -30 } },
+      });
+    });
+
+    it('throws TransactionNotFoundError when the transaction is missing', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst.mockResolvedValue(null);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await expect(
+        repo.edit({ id: 'ghost', userId: CURRENT_USER, amount: 10 }),
+      ).rejects.toBeInstanceOf(TransactionNotFoundError);
+    });
+
+    it('throws AccountNotFoundError when moving to an unowned account', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst.mockResolvedValue({
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: decimal(30),
+      });
+      tx.userBankAccount.updateMany
+        .mockResolvedValueOnce({ count: 1 })
+        .mockResolvedValueOnce({ count: 0 });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await expect(
+        repo.edit({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          accountId: 'foreign-account',
+        }),
+      ).rejects.toBeInstanceOf(AccountNotFoundError);
+    });
+
+    describe('with invoice reconciliation', () => {
+      it('applies invoice delta on the same invoice when card + same cycle', async () => {
+        const { prisma, tx } = buildPrisma();
+        tx.transaction.findFirst.mockResolvedValue({
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: decimal(40),
+          invoiceId: 'inv-1',
+        });
+        tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+        tx.creditCardInvoice.updateMany.mockResolvedValue({ count: 1 });
+        tx.transaction.update.mockResolvedValue({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: null,
+          invoiceId: 'inv-1',
+          type: TransactionType.Expense,
+          amount: decimal(60),
+          description: null,
+          occurredAt: new Date(),
+        });
+        const repo = new PrismaTransactionsRepository(prisma);
+
+        await repo.edit({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          amount: 60,
+          newInvoiceId: 'inv-1',
+        });
+
+        // invoice: was +40, now +60 → delta +20 (oldEffect=-40, newEffect=-60, oldEffect-newEffect=20)
+        expect(tx.creditCardInvoice.updateMany).toHaveBeenCalledWith({
+          where: { id: 'inv-1' },
+          data: { totalAmount: { increment: 20 } },
+        });
+      });
+
+      it('reverts old invoice + applies new when invoice changes (cycle jump)', async () => {
+        const { prisma, tx } = buildPrisma();
+        tx.transaction.findFirst.mockResolvedValue({
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: decimal(50),
+          invoiceId: 'inv-old',
+        });
+        tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+        tx.creditCardInvoice.updateMany.mockResolvedValue({ count: 1 });
+        tx.transaction.update.mockResolvedValue({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: null,
+          invoiceId: 'inv-new',
+          type: TransactionType.Expense,
+          amount: decimal(50),
+          description: null,
+          occurredAt: new Date(),
+        });
+        const repo = new PrismaTransactionsRepository(prisma);
+
+        await repo.edit({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          occurredAt: new Date('2026-08-15T00:00:00Z'),
+          newInvoiceId: 'inv-new',
+        });
+
+        // revert on old (+oldEffect = -50)
+        expect(tx.creditCardInvoice.updateMany).toHaveBeenNthCalledWith(1, {
+          where: { id: 'inv-old' },
+          data: { totalAmount: { increment: -50 } },
+        });
+        // apply on new (-newEffect = +50)
+        expect(tx.creditCardInvoice.updateMany).toHaveBeenNthCalledWith(2, {
+          where: { id: 'inv-new' },
+          data: { totalAmount: { increment: 50 } },
+        });
+      });
+
+      it('reverts old invoice only when moving card→debit (newInvoiceId=null)', async () => {
+        const { prisma, tx } = buildPrisma();
+        tx.transaction.findFirst.mockResolvedValue({
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: decimal(80),
+          invoiceId: 'inv-old',
+        });
+        tx.userBankAccount.updateMany
+          .mockResolvedValueOnce({ count: 1 })
+          .mockResolvedValueOnce({ count: 1 });
+        tx.creditCardInvoice.updateMany.mockResolvedValue({ count: 1 });
+        tx.transaction.update.mockResolvedValue({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_B,
+          categoryId: null,
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(80),
+          description: null,
+          occurredAt: new Date(),
+        });
+        const repo = new PrismaTransactionsRepository(prisma);
+
+        await repo.edit({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_B,
+          newInvoiceId: null,
+        });
+
+        expect(tx.creditCardInvoice.updateMany).toHaveBeenCalledTimes(1);
+        expect(tx.creditCardInvoice.updateMany).toHaveBeenCalledWith({
+          where: { id: 'inv-old' },
+          data: { totalAmount: { increment: -80 } },
+        });
+      });
+
+      it('applies new invoice only when moving debit→card (oldInvoiceId=null)', async () => {
+        const { prisma, tx } = buildPrisma();
+        tx.transaction.findFirst.mockResolvedValue({
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: decimal(35),
+          invoiceId: null,
+        });
+        tx.userBankAccount.updateMany
+          .mockResolvedValueOnce({ count: 1 })
+          .mockResolvedValueOnce({ count: 1 });
+        tx.creditCardInvoice.updateMany.mockResolvedValue({ count: 1 });
+        tx.transaction.update.mockResolvedValue({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_B,
+          categoryId: null,
+          invoiceId: 'inv-new',
+          type: TransactionType.Expense,
+          amount: decimal(35),
+          description: null,
+          occurredAt: new Date(),
+        });
+        const repo = new PrismaTransactionsRepository(prisma);
+
+        await repo.edit({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_B,
+          newInvoiceId: 'inv-new',
+        });
+
+        expect(tx.creditCardInvoice.updateMany).toHaveBeenCalledTimes(1);
+        expect(tx.creditCardInvoice.updateMany).toHaveBeenCalledWith({
+          where: { id: 'inv-new' },
+          data: { totalAmount: { increment: 35 } },
+        });
+      });
+
+      it('skips invoice update when debit→debit (both null)', async () => {
+        const { prisma, tx } = buildPrisma();
+        tx.transaction.findFirst.mockResolvedValue({
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: decimal(20),
+          invoiceId: null,
+        });
+        tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+        tx.transaction.update.mockResolvedValue({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: null,
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(25),
+          description: null,
+          occurredAt: new Date(),
+        });
+        const repo = new PrismaTransactionsRepository(prisma);
+
+        await repo.edit({
+          id: TRANSACTION_ID,
+          userId: CURRENT_USER,
+          amount: 25,
+          newInvoiceId: null,
+        });
+
+        expect(tx.creditCardInvoice.updateMany).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('delete', () => {
+    it('reverses the balance effect and deletes the transaction', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst.mockResolvedValue({
+        accountId: ACCOUNT_A,
+        type: TransactionType.Income,
+        amount: decimal(75),
+      });
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.delete(TRANSACTION_ID, CURRENT_USER);
+
+      // income of 75 credited balance; delete reverts: -75
+      expect(tx.userBankAccount.updateMany).toHaveBeenCalledWith({
+        where: { id: ACCOUNT_A, userId: CURRENT_USER },
+        data: { balance: { increment: -75 } },
+      });
+      expect(tx.transaction.delete).toHaveBeenCalledWith({
+        where: { id: TRANSACTION_ID },
+      });
+    });
+
+    it('throws TransactionNotFoundError when the transaction is missing', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst.mockResolvedValue(null);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await expect(repo.delete('ghost', CURRENT_USER)).rejects.toBeInstanceOf(
+        TransactionNotFoundError,
+      );
+    });
+
+    it('reverses invoice.total_amount when the transaction had an invoice_id', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst.mockResolvedValue({
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: decimal(120),
+        invoiceId: 'inv-1',
+      });
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.creditCardInvoice.updateMany.mockResolvedValue({ count: 1 });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.delete(TRANSACTION_ID, CURRENT_USER);
+
+      // expense of 120 had added +120 to invoice; delete subtracts -120
+      expect(tx.creditCardInvoice.updateMany).toHaveBeenCalledWith({
+        where: { id: 'inv-1' },
+        data: { totalAmount: { increment: -120 } },
+      });
+    });
+
+    it('does not touch invoices when the transaction had no invoice_id (debit)', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst.mockResolvedValue({
+        accountId: ACCOUNT_A,
+        type: TransactionType.Expense,
+        amount: decimal(50),
+        invoiceId: null,
+      });
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.delete(TRANSACTION_ID, CURRENT_USER);
+
+      expect(tx.creditCardInvoice.updateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('addMany', () => {
+    it('runs all adds inside a single $transaction and returns them in order', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.create
+        .mockResolvedValueOnce({
+          id: 't-1',
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: null,
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(10),
+          description: null,
+          occurredAt: new Date(),
+        })
+        .mockResolvedValueOnce({
+          id: 't-2',
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: null,
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(25),
+          description: null,
+          occurredAt: new Date(),
+        });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const result = await repo.addMany([
+        {
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: 10,
+          occurredAt: new Date(),
+        },
+        {
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: 25,
+          occurredAt: new Date(),
+        },
+      ]);
+
+      expect(result.map((r) => r.id)).toEqual(['t-1', 't-2']);
+      expect(tx.userBankAccount.updateMany).toHaveBeenCalledTimes(2);
+      expect(tx.transaction.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('aborts the batch when any item references an unowned account (Prisma rolls back)', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.updateMany
+        .mockResolvedValueOnce({ count: 1 })
+        .mockResolvedValueOnce({ count: 0 });
+      tx.transaction.create.mockResolvedValueOnce({
+        id: 't-1',
+        userId: CURRENT_USER,
+        accountId: ACCOUNT_A,
+        categoryId: null,
+        invoiceId: null,
+        type: TransactionType.Expense,
+        amount: decimal(10),
+        description: null,
+        occurredAt: new Date(),
+      });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await expect(
+        repo.addMany([
+          {
+            userId: CURRENT_USER,
+            accountId: ACCOUNT_A,
+            type: TransactionType.Expense,
+            amount: 10,
+            occurredAt: new Date(),
+          },
+          {
+            userId: CURRENT_USER,
+            accountId: 'foreign',
+            type: TransactionType.Expense,
+            amount: 25,
+            occurredAt: new Date(),
+          },
+        ]),
+      ).rejects.toBeInstanceOf(AccountNotFoundError);
+    });
+  });
+
+  describe('editMany', () => {
+    it('applies each edit inside the same $transaction', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.transaction.findFirst
+        .mockResolvedValueOnce({
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: decimal(40),
+        })
+        .mockResolvedValueOnce({
+          accountId: ACCOUNT_A,
+          type: TransactionType.Expense,
+          amount: decimal(20),
+        });
+      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.transaction.update
+        .mockResolvedValueOnce({
+          id: 't-1',
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: null,
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(50),
+          description: null,
+          occurredAt: new Date(),
+        })
+        .mockResolvedValueOnce({
+          id: 't-2',
+          userId: CURRENT_USER,
+          accountId: ACCOUNT_A,
+          categoryId: 'cat-1',
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(20),
+          description: null,
+          occurredAt: new Date(),
+        });
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const result = await repo.editMany([
+        { id: 't-1', userId: CURRENT_USER, amount: 50 },
+        { id: 't-2', userId: CURRENT_USER, categoryId: 'cat-1' },
+      ]);
+
+      expect(result.map((r) => r.id)).toEqual(['t-1', 't-2']);
+      expect(tx.transaction.findFirst).toHaveBeenCalledTimes(2);
+      expect(tx.transaction.update).toHaveBeenCalledTimes(2);
+    });
+  });
+});

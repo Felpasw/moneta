@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
 
-import { ElevenLabsTtsClient } from './providers/elevenlabs/elevenlabs-tts.client';
+import { HttpStreamingTtsService } from './http-streaming-tts.service';
 import { ElevenLabsTtsHealthIndicator } from './providers/elevenlabs/elevenlabs-tts-health.indicator';
-import { TTS_CLIENT } from './tts.tokens';
-import { TtsService } from './tts.service';
+import { ElevenLabsTtsProvider } from './providers/elevenlabs/elevenlabs-tts.provider';
+import { TTS_SERVICE, TTS_PROVIDER } from './tts.tokens';
 
 @Module({
   providers: [
-    TtsService,
     ElevenLabsTtsHealthIndicator,
-    { provide: TTS_CLIENT, useClass: ElevenLabsTtsClient },
+    { provide: TTS_PROVIDER, useClass: ElevenLabsTtsProvider },
+    { provide: TTS_SERVICE, useClass: HttpStreamingTtsService },
   ],
-  exports: [TtsService, ElevenLabsTtsHealthIndicator, TTS_CLIENT],
+  exports: [ElevenLabsTtsHealthIndicator, TTS_SERVICE],
 })
 export class TtsModule {}

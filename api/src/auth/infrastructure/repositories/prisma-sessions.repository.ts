@@ -14,7 +14,7 @@ export class PrismaSessionsRepository implements SessionsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateSessionInput): Promise<Session> {
-    const session = await this.prisma.session.create({
+    return this.prisma.session.create({
       data: {
         userId: input.userId,
         refreshTokenHash: input.refreshTokenHash,
@@ -22,32 +22,21 @@ export class PrismaSessionsRepository implements SessionsRepository {
         ip: input.ip,
         expiresAt: input.expiresAt,
       },
+      select: { id: true, userId: true, createdAt: true, expiresAt: true },
     });
-    return {
-      id: session.id,
-      userId: session.userId,
-      createdAt: session.createdAt,
-      expiresAt: session.expiresAt,
-    };
   }
 
   async findByRefreshTokenHash(hash: string): Promise<SessionWithUser | null> {
-    const session = await this.prisma.session.findUnique({
+    return this.prisma.session.findUnique({
       where: { refreshTokenHash: hash },
-      include: { user: { select: { id: true, email: true, name: true } } },
-    });
-    if (!session) return null;
-    return {
-      id: session.id,
-      userId: session.userId,
-      revokedAt: session.revokedAt,
-      expiresAt: session.expiresAt,
-      user: {
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.name,
+      select: {
+        id: true,
+        userId: true,
+        revokedAt: true,
+        expiresAt: true,
+        user: { select: { id: true, email: true, name: true } },
       },
-    };
+    });
   }
 
   async revokeByRefreshTokenHash(hash: string, now: Date): Promise<void> {
@@ -70,7 +59,7 @@ export class PrismaSessionsRepository implements SessionsRepository {
         where: { id: input.previousSessionId },
         data: { revokedAt: input.now },
       });
-      const created = await tx.session.create({
+      return tx.session.create({
         data: {
           userId: input.next.userId,
           refreshTokenHash: input.next.refreshTokenHash,
@@ -78,13 +67,8 @@ export class PrismaSessionsRepository implements SessionsRepository {
           ip: input.next.ip,
           expiresAt: input.next.expiresAt,
         },
+        select: { id: true, userId: true, createdAt: true, expiresAt: true },
       });
-      return {
-        id: created.id,
-        userId: created.userId,
-        createdAt: created.createdAt,
-        expiresAt: created.expiresAt,
-      };
     });
   }
 }
