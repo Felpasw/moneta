@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { queryClient } from "./queryClient";
+import { queryClient } from "@/lib/queryClient";
 
 describe("queryClient", () => {
   const queryRetry = queryClient.getDefaultOptions().queries?.retry;

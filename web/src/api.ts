@@ -1,10 +1,21 @@
 import axios from "axios";
 
 import { API_URL } from "./globals";
+import userManager from "./utils/userManager";
 
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+});
+
+api.interceptors.request.use((config) => {
+  const token = userManager.getAccessToken();
+
+  if (token !== null) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
 
 api.interceptors.response.use(

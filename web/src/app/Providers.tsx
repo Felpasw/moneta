@@ -5,7 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
 
-import { Toaster } from "@/components/ui/Sonner";
+import { Toaster } from "@/components/atoms/Sonner";
 import { queryClient } from "@/lib/queryClient";
 
 interface ProvidersProps {
