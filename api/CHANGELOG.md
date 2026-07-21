@@ -6,6 +6,39 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.4.0](https://github.com/Felpasw/moneta/compare/api-v0.3.0...api-v0.4.0) (2026-07-21)
+
+
+### ✨ Features
+
+* **accounts:** módulo accounts/ com CRUD + setBalance e ownership por JWT ([c9d37dd](https://github.com/Felpasw/moneta/commit/c9d37dd2dd7b30c23e04b4903401bc3c42c0b0df))
+* **agent:** tools list_banks + accounts CRUD em sub-módulos dedicados ([5940181](https://github.com/Felpasw/moneta/commit/594018133ab173e6e15efd2934d76e49a40069e4))
+* **banks:** módulo banks/ com GET /banks e ListBanks use-case ([2df01a4](https://github.com/Felpasw/moneta/commit/2df01a4f541efebabf00da6be829178da0fb1c3a))
+* **card-billing:** auto-detect payment via TransferCreated event [MNT-139] ([4c735e7](https://github.com/Felpasw/moneta/commit/4c735e771efa7d4e30d8eb71d708f8efd2fcebd8))
+* **card-billing:** CreditCardCycleService + cycle math com dayjs (ADR-0001) [MNT-136] ([74e42b9](https://github.com/Felpasw/moneta/commit/74e42b972bf9184b75061d0e5c99f5e552d5e846))
+* **card-billing:** InvoiceRepository + status enum + regra 1-open-por-cartão [MNT-135] ([dc87aa4](https://github.com/Felpasw/moneta/commit/dc87aa405ffeddd40dd601bbbb7005a76bd5826d))
+* **card-billing:** tools get_current_invoice + list_invoices [MNT-140] ([5a3ac1a](https://github.com/Felpasw/moneta/commit/5a3ac1a99a8d94a6279d2b2df6951e7b53225623))
+* **card-billing:** tools pay_invoice + mark_invoice_paid [MNT-140] ([10c7100](https://github.com/Felpasw/moneta/commit/10c7100d6aadeda5807689b11137107c66ced781))
+* **categories:** módulo categories/ + 4 tools do assistente ([b18ba3e](https://github.com/Felpasw/moneta/commit/b18ba3e8ad1af02b9d9261b4d265e6934b60d47a))
+* **db:** adiciona schema financeiro e seed de bancos+categorias ([db9652c](https://github.com/Felpasw/moneta/commit/db9652c6f0e622b345ed5c326e0d3436c9334704))
+* **installments:** schema InstallmentGroup + colunas nullable em transactions [MNT-154] ([c54294d](https://github.com/Felpasw/moneta/commit/c54294d4b91d3549cd76e7ac8c2a4eb5d1774b36))
+* **installments:** tool add_installment_purchase + use-case atômico [MNT-155] ([08ded9e](https://github.com/Felpasw/moneta/commit/08ded9e035293d662d884ff20f97065082d70b09))
+* **installments:** tool cancel_installment_purchase + reversão atômica [MNT-156] ([44adc74](https://github.com/Felpasw/moneta/commit/44adc7455cf9b54214f4c96d05b297afd19cee7b))
+* **transactions:** CRUD atômico com auto-update de balance ([9ef6a99](https://github.com/Felpasw/moneta/commit/9ef6a99b337e441657e7c8e8b1b1f391fe1ae7b6))
+* **transactions:** reconcilia invoice no Edit + EditMany [MNT-137] ([d7f60ac](https://github.com/Felpasw/moneta/commit/d7f60ac22ec6d091ddbafa2d1e1ded442c3f8931))
+* **transactions:** resolve invoice de cartão no Add + AddMany [MNT-137] ([2f7ab77](https://github.com/Felpasw/moneta/commit/2f7ab7797215c77e0eac9b0fffddaa903752527a))
+* **transactions:** reverte invoice.total_amount no Delete de transação com invoice_id [MNT-137] ([e50cb82](https://github.com/Felpasw/moneta/commit/e50cb8256339cec661e8cee4dcc25c2b800d0999))
+* **transactions:** tools do assistente + batches atômicos [MNT-131] ([a50dae5](https://github.com/Felpasw/moneta/commit/a50dae5566c52d18ae13f4c4441cc80cce04661f))
+* **transfers:** módulo transfers/ + 3 tools do assistente [MNT-132] ([c00264f](https://github.com/Felpasw/moneta/commit/c00264f30b0ca16617c005002fa752c4b5ba881c))
+
+
+### 🔨 Refactoring
+
+* **agent:** consolida tools de todos domínios sob agent/tools/ [MNT-134] ([6829fd5](https://github.com/Felpasw/moneta/commit/6829fd57a15f9263cb68de2f3211ddeeb15af4e4))
+* **agent:** port+adapter em TTS e LLM, WsEvent enum, service naming ([691c169](https://github.com/Felpasw/moneta/commit/691c16904c1c6cc739451a0b96eb1df06ebe97d1))
+* **finance:** agrupa banks/accounts/categories/transactions/transfers em finance/ [MNT-134] ([4fcc857](https://github.com/Felpasw/moneta/commit/4fcc85710a125a2b98ca145aa29939aca8545500))
+* **repositories:** usa Prisma select em vez de reshape manual pós-query ([6b1589f](https://github.com/Felpasw/moneta/commit/6b1589f97d4bdfc0f31ea9337a77b37139a1dadb))
+
 ## [0.3.0](https://github.com/Felpasw/moneta/compare/api-v0.2.0...api-v0.3.0) (2026-07-17)
 
 
