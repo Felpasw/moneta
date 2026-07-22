@@ -77,7 +77,7 @@ describe("useSignupForm()", () => {
       email: "prima@moneta.com",
       password: "hunter22!",
     });
-    expect(routerPush).toHaveBeenCalledWith("/");
+    expect(routerPush).toHaveBeenCalledWith("/onboarding");
   });
 
   it("não chama mutation quando validação falha", async () => {

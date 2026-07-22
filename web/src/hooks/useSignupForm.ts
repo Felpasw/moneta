@@ -84,7 +84,7 @@ export function useSignupForm() {
       setIsSuccess(true);
       form.reset();
       await new Promise((resolve) => setTimeout(resolve, SUCCESS_HOLD_MS));
-      router.push("/");
+      router.push("/onboarding");
     } catch (error) {
       const message = isConflictError(error)
         ? SIGNUP_MESSAGES.emailInUseToast
