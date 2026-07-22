@@ -109,9 +109,9 @@ const FRAG_SHADER = `
     return vec4(colorIn.rgb / (a + 1e-5), a);
   }
 
-  const vec3 baseColor1 = vec3(0.0, 0.764, 0.651);
-  const vec3 baseColor2 = vec3(0.298039, 0.760784, 0.913725);
-  const vec3 baseColor3 = vec3(0.027, 0.180, 0.160);
+  const vec3 baseColor1 = vec3(1.0, 1.0, 1.0);
+  const vec3 baseColor2 = vec3(0.85, 0.85, 0.85);
+  const vec3 baseColor3 = vec3(0.15, 0.15, 0.15);
   const float innerRadius = 0.6;
   const float noiseScale = 0.65;
 

@@ -142,3 +142,19 @@
   stroke-dasharray: 10 5;
   animation: circuit-flow 10s linear infinite;
 }
+
+@keyframes bar-loader {
+  0%,
+  100% {
+    transform: scaleY(0.1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.animate-bar-loader {
+  animation: bar-loader 1.2s ease-in-out infinite;
+}
