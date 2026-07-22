@@ -5,15 +5,32 @@ import { REALTIME_EVENT_TYPE } from '../constants/realtime-event-types';
 import type { SystemPromptContext } from '../types/system-prompt-context';
 
 const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
-  const profile = await ctx.profiles.findByUserId(ctx.userId);
+  const [profile, user] = await Promise.all([
+    ctx.profiles.findByUserId(ctx.userId),
+    ctx.users.findById(ctx.userId),
+  ]);
   const treatmentStyle = profile?.treatmentStyle ?? DEFAULT_TREATMENT_STYLE;
-  const instructions = composeSystemPrompt({ treatmentStyle });
+  const isOnboarded = user?.onboardedAt != null;
+  const instructions = composeSystemPrompt({
+    treatmentStyle,
+    onboarding: !isOnboarded,
+    userName: user?.name ?? null,
+  });
   ctx.upstream.send(
     JSON.stringify({
       type: REALTIME_EVENT_TYPE.sessionUpdate,
-      session: { instructions },
+      session: {
+        type: 'realtime',
+        instructions,
+        output_modalities: ['text'],
+      },
     }),
   );
+  if (!isOnboarded) {
+    ctx.upstream.send(
+      JSON.stringify({ type: REALTIME_EVENT_TYPE.responseCreate }),
+    );
+  }
 };
 
 export const wireSystemPrompt = (ctx: SystemPromptContext): void => {

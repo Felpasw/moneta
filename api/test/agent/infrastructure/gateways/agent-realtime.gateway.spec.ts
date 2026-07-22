@@ -16,6 +16,20 @@ import { TreatmentStyle } from '~/agent/personality/domain/constants/treatment-s
 import type { AssistantProfileRepository } from '~/agent/personality/domain/ports/assistant-profile-repository';
 import type { AssistantProfile } from '~/agent/personality/domain/types/assistant-profile';
 import type { TokenService } from '~/auth/domain/services/token-service';
+import { UsersService } from '~/users/users.service';
+
+const makeStubUsers = (
+  isOnboarded = true,
+  name = 'Alice',
+): UsersService =>
+  ({
+    findById: jest.fn().mockResolvedValue({
+      id: 'user-1',
+      email: 'alice@example.com',
+      name,
+      onboardedAt: isOnboarded ? new Date('2026-01-01') : null,
+    }),
+  }) as unknown as UsersService;
 
 type Listener<T extends unknown[]> = (...args: T) => void;
 
@@ -217,6 +231,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -240,6 +255,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -261,6 +277,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -282,6 +299,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -304,6 +322,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -327,6 +346,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -349,6 +369,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
       client.readyState = 3;
@@ -374,6 +395,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -395,6 +417,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -417,6 +440,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -439,6 +463,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -474,7 +499,7 @@ describe('AgentRealtimeGateway', () => {
     const flushMicrotasks = (): Promise<void> =>
       new Promise((resolve) => setImmediate(resolve));
 
-    it('synthesizes assistant text on response.text.done and streams tts.audio.delta + tts.audio.done to the client', async () => {
+    it('synthesizes assistant text on response.output_text.done and streams tts.audio.delta + tts.audio.done to the client', async () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
@@ -484,6 +509,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         tts,
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -492,7 +518,7 @@ describe('AgentRealtimeGateway', () => {
         makeReq({ token: 'ok' }),
       );
       upstream.emitMessage(
-        JSON.stringify({ type: 'response.text.done', text: 'olá mundo' }),
+        JSON.stringify({ type: 'response.output_text.done', text: 'olá mundo' }),
       );
       await flushMicrotasks();
       handles[0].yield(Buffer.from([0xaa, 0xbb]));
@@ -516,6 +542,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         tts,
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -524,7 +551,7 @@ describe('AgentRealtimeGateway', () => {
         makeReq({ token: 'ok' }),
       );
       upstream.emitMessage(
-        JSON.stringify({ type: 'response.text.done', text: 'oi' }),
+        JSON.stringify({ type: 'response.output_text.done', text: 'oi' }),
       );
       await flushMicrotasks();
       handles[0].yield(Buffer.from([1]));
@@ -548,6 +575,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         tts,
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -561,7 +589,7 @@ describe('AgentRealtimeGateway', () => {
       expect(handles).toHaveLength(0);
     });
 
-    it('does not synthesize when response.text.done has an empty text', async () => {
+    it('does not synthesize when response.output_text.done has an empty text', async () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
@@ -571,6 +599,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         tts,
         makeProfileRepo(null),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -579,7 +608,7 @@ describe('AgentRealtimeGateway', () => {
         makeReq({ token: 'ok' }),
       );
       upstream.emitMessage(
-        JSON.stringify({ type: 'response.text.done', text: '' }),
+        JSON.stringify({ type: 'response.output_text.done', text: '' }),
       );
       await flushMicrotasks();
 
@@ -629,6 +658,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         repo,
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -660,6 +690,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         repo,
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -684,6 +715,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         repo,
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -707,6 +739,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(buildProfile()),
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -728,6 +761,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         repo,
+        makeStubUsers(),
       );
       const client = makeClient();
 
@@ -740,6 +774,129 @@ describe('AgentRealtimeGateway', () => {
 
       expect(client.close).not.toHaveBeenCalled();
       expect(findSessionUpdate(upstream)).toBeUndefined();
+    });
+  });
+
+  describe('onboarding kickoff', () => {
+    const flushMicrotasks = (): Promise<void> =>
+      new Promise((resolve) => setImmediate(resolve));
+
+    const findEvent = (
+      upstream: FakeUpstream,
+      type: string,
+    ): Record<string, unknown> | undefined => {
+      for (const payload of upstream.sent) {
+        if (typeof payload !== 'string') continue;
+        try {
+          const parsed = JSON.parse(payload) as Record<string, unknown>;
+          if (parsed.type === type) return parsed;
+        } catch {
+          /* not JSON */
+        }
+      }
+      return undefined;
+    };
+
+    const readInstructions = (upstream: FakeUpstream): string | undefined => {
+      for (const payload of upstream.sent) {
+        if (typeof payload !== 'string') continue;
+        try {
+          const parsed = JSON.parse(payload) as {
+            type?: string;
+            session?: { instructions?: string };
+          };
+          if (
+            parsed.type === 'session.update' &&
+            parsed.session?.instructions
+          ) {
+            return parsed.session.instructions;
+          }
+        } catch {
+          /* not JSON */
+        }
+      }
+      return undefined;
+    };
+
+    it('injeta snippet de onboarding e dispara response.create quando user não é onboarded', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-new' }));
+      const factory = makeFactory(upstream);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        makeProfileRepo(null),
+        makeStubUsers(false),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      const instructions = readInstructions(upstream);
+      expect(instructions).toBeDefined();
+      expect(instructions).toMatch(/primeira/i);
+
+      expect(findEvent(upstream, 'response.create')).toBeDefined();
+    });
+
+    it('injeta o nome real do usuário nas instructions quando não onboarded', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-new' }));
+      const factory = makeFactory(upstream);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        makeProfileRepo(null),
+        makeStubUsers(false, 'Felipe'),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      const instructions = readInstructions(upstream);
+      expect(instructions).toContain('Felipe');
+    });
+
+    it('não injeta snippet nem dispara response.create quando user já é onboarded', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-old' }));
+      const factory = makeFactory(upstream);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        makeProfileRepo(null),
+        makeStubUsers(true),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      const instructions = readInstructions(upstream);
+      expect(instructions).toBeDefined();
+      expect(instructions).not.toMatch(/primeira/i);
+
+      expect(findEvent(upstream, 'response.create')).toBeUndefined();
     });
   });
 });

@@ -23,6 +23,7 @@ import {
   type AssistantProfileRepository,
 } from '~/agent/personality/domain/ports/assistant-profile-repository';
 import { env } from '~/config/env';
+import { UsersService } from '~/users/users.service';
 
 import { CLOSE_UNAUTHORIZED } from './constants/close-codes';
 import { extractHandshakeToken } from './utils/extract-handshake-token';
@@ -44,6 +45,7 @@ export class AgentRealtimeGateway
     @Inject(TTS_SERVICE) private readonly tts: TtsService,
     @Inject(ASSISTANT_PROFILE_REPOSITORY)
     private readonly profiles: AssistantProfileRepository,
+    private readonly users: UsersService,
   ) {}
 
   handleConnection(client: WebSocket, req: IncomingMessage): void {
@@ -60,6 +62,7 @@ export class AgentRealtimeGateway
       upstream,
       userId,
       profiles: this.profiles,
+      users: this.users,
       logger: this.logger,
     });
     wireTtsTap({
