@@ -17,25 +17,12 @@ import { normalizeAudioChunk } from './utils/normalize-audio-chunk';
 import { sleep } from './utils/sleep';
 import { wrapTtsError } from './utils/wrap-tts-error';
 
-export interface HttpStreamingTtsServiceOptions {
-  readonly maxRetries?: number;
-  readonly retryBackoffMs?: number;
-}
-
 @Injectable()
 export class HttpStreamingTtsService implements TtsService {
-  private readonly maxRetries: number;
-  private readonly retryBackoffMs: number;
+  private readonly maxRetries = HTTP_STREAMING_TTS.defaultMaxRetries;
+  private readonly retryBackoffMs = HTTP_STREAMING_TTS.defaultRetryBackoffMs;
 
-  constructor(
-    @Inject(TTS_PROVIDER) private readonly provider: TtsProvider,
-    options: HttpStreamingTtsServiceOptions = {},
-  ) {
-    this.maxRetries =
-      options.maxRetries ?? HTTP_STREAMING_TTS.defaultMaxRetries;
-    this.retryBackoffMs =
-      options.retryBackoffMs ?? HTTP_STREAMING_TTS.defaultRetryBackoffMs;
-  }
+  constructor(@Inject(TTS_PROVIDER) private readonly provider: TtsProvider) {}
 
   async *synthesizeStream(
     params: SynthesizeStreamParams,

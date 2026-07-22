@@ -33,6 +33,7 @@ type PrismaTransactionRow = Prisma.TransactionGetPayload<{
 const toDomain = (row: PrismaTransactionRow): Transaction => ({
   ...row,
   amount: row.amount.toNumber(),
+  type: row.type as TransactionType,
 });
 
 type TxClient = Parameters<

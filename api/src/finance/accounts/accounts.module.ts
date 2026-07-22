@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../../auth/auth.module';
 import { AccountsController } from './accounts.controller';
 import { AddBankAccountUseCase } from './application/use-cases/add-bank-account.use-case';
 import { DeleteBankAccountUseCase } from './application/use-cases/delete-bank-account.use-case';
