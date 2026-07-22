@@ -17,6 +17,7 @@ const buildUseCase = () => {
           id: 'user-1',
           email: input.email,
           name: input.name,
+          onboardedAt: null,
         }),
       ),
     findByEmailWithPasswordCredential: jest.fn(),
@@ -53,6 +54,7 @@ describe('SignupWithPasswordUseCase', () => {
       id: 'user-1',
       email: 'alice@example.com',
       name: 'Alice Smith',
+      onboardedAt: null,
     });
   });
 

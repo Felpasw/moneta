@@ -56,12 +56,13 @@ export function useLoginForm() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      await auth.login.mutateAsync(values);
+      const { user } = await auth.login.mutateAsync(values);
       toast.success(LOGIN_MESSAGES.successToast);
       setIsSuccess(true);
       form.reset();
       await new Promise((resolve) => setTimeout(resolve, SUCCESS_HOLD_MS));
-      router.push("/");
+      const destination = user.onboardedAt ? "/" : "/onboarding";
+      router.push(destination);
     } catch {
       toast.error(LOGIN_MESSAGES.errorToast);
     }

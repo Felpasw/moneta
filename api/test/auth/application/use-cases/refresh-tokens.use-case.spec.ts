@@ -14,7 +14,12 @@ const activeSession = () => ({
   userId: 'user-1',
   revokedAt: null,
   expiresAt: FAR_FUTURE,
-  user: { id: 'user-1', email: 'alice@example.com', name: 'Alice' },
+  user: {
+    id: 'user-1',
+    email: 'alice@example.com',
+    name: 'Alice',
+    onboardedAt: null,
+  },
 });
 
 const buildUseCase = () => {
@@ -52,7 +57,12 @@ describe('RefreshTokensUseCase', () => {
     const result = await useCase.execute({ refreshToken: REFRESH_TOKEN_INPUT });
 
     expect(result).toEqual({
-      user: { id: 'user-1', email: 'alice@example.com', name: 'Alice' },
+      user: {
+        id: 'user-1',
+        email: 'alice@example.com',
+        name: 'Alice',
+        onboardedAt: null,
+      },
       accessToken: 'new.access.jwt',
       refreshToken: 'new.refresh.jwt',
     });

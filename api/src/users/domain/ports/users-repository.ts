@@ -10,6 +10,7 @@ export interface UserSnapshot {
   id: string;
   email: string;
   name: string;
+  onboardedAt: Date | null;
 }
 
 export interface UserWithPasswordCredential extends UserSnapshot {
