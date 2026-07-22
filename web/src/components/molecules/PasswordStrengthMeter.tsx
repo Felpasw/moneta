@@ -1,8 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
-import { Input } from "@/components/atoms/Input";
 import {
   Meter,
   MeterIndicator,
@@ -28,16 +25,18 @@ interface StrengthDescriptor {
 
 const STRENGTH_DESCRIPTORS: Record<StrengthLevel, StrengthDescriptor> = {
   [StrengthLevel.EMPTY]: { color: "", label: "", value: 0 },
-  [StrengthLevel.WEAK]: { color: "bg-destructive", label: "Weak", value: 20 },
-  [StrengthLevel.FAIR]: { color: "bg-orange-500", label: "Fair", value: 40 },
-  [StrengthLevel.GOOD]: { color: "bg-yellow-500", label: "Good", value: 60 },
-  [StrengthLevel.STRONG]: { color: "bg-blue-500", label: "Strong", value: 80 },
+  [StrengthLevel.WEAK]: { color: "bg-destructive", label: "Fraca", value: 20 },
+  [StrengthLevel.FAIR]: { color: "bg-orange-500", label: "Razoável", value: 40 },
+  [StrengthLevel.GOOD]: { color: "bg-yellow-500", label: "Boa", value: 60 },
+  [StrengthLevel.STRONG]: { color: "bg-blue-500", label: "Forte", value: 80 },
   [StrengthLevel.VERY_STRONG]: {
     color: "bg-green-500",
-    label: "Very strong",
+    label: "Muito forte",
     value: 100,
   },
 };
+
+const STRENGTH_LABEL = "Força da senha";
 
 const SCORE_CHECKS: Array<(password: string) => boolean> = [
   (password) => password.length >= 8,
@@ -56,41 +55,40 @@ const SCORE_THRESHOLDS: Array<{ maxScore: number; level: StrengthLevel }> = [
 ];
 
 const scorePassword = (password: string): number =>
-  SCORE_CHECKS.reduce(
-    (total, check) => total + (check(password) ? 1 : 0),
-    0,
-  );
+  SCORE_CHECKS.reduce((total, check) => total + (check(password) ? 1 : 0), 0);
 
 const resolveLevel = (password: string): StrengthLevel => {
   if (password.length === 0) return StrengthLevel.EMPTY;
-
   const score = scorePassword(password);
   const threshold = SCORE_THRESHOLDS.find((entry) => score <= entry.maxScore);
-
   return threshold?.level ?? StrengthLevel.VERY_STRONG;
 };
 
-export default function PasswordStrengthMeter() {
-  const [password, setPassword] = useState("");
-  const strength = STRENGTH_DESCRIPTORS[resolveLevel(password)];
+interface PasswordStrengthMeterProps {
+  value: string;
+  className?: string;
+}
+
+export function PasswordStrengthMeter({ value, className }: PasswordStrengthMeterProps) {
+  const strength = STRENGTH_DESCRIPTORS[resolveLevel(value)];
 
   return (
-    <div className="w-full max-w-sm space-y-3">
-      <Input
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Enter a password"
-        type="password"
-        value={password}
-      />
-      <Meter value={strength.value}>
-        <div className="flex items-center justify-between gap-2">
-          <MeterLabel>Password strength</MeterLabel>
-          {strength.label ? <MeterValue>{() => strength.label}</MeterValue> : null}
-        </div>
-        <MeterTrack>
-          <MeterIndicator className={strength.color} />
-        </MeterTrack>
-      </Meter>
-    </div>
+    <Meter value={strength.value} className={className}>
+      <div className="flex items-center justify-between gap-2">
+        <MeterLabel className="text-xs text-muted-foreground">
+          {STRENGTH_LABEL}
+        </MeterLabel>
+        {strength.label ? (
+          <MeterValue className="text-xs text-muted-foreground">
+            {() => strength.label}
+          </MeterValue>
+        ) : null}
+      </div>
+      <MeterTrack>
+        <MeterIndicator className={strength.color} />
+      </MeterTrack>
+    </Meter>
   );
 }
+
+export default PasswordStrengthMeter;

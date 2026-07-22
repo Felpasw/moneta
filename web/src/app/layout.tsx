@@ -1,17 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
+
+import { CircuitBackground } from "@/components/atoms/CircuitBackground";
 
 import { Providers } from "./Providers";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "700"],
 });
 
 export const metadata: Metadata = {
@@ -27,11 +31,15 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+        <Providers>
+          <CircuitBackground className="flex flex-1 flex-col">
+            {children}
+          </CircuitBackground>
+        </Providers>
       </body>
     </html>
   );
