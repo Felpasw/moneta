@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 
 import { CircuitBackground } from "@/components/atoms/CircuitBackground";
+import { PoweredByFooter } from "@/components/atoms/PoweredByFooter";
 
 import { Providers } from "./Providers";
 import "./globals.css";
@@ -38,6 +39,7 @@ export default function RootLayout({
         <Providers>
           <CircuitBackground className="flex flex-1 flex-col">
             {children}
+            <PoweredByFooter />
           </CircuitBackground>
         </Providers>
       </body>

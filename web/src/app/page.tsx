@@ -7,9 +7,6 @@ import { HeroShutterText } from "@/components/atoms/HeroShutterText";
 import { MotionButton } from "@/components/atoms/MotionButton";
 
 const SUBTITLE = "Assistente financeiro · voz e IA";
-const POWERED_BY_LABEL = "powered by";
-const AUTHOR_LABEL = "felpasw";
-const AUTHOR_HREF = "https://felipeclacerda.com";
 const CTA_LABEL = "Entrar";
 const CTA_HREF = "/login";
 const SIGNUP_LABEL = "Cadastrar";
@@ -46,22 +43,6 @@ export default function Home() {
         </motion.div>
       </div>
 
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2, duration: 0.8, ease: "easeOut" }}
-        className="absolute bottom-6 left-0 right-0 px-4 text-center text-[10px] uppercase tracking-[0.3em] text-white"
-      >
-        {POWERED_BY_LABEL}{" "}
-        <a
-          href={AUTHOR_HREF}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-semibold text-white underline-offset-4 transition-opacity hover:opacity-80 focus-visible:underline focus-visible:outline-none"
-        >
-          {AUTHOR_LABEL}
-        </a>
-      </motion.footer>
     </main>
   );
 }
