@@ -30,7 +30,7 @@ export class AddUserBanksTool implements AssistantTool {
     additionalProperties: false,
   };
   readonly playbook =
-    'Chame durante o onboarding depois que o user confirmar visualmente na interface quais bancos ele usa. O frontend expõe o catálogo e o user marca os que tem — você recebe os IDs pra criar. Nunca invente bankId: use SEMPRE os IDs que vieram da escolha do user. Se algum ID vier em notFound, avise que houve inconsistência (não deveria acontecer no fluxo normal) e peça pra escolher de novo. Se created estiver vazio, não avance pra etapa de saldos.';
+    'Chame durante o onboarding depois de ter coletado os bancos que o user usa e obtido os bankIds correspondentes do catálogo global de bancos suportados. Você pode receber os IDs diretamente do frontend (via seleção visual do catálogo, quando disponível) ou resolvê-los a partir dos nomes falados pelo user (aceita variações: "nubank"≈"Nubank", "itau"≈"Itaú Unibanco", "btg"≈"BTG Pactual"). Nunca invente bankId — se ficar em dúvida em algum nome, confirme por voz antes ("Você disse BTG — é o BTG Pactual?"). Se o result trouxer notFound, revise e tente de novo. Se created estiver vazio, não avance pra etapa de saldos.';
 
   constructor(private readonly useCase: AddUserBanksUseCase) {}
 
