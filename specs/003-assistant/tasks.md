@@ -62,7 +62,7 @@ Após commit: `[ ]` → `[x] ✅ commit \`<hash>\``.
 
 ADR-05 decidido como opção **B (Proxy WebSocket)** no MNT-47.
 
-- [x] **MNT-50** [T][S] ✅ commit `dcf1e47` — Gateway WebSocket em `/agent/ws` (auth via JWT no handshake via `?token=` ou `Sec-WebSocket-Protocol: bearer.<token>`); mantém par de WS (client↔NestJS + NestJS↔OpenAI) via port `RealtimeUpstreamFactory` + adapter `OpenAiRealtimeUpstreamFactory`; relaya frames. Validação end-to-end real (`wss://api.openai.com/v1/realtime`) pendente de MNT-45 [HUMANO]
+- [x] **MNT-50** [T][S] ✅ commits `dcf1e47` + `5b98cf3` (compat GA) — Gateway WebSocket em `/agent/ws` (auth via JWT no handshake via `?token=` ou `Sec-WebSocket-Protocol: bearer.<token>`); mantém par de WS (client↔NestJS + NestJS↔OpenAI) via port `RealtimeUpstreamFactory` + adapter `OpenAiRealtimeUpstreamFactory`; relaya frames. **Validação end-to-end real OK** depois de MNT-45/46 destravados. Compat GA (5b98cf3): removido header `OpenAI-Beta` (a Beta foi descontinuada), modelo migrou de `gpt-4o-realtime-preview` pra `gpt-realtime`, `session.update` agora envia `session.type: 'realtime'` + `output_modalities: ['text']` (o GA ignora o `modalities` legado e por default produz áudio próprio, o que quebrava nosso pipeline via ElevenLabs), event name `response.text.done` → `response.output_text.done`.
 
 Client WS (MNT-51) migrou pra `specs/009-ui-shell/tasks.md`.
 

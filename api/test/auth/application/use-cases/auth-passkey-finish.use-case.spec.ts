@@ -19,7 +19,12 @@ const buildUseCase = () => {
       publicKey: new Uint8Array([1, 2, 3]),
       counter: STORED_COUNTER,
       transports: ['internal'],
-      user: { id: 'user-1', email: 'alice@example.com', name: 'Alice' },
+      user: {
+        id: 'user-1',
+        email: 'alice@example.com',
+        name: 'Alice',
+        onboardedAt: null,
+      },
     }),
     updateCounter: jest.fn().mockResolvedValue(undefined),
   };
@@ -88,7 +93,12 @@ describe('AuthPasskeyFinishUseCase', () => {
     });
 
     expect(result).toEqual({
-      user: { id: 'user-1', email: 'alice@example.com', name: 'Alice' },
+      user: {
+        id: 'user-1',
+        email: 'alice@example.com',
+        name: 'Alice',
+        onboardedAt: null,
+      },
       accessToken: 'access.jwt',
       refreshToken: 'refresh.jwt',
     });

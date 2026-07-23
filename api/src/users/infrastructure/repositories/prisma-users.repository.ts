@@ -28,7 +28,7 @@ export class PrismaUsersRepository implements UsersRepository {
             create: { type: CredentialType.password, hash: input.passwordHash },
           },
         },
-        select: { id: true, email: true, name: true },
+        select: { id: true, email: true, name: true, onboardedAt: true },
       });
     } catch (e) {
       if (
@@ -44,14 +44,14 @@ export class PrismaUsersRepository implements UsersRepository {
   async findById(id: string): Promise<UserSnapshot | null> {
     return this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, onboardedAt: true },
     });
   }
 
   async findByEmail(email: string): Promise<UserSnapshot | null> {
     return this.prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, onboardedAt: true },
     });
   }
 
@@ -64,6 +64,7 @@ export class PrismaUsersRepository implements UsersRepository {
         id: true,
         email: true,
         name: true,
+        onboardedAt: true,
         credentials: {
           where: { type: CredentialType.password },
           select: { hash: true },
@@ -76,6 +77,7 @@ export class PrismaUsersRepository implements UsersRepository {
       id: user.id,
       email: user.email,
       name: user.name,
+      onboardedAt: user.onboardedAt,
       passwordHash: user.credentials[0].hash,
     };
   }

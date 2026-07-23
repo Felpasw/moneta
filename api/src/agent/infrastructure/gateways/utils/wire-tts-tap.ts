@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import type { WebSocket } from 'ws';
 
 import { TtsPipeline } from '~/agent/application/tts-pipeline';
@@ -15,6 +16,8 @@ interface TtsTapContext {
   readonly tts: TtsService;
   readonly voiceId: string;
 }
+
+const debugLogger = new Logger('UpstreamDebug');
 
 export const wireTtsTap = (ctx: TtsTapContext): void => {
   const pipeline = new TtsPipeline(ctx.tts, {
@@ -41,6 +44,11 @@ export const wireTtsTap = (ctx: TtsTapContext): void => {
   ctx.upstream.onMessage((data) => {
     const event = parseRealtimeEvent(data);
     if (!event) return;
+    if (event.type === 'error') {
+      debugLogger.error(`upstream error payload: ${JSON.stringify(event)}`);
+    } else {
+      debugLogger.log(`upstream event: ${event.type}`);
+    }
     if (
       event.type === REALTIME_EVENT_TYPE.responseTextDone &&
       typeof event.text === 'string' &&

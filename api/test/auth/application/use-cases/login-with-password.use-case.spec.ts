@@ -25,6 +25,7 @@ const buildUseCase = () => {
       id: 'user-1',
       email: 'alice@example.com',
       name: 'Alice',
+      onboardedAt: null,
       passwordHash: 'stored-hash',
     }),
   };
@@ -66,7 +67,12 @@ describe('LoginWithPasswordUseCase', () => {
     });
 
     expect(result).toEqual({
-      user: { id: 'user-1', email: 'alice@example.com', name: 'Alice' },
+      user: {
+        id: 'user-1',
+        email: 'alice@example.com',
+        name: 'Alice',
+        onboardedAt: null,
+      },
       accessToken: 'access.jwt',
       refreshToken: 'refresh.jwt',
     });

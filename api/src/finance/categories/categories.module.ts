@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../../auth/auth.module';
 import { AddCategoryUseCase } from './application/use-cases/add-category.use-case';
 import { DeleteCategoryUseCase } from './application/use-cases/delete-category.use-case';
 import { ListCategoriesUseCase } from './application/use-cases/list-categories.use-case';

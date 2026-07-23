@@ -8,6 +8,7 @@ const CREATED_USER = {
   id: 'user-1',
   email: 'alice@example.com',
   name: 'Alice',
+  onboardedAt: null,
 };
 
 const makePrismaWithCreate = (createImpl: jest.Mock): PrismaService =>
@@ -32,6 +33,7 @@ describe('PrismaUsersRepository', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        onboardedAt: null,
       });
       expect(create).toHaveBeenCalledWith({
         data: {
@@ -41,7 +43,7 @@ describe('PrismaUsersRepository', () => {
             create: { type: 'password', hash: 'hashed' },
           },
         },
-        select: { id: true, email: true, name: true },
+        select: { id: true, email: true, name: true, onboardedAt: true },
       });
     });
 
@@ -81,11 +83,12 @@ describe('PrismaUsersRepository', () => {
   });
 
   describe('findByEmailWithPasswordCredential', () => {
-    it('returns id/email/name/passwordHash when the user has a password credential', async () => {
+    it('returns id/email/name/onboardedAt/passwordHash when the user has a password credential', async () => {
       const findUnique = jest.fn().mockResolvedValue({
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        onboardedAt: null,
         credentials: [{ hash: 'stored-hash' }],
       });
       const repo = new PrismaUsersRepository(
@@ -99,6 +102,7 @@ describe('PrismaUsersRepository', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        onboardedAt: null,
         passwordHash: 'stored-hash',
       });
       expect(findUnique).toHaveBeenCalledWith({
@@ -107,6 +111,7 @@ describe('PrismaUsersRepository', () => {
           id: true,
           email: true,
           name: true,
+          onboardedAt: true,
           credentials: {
             where: { type: 'password' },
             select: { hash: true },
@@ -132,6 +137,7 @@ describe('PrismaUsersRepository', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        onboardedAt: null,
         credentials: [],
       });
       const repo = new PrismaUsersRepository(

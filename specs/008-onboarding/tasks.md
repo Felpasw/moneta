@@ -48,7 +48,7 @@ Mesmas do `specs/002-auth/tasks.md`.
 
 ## Fase 2 — Prompt do assistente
 
-- [ ] **MNT-83** [T][S] Snippet `prompts/onboarding.ts` — instrui o assistente a: (a) usar `users.name` na saudação inicial, (b) pedir nickname primeiro, (c) seguir a ordem bancos → renda → despesas fixas, (d) tom conforme `treatment_style`, (e) NUNCA inventar dados — sempre confirmar antes de chamar tool. Composição de system prompt (MNT-62) injeta esse snippet quando `OnboardingState.completed === false`
+- [x] ✅ commit `5b98cf3` **MNT-83** [T][S] Snippet `prompts/onboarding.ts` — foco reduzido pra saudação: (a) `users.name` real injetado via `composeSystemPrompt({ userName })` pra evitar alucinação (o modelo tava chamando de "Rafael" random), (b) explica Moneta em 1 frase, (c) pergunta o apelido. Bancos/renda/despesas ficam pra MNT-81/86 (fase de tools). Wire condicional em `wireSystemPrompt`: `UsersService.findById` (novo — substitui `isOnboarded`) decide `onboarding` + injeta `userName`; quando `!onboardedAt`, dispara também `response.create` upstream pro Realtime iniciar a fala. `OnboardingState` completo (MNT-80) fica pra depois — hoje deriva de `user.onboardedAt`. Bundle inclui MNT-50 GA compat (ver `specs/003-assistant/tasks.md`).
 
 ## Fase 3 — UX web
 

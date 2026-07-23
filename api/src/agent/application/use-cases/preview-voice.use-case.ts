@@ -7,7 +7,6 @@ import {
   VOICE_PREVIEW_PHRASE_PT_BR,
 } from '~/agent/domain/constants/voice-preview';
 import type { TtsService } from '~/agent/domain/ports/tts-service';
-import type { PreviewVoiceUseCaseOptions } from '~/agent/domain/types/preview-voice';
 import { TTS_SERVICE } from '~/agent/infrastructure/tts/tts.tokens';
 
 import type { VoicePreviewCacheEntry } from '../types/voice-preview-cache-entry';
@@ -15,17 +14,13 @@ import type { VoicePreviewCacheEntry } from '../types/voice-preview-cache-entry'
 @Injectable()
 export class PreviewVoiceUseCase {
   private readonly cache = new Map<string, VoicePreviewCacheEntry>();
-  private readonly cacheTtlMs: number;
-  private readonly phrase: string;
+  private readonly cacheTtlMs = VOICE_PREVIEW_CACHE_TTL_MS;
+  private readonly phrase = VOICE_PREVIEW_PHRASE_PT_BR;
 
   constructor(
     @Inject(TTS_SERVICE) private readonly tts: TtsService,
     @Inject(CLOCK) private readonly clock: Clock,
-    options: PreviewVoiceUseCaseOptions = {},
-  ) {
-    this.cacheTtlMs = options.cacheTtlMs ?? VOICE_PREVIEW_CACHE_TTL_MS;
-    this.phrase = options.phrase ?? VOICE_PREVIEW_PHRASE_PT_BR;
-  }
+  ) {}
 
   async execute(voiceId: string): Promise<Buffer> {
     const nowMs = this.clock.now().getTime();

@@ -100,6 +100,7 @@ describe('AuthController', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        onboardedAt: null,
       });
 
       const res = await request(http).post('/auth/signup').send({
@@ -110,7 +111,12 @@ describe('AuthController', () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toEqual({
-        user: { id: 'user-1', email: 'alice@example.com', name: 'Alice' },
+        user: {
+          id: 'user-1',
+          email: 'alice@example.com',
+          name: 'Alice',
+          onboardedAt: null,
+        },
       });
     });
 
@@ -157,7 +163,12 @@ describe('AuthController', () => {
   describe('POST /auth/login', () => {
     it('returns 200 with token pair and sets refresh cookie on success', async () => {
       mocks.login.execute.mockResolvedValue({
-        user: { id: 'user-1', email: 'alice@example.com', name: 'Alice' },
+        user: {
+          id: 'user-1',
+          email: 'alice@example.com',
+          name: 'Alice',
+          onboardedAt: null,
+        },
         accessToken: 'access.jwt',
         refreshToken: 'refresh.jwt',
       });
@@ -169,7 +180,12 @@ describe('AuthController', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
-        user: { id: 'user-1', email: 'alice@example.com', name: 'Alice' },
+        user: {
+          id: 'user-1',
+          email: 'alice@example.com',
+          name: 'Alice',
+          onboardedAt: null,
+        },
         accessToken: 'access.jwt',
         refreshToken: 'refresh.jwt',
       });
@@ -179,6 +195,28 @@ describe('AuthController', () => {
       expect(cookie).toContain('HttpOnly');
       expect(cookie).toContain('SameSite=Lax');
       expect(cookie).toContain('Path=/auth/refresh');
+    });
+
+    it('propagates a non-null onboardedAt through the login body', async () => {
+      const onboardedAt = new Date('2026-01-15T10:00:00.000Z');
+      mocks.login.execute.mockResolvedValue({
+        user: {
+          id: 'user-1',
+          email: 'alice@example.com',
+          name: 'Alice',
+          onboardedAt,
+        },
+        accessToken: 'access.jwt',
+        refreshToken: 'refresh.jwt',
+      });
+
+      const res = await request(http).post('/auth/login').send({
+        email: 'alice@example.com',
+        password: 'plaintext',
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body.user.onboardedAt).toBe(onboardedAt.toISOString());
     });
 
     it('returns 401 on InvalidCredentialsError', async () => {

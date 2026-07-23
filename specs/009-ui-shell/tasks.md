@@ -1,7 +1,7 @@
 # UI shell e arquitetura de telas
 
 Casa canônica de **toda UI/frontend** do projeto. Includes:
-- MNT-98..MNT-111 (nativos)
+- MNT-98..MNT-111, MNT-193 (nativos)
 - MNT-51, MNT-63..MNT-64, MNT-66..MNT-70 (migradas de 003-assistant)
 - MNT-71, MNT-44 (migradas de 002-auth)
 - MNT-141..MNT-145 (migradas de 004-transactions)
@@ -23,6 +23,27 @@ Referências cruzadas apontam pros specs backend correspondentes.
   - `middleware.ts` decide o grupo baseado na sessão.
 - **shadcn/ui** como base (MNT-71). Componentes: `Tabs`, `Sheet`, `Card`, `Skeleton`, `Sonner`, `Dialog`, `Dropdown`, `Avatar`, `Button`.
 - **Empty states não são opcionais** — toda lista/grid tem um estado vazio explícito com CTA (geralmente "peça pelo chat").
+- **Padrão de estrutura e contratos**: `/web` espelha o layout de `../selling-front-master` (referência local ao lado do repo) — mesma organização de pastas e mesmos contratos de camadas. **Única diferença: UI usa `shadcn/ui`, não HeroUI**. Toast via `sonner` (do shadcn) no lugar de `@heroui/toast`. Layout:
+  - `/web/src/app/` — App Router com route groups `(auth)/` e `(app)/`, `providers.tsx` (agrupa `QueryClientProvider` + tema + `<Toaster />`) e `layout.tsx` root
+  - `/web/src/services/<dominio>.service.ts` — classe `implements I<Dominio>Service`; usa o `api` (axios) singleton; encapsula chamadas HTTP e dispara toast de sucesso/erro
+  - `/web/src/services/interfaces/<dominio>.interface.ts` — DTOs de request/response + interface do service
+  - `/web/src/hooks/use<Dominio>.ts` — **classe** com um único método `use()` (mesmo estilo dos services) que retorna todos os hooks do domínio de uma vez (`{ profile, login, signup, logout, ... }`). `useQueryClient()` é chamado uma vez só dentro de `use()`, compartilhado por todas as mutations. Interface fica em `hooks/interfaces/use<Dominio>.interface.ts` (ex: `IAuthHooks`, `AuthHooksResult`). Query keys num objeto `<DOMINIO>_QUERY_KEYS` no escopo do módulo (arrays literais com `as const`, não factory function). Instância singleton exportada como `export default new <Dominio>Hooks()`. Usage: `const auth = authHooks.use(); auth.login.mutate({...})`. **Requer** `/* eslint-disable react-hooks/rules-of-hooks */` no topo do arquivo — o lint bane hooks em class (assume "class component"), mas plain TS class não é componente React; chamada acontece durante render em ordem estável, então Rules of Hooks (runtime) segue respeitada. **Contrato**: `use()` chama todos os hooks no topo em ordem fixa, sem `if`/loop
+  - `/web/src/components/` — componentes seguindo **Atomic Design**:
+    - `atoms/` — peças indivisíveis (shadcn primitives: `Button`, `Input`, `Label`, `Card`, `Meter`, `Dialog`, ...). `components.json` aponta o alias `ui` pra cá, então `shadcn add` cai aqui automaticamente
+    - `molecules/` — composições pequenas de atoms com responsabilidade única, sem side-effect global (ex: `PasswordStrengthMeter` = `Input` + `Meter`, `FormField` = `Label` + `Input` + erro)
+    - `organisms/` — composições grandes que **conhecem domínio** e/ou consomem hooks de dados (ex: `LoginForm` consumindo `useLogin`, `TransactionList` consumindo `useTransactions`)
+    - `templates/` — esqueletos de layout que recebem `children` (ex: `AuthLayout`, `AppShell`). No App Router, muitas vezes o próprio `layout.tsx` do route group já é template — só sobe pra cá quando reutilizado
+  - `/web/src/lib/queryClient.ts` — `QueryClient` configurado (retry só em 5xx/408, `staleTime` 30s, `refetchOnWindowFocus: false`)
+  - `/web/src/utils/` — helpers puros (`errorHandler`, `formatters`, `userManager`)
+  - `/web/src/types/` — types globais
+  - `/web/src/config/` — config (fontes, etc)
+  - `/web/src/api.ts` — instância `axios` com `withCredentials: true` + interceptor de resposta pra 401/419
+  - `/web/src/globals.ts` — `API_URL` e constantes de env
+  - `/web/test/` — **mirror do `src/`** com specs isolados (`test/lib/queryClient.spec.ts` testa `src/lib/queryClient.ts`). Mesmo padrão do `/api/test/`. Vitest config restringe descoberta a `test/**/*.spec.{ts,tsx}`. Imports usam alias `@/` (não relativo) pra apontar pra produção
+  - **Stack complementar**: `axios` + `@tanstack/react-query` + `react-hook-form` + `@hookform/resolvers` (zod). Sem estado global "manual" — TanStack Query é fonte única de verdade pros dados remotos, `userManager` (util) é o único ponto que persiste user localmente
+  - **Naming de arquivo**: **todo** componente React (`.tsx` que exporta JSX) usa **PascalCase** — incluindo os vendored pelo shadcn em `src/components/atoms/*` (ex: `Button.tsx`, `DropdownMenu.tsx`, `RadioGroup.tsx`). Módulos/services/hooks/utils (`.ts` sem JSX) usam **camelCase** (ex: `queryClient.ts`, `useAuth.ts`, `userManager.ts`). Services e interfaces com escopo de domínio no filename usam ponto (`auth.service.ts`, `auth.interface.ts`). Next.js special files (`layout.tsx`, `page.tsx`, `middleware.ts`, `globals.css`) seguem o padrão do framework. **Atenção**: `shadcn add` cria arquivos em kebab-case por default — após rodar, renomear pra PascalCase (`git mv`) e ajustar imports internos entre os componentes recém-adicionados
+  - **Export style**: services, utils e hooks singleton usam **`export default` da instância** (ex: `const authService = new AuthService(); export default authService;`). Um export só — sem duplicar em named + default. Types/interfaces + constantes globais do módulo (query keys, enums, mapas de descriptors) vão como named export no mesmo arquivo (`export interface AuthUser`, `export const AUTH_QUERY_KEYS`). Services, utils e hooks são **classes** (não plain object com `let` no escopo de módulo — encapsulação real via `private`)
+  - **Data-driven > condicional**: prioriza `Record`/`Map`/array de descriptors + enum sobre cadeias de `if`/`switch` (regra do CLAUDE.md global). Ex: `PasswordStrengthMeter` usa `enum StrengthLevel` + `STRENGTH_DESCRIPTORS: Record<StrengthLevel, ...>` + `SCORE_CHECKS: Array<(pw) => boolean>` + `SCORE_THRESHOLDS: Array<{maxScore, level}>` em vez de encadear `if score <= 1 ... else if score === 2`
 
 ## Depende de
 
@@ -31,6 +52,7 @@ Toda a UI listada aqui depende dos backends terminados nos specs abaixo. Bloquei
 | Item | Spec backend | Necessário pra |
 |------|--------------|----------------|
 | Auth JWT + refresh (Fase 1 do 002) | 002-auth | Middleware + rotas protegidas |
+| `POST /auth/signup` + `POST /auth/login` (MNT-13) | 002-auth | MNT-193 (páginas login/signup) |
 | `POST /auth/forgot` + `POST /auth/reset` (MNT-36) | 002-auth | MNT-44 (páginas forgot/reset password) |
 | Gateway WS `/agent/ws` (MNT-50) | 003-assistant | MNT-51 (client WS), MNT-101 (`/chat`) |
 | CRUD `/agent/profile` (MNT-61) | 003-assistant | MNT-66 (`/settings/assistant`), MNT-67 (wizard RPM) |
@@ -140,6 +162,7 @@ Pré-requisito de toda UI. Precisa acontecer **antes** de qualquer outra task de
 
 ## Fase 5 — Auth (UI) — migrada de 002-auth
 
+- [x] ✅ commit `7d0bbf5` **MNT-193** [T][S] Páginas `/login` e `/signup` em `/web/src/app/(auth)/` — casca principal da UI. Consomem `POST /auth/login` e `POST /auth/signup` (MNT-13). Segue **integralmente** o padrão descrito em "Decisões" (`services/auth.service.ts` + `services/interfaces/auth.interface.ts` + `hooks/useAuth.ts` com `useLogin`/`useRegister`/`useLogout`/`useGetProfile` via TanStack Query). Form via `react-hook-form` + zod resolver. UI com shadcn (`Card`, `Input`, `Label`, `Button`, `Form`). Toast de erro/sucesso via `sonner`. Link "Esqueci minha senha" já presente (aponta pra `/forgot-password` — página real vem no MNT-44). Redirect pós-sucesso ramificado direto no `useLoginForm` a partir de `user.onboardedAt` (`/` se preenchido, `/onboarding` se `null`); `UserSnapshot` no api ganhou `onboardedAt` pra viabilizar. Signup redireciona incondicional pra `/onboarding`. O middleware do MNT-99 ainda é necessário pra cobrir deep-link/refresh de aba fora do fluxo pós-submit.
 - [ ] **MNT-44** [S] Web UI no `/web`: link "Esqueci minha senha" na tela de login; página `/forgot-password` com input de email e mensagem neutra pós-submit; página `/reset-password?token=...` com form de nova senha + confirmação. Consome `POST /auth/forgot` e `POST /auth/reset` (MNT-36 no `specs/002-auth`)
 
 ---
@@ -170,7 +193,7 @@ Especializa as páginas abstratas do shell (MNT-100/102/103) com detalhes de dom
 
 ## Fase 8 — Onboarding (UI) — migrada de 008-onboarding
 
-- [ ] **MNT-84** [T][S] Primeiro carregamento pós-login checa `GET /onboarding/state` (MNT-80). Se `!completed`, abre modal/página `/onboarding` que já inicia sessão do assistente em modo onboarding (usa gateway WS de MNT-50 com flag/hint)
+- [x] ✅ commit `c376c93` **MNT-84** [T][S] Página `/onboarding` (server component que delega pro `OnboardingHero` organism). Hook `useAgentSession({ enabled })` — conecta WS `/agent/ws?token=<jwt>`, buffera chunks base64 dos envelopes `tts.audio.delta` em `Uint8Array[]`, monta `Blob(audio/mpeg)` no `.done` e toca via `HTMLAudioElement`. Estado tipado em enum `AgentSessionStatus` (idle/connecting/listening/speaking/error) + flag `isWarming` pra ocultar loader após 1º `audio.onplay`. `OnboardingHero` renderiza VoiceOrb + título + subtítulo + `<BarLoader>` com fadeIn hierárquico via motion (mesmos variants do login/signup); passa `audioElement` pro VoiceOrb que reage via AnalyserNode/uniform `hover` no shader. Novo atom `BarLoader` (8 barras `bg-foreground` animadas, theme-aware). VoiceOrb ganha paleta monocromática (`baseColor1/2/3` em escala de cinza). Ainda **sem** consulta a `GET /onboarding/state` (MNT-80 pendente) — condicionalidade "abre onboarding" é feita direto no `useLoginForm` via `user.onboardedAt` do MNT-193. Middleware do MNT-99 ainda pra deep-link/refresh.
 - [ ] **MNT-85** [S] Botão "pular por enquanto" — chama endpoint `POST /onboarding/dismiss` (endpoint 1:1 acoplado ao botão, definido junto: seta `users.dismissed_onboarding_at`). Não conclui onboarding, mas some da UI até próximo login. Badge discreto no header lembra ("Complete seu setup")
 
 ---

@@ -102,6 +102,7 @@ describe('PrismaSessionsRepository', () => {
           id: 'user-1',
           email: 'alice@example.com',
           name: 'Alice',
+          onboardedAt: null,
         },
       });
       const repo = new PrismaSessionsRepository(makePrisma({ findUnique }));
@@ -117,6 +118,7 @@ describe('PrismaSessionsRepository', () => {
           id: 'user-1',
           email: 'alice@example.com',
           name: 'Alice',
+          onboardedAt: null,
         },
       });
       expect(findUnique).toHaveBeenCalledWith({
@@ -126,7 +128,9 @@ describe('PrismaSessionsRepository', () => {
           userId: true,
           revokedAt: true,
           expiresAt: true,
-          user: { select: { id: true, email: true, name: true } },
+          user: {
+            select: { id: true, email: true, name: true, onboardedAt: true },
+          },
         },
       });
     });

@@ -7,7 +7,7 @@ import type {
 import { env } from '../../../../../config/env';
 
 const REALTIME_URL_BASE = 'wss://api.openai.com/v1/realtime';
-const REALTIME_MODEL = 'gpt-4o-realtime-preview';
+const REALTIME_MODEL = 'gpt-realtime';
 
 @Injectable()
 export class OpenAiRealtimeProvider implements RealtimeUpstreamProvider {
@@ -16,7 +16,6 @@ export class OpenAiRealtimeProvider implements RealtimeUpstreamProvider {
       url: `${REALTIME_URL_BASE}?model=${REALTIME_MODEL}`,
       headers: {
         Authorization: `Bearer ${env.LLM_API_KEY}`,
-        'OpenAI-Beta': 'realtime=v1',
       },
     };
   }

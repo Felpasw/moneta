@@ -34,7 +34,9 @@ export class PrismaSessionsRepository implements SessionsRepository {
         userId: true,
         revokedAt: true,
         expiresAt: true,
-        user: { select: { id: true, email: true, name: true } },
+        user: {
+          select: { id: true, email: true, name: true, onboardedAt: true },
+        },
       },
     });
   }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module';
+import { UsersModule } from '../users/users.module';
 import { AgentController } from './agent.controller';
 import { AgentService } from './agent.service';
 import { ListAvailableVoicesUseCase } from './application/use-cases/list-available-voices.use-case';
@@ -11,7 +12,7 @@ import { TtsModule } from './infrastructure/tts/tts.module';
 import { PersonalityModule } from './personality/personality.module';
 
 @Module({
-  imports: [AuthModule, LlmModule, TtsModule, PersonalityModule],
+  imports: [AuthModule, UsersModule, LlmModule, TtsModule, PersonalityModule],
   controllers: [AgentController],
   providers: [
     AgentService,

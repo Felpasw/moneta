@@ -93,7 +93,12 @@ export class LoginWithPasswordUseCase {
     });
 
     return {
-      user: { id: record.id, email: record.email, name: record.name },
+      user: {
+        id: record.id,
+        email: record.email,
+        name: record.name,
+        onboardedAt: record.onboardedAt,
+      },
       accessToken,
       refreshToken,
     };

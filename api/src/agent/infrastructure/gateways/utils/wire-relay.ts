@@ -20,11 +20,20 @@ const isOpen = (client: WebSocket): boolean =>
 export const wireRelay = (ctx: RelayContext): void => {
   const { client, upstream, logger, userId } = ctx;
 
+  upstream.onOpen(() => {
+    logger.log(`upstream OPEN for ${userId}`);
+  });
+
   upstream.onMessage((data) => {
     if (isOpen(client)) client.send(data);
   });
 
   upstream.onClose((code, reason) => {
+    logger.log(
+      `upstream CLOSE for ${userId} — code=${code} reason=${reason.toString(
+        'utf8',
+      )}`,
+    );
     if (isOpen(client)) client.close(code, reason.toString('utf8'));
   });
 
@@ -33,6 +42,18 @@ export const wireRelay = (ctx: RelayContext): void => {
     if (isOpen(client)) client.close(CLOSE_UPSTREAM_ERROR, 'upstream_error');
   });
 
-  client.on(WsEvent.Message, (raw: Buffer) => upstream.send(raw));
+  let clientFrameCount = 0;
+  client.on(WsEvent.Message, (raw: Buffer, isBinary: boolean) => {
+    clientFrameCount += 1;
+    if (clientFrameCount <= 3 || clientFrameCount % 20 === 0) {
+      const preview = isBinary
+        ? `<binary ${raw.length}B>`
+        : raw.toString('utf8').slice(0, 80);
+      logger.log(
+        `client frame #${clientFrameCount} (${isBinary ? 'bin' : 'text'}): ${preview}`,
+      );
+    }
+    upstream.send(isBinary ? raw : raw.toString('utf8'));
+  });
   client.on(WsEvent.Close, () => upstream.close());
 };
