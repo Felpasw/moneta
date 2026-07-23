@@ -11,6 +11,6 @@ import { PrismaBanksRepository } from './infrastructure/repositories/prisma-bank
     { provide: BANKS_REPOSITORY, useClass: PrismaBanksRepository },
     ListBanksUseCase,
   ],
-  exports: [ListBanksUseCase],
+  exports: [ListBanksUseCase, BANKS_REPOSITORY],
 })
 export class BanksModule {}

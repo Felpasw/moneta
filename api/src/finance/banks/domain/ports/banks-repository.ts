@@ -9,4 +9,5 @@ export interface Bank {
 
 export interface BanksRepository {
   listAll(): Promise<Bank[]>;
+  findManyByIds(ids: string[]): Promise<Bank[]>;
 }
