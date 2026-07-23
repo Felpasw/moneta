@@ -26,4 +26,5 @@ export interface UsersRepository {
   ): Promise<UserWithPasswordCredential | null>;
   findById(id: string): Promise<UserSnapshot | null>;
   findByEmail(email: string): Promise<UserSnapshot | null>;
+  updateNickname(id: string, nickname: string): Promise<{ nickname: string }>;
 }

@@ -15,4 +15,11 @@ export class UsersService {
   async findById(id: string): Promise<UserSnapshot | null> {
     return this.users.findById(id);
   }
+
+  async updateNickname(
+    id: string,
+    nickname: string,
+  ): Promise<{ nickname: string }> {
+    return this.users.updateNickname(id, nickname);
+  }
 }

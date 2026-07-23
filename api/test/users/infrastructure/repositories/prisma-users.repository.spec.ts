@@ -17,6 +17,9 @@ const makePrismaWithCreate = (createImpl: jest.Mock): PrismaService =>
 const makePrismaWithFindUnique = (findUniqueImpl: jest.Mock): PrismaService =>
   ({ user: { findUnique: findUniqueImpl } }) as unknown as PrismaService;
 
+const makePrismaWithUpdate = (updateImpl: jest.Mock): PrismaService =>
+  ({ user: { update: updateImpl } }) as unknown as PrismaService;
+
 describe('PrismaUsersRepository', () => {
   describe('createWithPasswordCredential', () => {
     it('returns a UserSnapshot from the created user on success', async () => {
@@ -147,6 +150,22 @@ describe('PrismaUsersRepository', () => {
       const result =
         await repo.findByEmailWithPasswordCredential('alice@example.com');
       expect(result).toBeNull();
+    });
+  });
+
+  describe('updateNickname', () => {
+    it('atualiza apenas o campo nickname e retorna o valor salvo', async () => {
+      const update = jest.fn().mockResolvedValue({ nickname: 'Felps' });
+      const repo = new PrismaUsersRepository(makePrismaWithUpdate(update));
+
+      const result = await repo.updateNickname('user-1', 'Felps');
+
+      expect(result).toEqual({ nickname: 'Felps' });
+      expect(update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { nickname: 'Felps' },
+        select: { nickname: true },
+      });
     });
   });
 });

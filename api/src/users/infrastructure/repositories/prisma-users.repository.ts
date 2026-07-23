@@ -55,6 +55,17 @@ export class PrismaUsersRepository implements UsersRepository {
     });
   }
 
+  async updateNickname(
+    id: string,
+    nickname: string,
+  ): Promise<{ nickname: string }> {
+    return this.prisma.user.update({
+      where: { id },
+      data: { nickname },
+      select: { nickname: true },
+    });
+  }
+
   async findByEmailWithPasswordCredential(
     email: string,
   ): Promise<UserWithPasswordCredential | null> {
