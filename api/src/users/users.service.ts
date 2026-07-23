@@ -22,4 +22,11 @@ export class UsersService {
   ): Promise<{ nickname: string }> {
     return this.users.updateNickname(id, nickname);
   }
+
+  async markOnboarded(
+    id: string,
+    onboardedAt: Date,
+  ): Promise<{ onboardedAt: Date }> {
+    return this.users.markOnboarded(id, onboardedAt);
+  }
 }

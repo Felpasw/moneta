@@ -8,6 +8,7 @@ const CREATED_USER = {
   id: 'user-1',
   email: 'alice@example.com',
   name: 'Alice',
+  nickname: null,
   onboardedAt: null,
 };
 
@@ -36,6 +37,7 @@ describe('PrismaUsersRepository', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        nickname: null,
         onboardedAt: null,
       });
       expect(create).toHaveBeenCalledWith({
@@ -46,7 +48,13 @@ describe('PrismaUsersRepository', () => {
             create: { type: 'password', hash: 'hashed' },
           },
         },
-        select: { id: true, email: true, name: true, onboardedAt: true },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          nickname: true,
+          onboardedAt: true,
+        },
       });
     });
 
@@ -91,6 +99,7 @@ describe('PrismaUsersRepository', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        nickname: null,
         onboardedAt: null,
         credentials: [{ hash: 'stored-hash' }],
       });
@@ -105,6 +114,7 @@ describe('PrismaUsersRepository', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        nickname: null,
         onboardedAt: null,
         passwordHash: 'stored-hash',
       });
@@ -114,6 +124,7 @@ describe('PrismaUsersRepository', () => {
           id: true,
           email: true,
           name: true,
+          nickname: true,
           onboardedAt: true,
           credentials: {
             where: { type: 'password' },

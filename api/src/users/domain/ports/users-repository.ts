@@ -10,6 +10,7 @@ export interface UserSnapshot {
   id: string;
   email: string;
   name: string;
+  nickname: string | null;
   onboardedAt: Date | null;
 }
 
@@ -27,4 +28,5 @@ export interface UsersRepository {
   findById(id: string): Promise<UserSnapshot | null>;
   findByEmail(email: string): Promise<UserSnapshot | null>;
   updateNickname(id: string, nickname: string): Promise<{ nickname: string }>;
+  markOnboarded(id: string, onboardedAt: Date): Promise<{ onboardedAt: Date }>;
 }
