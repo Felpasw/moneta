@@ -16,16 +16,29 @@ const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
     onboarding: !isOnboarded,
     userName: user?.name ?? null,
   });
-  ctx.upstream.send(
-    JSON.stringify({
-      type: REALTIME_EVENT_TYPE.sessionUpdate,
-      session: {
-        type: 'realtime',
-        instructions,
-        output_modalities: ['text'],
+  const sessionPayload = {
+    type: REALTIME_EVENT_TYPE.sessionUpdate,
+    session: {
+      type: 'realtime',
+      instructions,
+      output_modalities: ['text'],
+      audio: {
+        input: {
+          format: { type: 'audio/pcm', rate: 24000 },
+          turn_detection: {
+            type: 'server_vad',
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 500,
+          },
+        },
       },
-    }),
+    },
+  };
+  ctx.logger.log(
+    `sending session.update for ${ctx.userId} (onboarding=${!isOnboarded})`,
   );
+  ctx.upstream.send(JSON.stringify(sessionPayload));
   if (!isOnboarded) {
     ctx.upstream.send(
       JSON.stringify({ type: REALTIME_EVENT_TYPE.responseCreate }),

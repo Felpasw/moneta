@@ -51,9 +51,11 @@ export class AgentRealtimeGateway
   handleConnection(client: WebSocket, req: IncomingMessage): void {
     const userId = this.authenticate(req);
     if (!userId) {
+      this.logger.warn(`ws handshake rejected: unauthorized`);
       client.close(CLOSE_UNAUTHORIZED, 'unauthorized');
       return;
     }
+    this.logger.log(`ws client connected for ${userId}`);
 
     const upstream = this.upstreamFactory.connect(userId);
     this.upstreams.set(client, upstream);
@@ -74,6 +76,7 @@ export class AgentRealtimeGateway
   }
 
   handleDisconnect(client: WebSocket): void {
+    this.logger.log(`ws client disconnected`);
     this.upstreams.get(client)?.close();
   }
 

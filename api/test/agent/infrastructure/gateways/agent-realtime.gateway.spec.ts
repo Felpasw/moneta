@@ -82,23 +82,23 @@ interface FakeClient {
   send: jest.Mock;
   close: jest.Mock;
   on: jest.Mock;
-  __handlers: Record<string, Listener<[Buffer]>>;
-  emit: (event: string, payload: Buffer) => void;
+  __handlers: Record<string, Listener<[Buffer, boolean]>>;
+  emit: (event: string, payload: Buffer, isBinary?: boolean) => void;
 }
 
 const makeClient = (): FakeClient => {
-  const handlers: Record<string, Listener<[Buffer]>> = {};
+  const handlers: Record<string, Listener<[Buffer, boolean]>> = {};
   return {
     readyState: 1,
     OPEN: 1,
     send: jest.fn(),
     close: jest.fn(),
-    on: jest.fn((event: string, fn: Listener<[Buffer]>) => {
+    on: jest.fn((event: string, fn: Listener<[Buffer, boolean]>) => {
       handlers[event] = fn;
     }),
     __handlers: handlers,
-    emit: (event: string, payload: Buffer): void => {
-      handlers[event]?.(payload);
+    emit: (event: string, payload: Buffer, isBinary = false): void => {
+      handlers[event]?.(payload, isBinary);
     },
   };
 };
@@ -313,7 +313,7 @@ describe('AgentRealtimeGateway', () => {
   });
 
   describe('frame relay', () => {
-    it('forwards client messages to upstream', () => {
+    it('converte frames de texto do cliente pra string ao enviar upstream', () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
       const factory = makeFactory(upstream);
@@ -331,8 +331,32 @@ describe('AgentRealtimeGateway', () => {
         makeReq({ token: 'ok' }),
       );
 
-      const payload = Buffer.from('client->openai');
-      client.emit(WsEvent.Message, payload);
+      const payload = Buffer.from('{"type":"ping"}');
+      client.emit(WsEvent.Message, payload, false);
+
+      expect(upstream.sent).toEqual(['{"type":"ping"}']);
+    });
+
+    it('preserva frames binários do cliente ao enviar upstream', () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-1' }));
+      const factory = makeFactory(upstream);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        makeProfileRepo(null),
+        makeStubUsers(),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+
+      const payload = Buffer.from([0x01, 0x02, 0x03]);
+      client.emit(WsEvent.Message, payload, true);
 
       expect(upstream.sent).toEqual([payload]);
     });
@@ -643,6 +667,23 @@ describe('AgentRealtimeGateway', () => {
       return undefined;
     };
 
+    const findFullSessionUpdate = (
+      upstream: FakeUpstream,
+    ): Record<string, unknown> | undefined => {
+      for (const payload of upstream.sent) {
+        if (typeof payload !== 'string') continue;
+        try {
+          const parsed = JSON.parse(payload) as Record<string, unknown>;
+          if (parsed.type === 'session.update') {
+            return parsed.session as Record<string, unknown>;
+          }
+        } catch {
+          /* not JSON */
+        }
+      }
+      return undefined;
+    };
+
     it('sends session.update with a prompt containing the very-informal snippet when profile is very_informal', async () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-vi' }));
@@ -774,6 +815,41 @@ describe('AgentRealtimeGateway', () => {
 
       expect(client.close).not.toHaveBeenCalled();
       expect(findSessionUpdate(upstream)).toBeUndefined();
+    });
+
+    it('configura input_audio_format=pcm16 + server_vad no session.update', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-1' }));
+      const factory = makeFactory(upstream);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        makeProfileRepo(null),
+        makeStubUsers(),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+
+      const session = findFullSessionUpdate(upstream);
+      expect(session).toBeDefined();
+      const audio = session?.audio as
+        | {
+            input?: {
+              format?: { type?: string; rate?: number };
+              turn_detection?: { type?: string };
+            };
+          }
+        | undefined;
+      expect(audio?.input?.format?.type).toBe('audio/pcm');
+      expect(audio?.input?.format?.rate).toBe(24000);
+      expect(audio?.input?.turn_detection?.type).toBe('server_vad');
     });
   });
 
