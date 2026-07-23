@@ -28,16 +28,17 @@ export class AddUserBanksUseCase {
     const foundIds = new Set(banks.map((b) => b.id));
     const notFound = uniqueIds.filter((id) => !foundIds.has(id));
 
-    const created: CreatedAccount[] = [];
-    for (const bank of banks) {
-      const account = await this.accounts.add({
-        userId: input.userId,
-        bankId: bank.id,
-        nickname: bank.name,
-        initialBalance: 0,
-      });
-      created.push({ accountId: account.id, bankName: bank.name });
-    }
+    const created: CreatedAccount[] = await Promise.all(
+      banks.map(async (bank) => {
+        const account = await this.accounts.add({
+          userId: input.userId,
+          bankId: bank.id,
+          nickname: bank.name,
+          initialBalance: 0,
+        });
+        return { accountId: account.id, bankName: bank.name };
+      }),
+    );
 
     return { created, notFound };
   }
