@@ -4,6 +4,7 @@ import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 
+import { BankIcon } from "@/components/atoms/BankIcon";
 import { StepIndicator } from "@/components/atoms/StepIndicator";
 import type { ToolEvent } from "@/hooks/interfaces/useAgentSession.interface";
 import {
@@ -106,9 +107,10 @@ export function OnboardingProgress({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="flex items-center justify-between rounded-lg border border-border/60 bg-background/60 px-4 py-3 shadow-sm backdrop-blur"
+                    className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/60 px-4 py-3 shadow-sm backdrop-blur"
                   >
-                    <span className="text-sm font-medium text-foreground">
+                    <BankIcon bankName={bank.bankName} size={32} />
+                    <span className="flex-1 text-sm font-medium text-foreground">
                       {bank.bankName}
                     </span>
                     <span className="text-sm tabular-nums text-muted-foreground">

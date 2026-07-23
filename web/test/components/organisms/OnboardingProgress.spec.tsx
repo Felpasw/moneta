@@ -11,6 +11,12 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: routerPush }),
 }));
 
+vi.mock("@/components/atoms/BankIcon", () => ({
+  BankIcon: ({ bankName }: { bankName: string }) => (
+    <span data-testid="bank-icon" data-bank={bankName} />
+  ),
+}));
+
 const pending = (callId: string, toolName: string): ToolEvent => ({
   kind: ToolEventKind.Pending,
   callId,

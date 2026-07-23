@@ -13,6 +13,12 @@ vi.mock("@/components/atoms/VoiceOrb", () => ({
   VoiceOrb: () => <div data-testid="voice-orb" />,
 }));
 
+vi.mock("@/components/atoms/BankIcon", () => ({
+  BankIcon: ({ bankName }: { bankName: string }) => (
+    <span data-testid="bank-icon" data-bank={bankName} />
+  ),
+}));
+
 const toastError = vi.fn();
 vi.mock("sonner", () => ({
   toast: { error: (...args: unknown[]) => toastError(...args), success: vi.fn() },
