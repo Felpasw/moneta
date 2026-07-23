@@ -5,6 +5,7 @@ import { BanksModule } from '../banks/banks.module';
 import { AccountsController } from './accounts.controller';
 import { AddBankAccountUseCase } from './application/use-cases/add-bank-account.use-case';
 import { AddUserBanksUseCase } from './application/use-cases/add-user-banks.use-case';
+import { ConfigureAccountDetailsUseCase } from './application/use-cases/configure-account-details.use-case';
 import { DeleteBankAccountUseCase } from './application/use-cases/delete-bank-account.use-case';
 import { GetAccountByIdUseCase } from './application/use-cases/get-account-by-id.use-case';
 import { ListMyAccountsUseCase } from './application/use-cases/list-my-accounts.use-case';
@@ -30,6 +31,7 @@ import { PrismaUserBankAccountsRepository } from './infrastructure/repositories/
     DeleteBankAccountUseCase,
     SetBalanceUseCase,
     SetAccountBalancesUseCase,
+    ConfigureAccountDetailsUseCase,
   ],
   exports: [
     ListMyAccountsUseCase,
@@ -40,6 +42,7 @@ import { PrismaUserBankAccountsRepository } from './infrastructure/repositories/
     DeleteBankAccountUseCase,
     SetBalanceUseCase,
     SetAccountBalancesUseCase,
+    ConfigureAccountDetailsUseCase,
   ],
 })
 export class AccountsModule {}
