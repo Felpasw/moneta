@@ -22,6 +22,7 @@ const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
       type: 'realtime',
       instructions,
       output_modalities: ['text'],
+      tools: ctx.registry.toRealtimeToolsList(),
       audio: {
         input: {
           format: { type: 'audio/pcm', rate: 24000 },

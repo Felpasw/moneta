@@ -8,7 +8,7 @@ import type { TtsService } from '~/agent/domain/ports/tts-service';
 import { REALTIME_EVENT_TYPE } from '../constants/realtime-event-types';
 import { TTS_EVENT_TYPE } from '../constants/tts-event-types';
 import { parseRealtimeEvent } from './parse-realtime-event';
-import { sendTtsEvent } from './send-tts-event';
+import { sendClientEvent } from './send-client-event';
 
 interface TtsTapContext {
   readonly client: WebSocket;
@@ -22,19 +22,19 @@ const debugLogger = new Logger('UpstreamDebug');
 export const wireTtsTap = (ctx: TtsTapContext): void => {
   const pipeline = new TtsPipeline(ctx.tts, {
     onAudio: (chunk) => {
-      sendTtsEvent(ctx.client, {
+      sendClientEvent(ctx.client, {
         type: TTS_EVENT_TYPE.audioDelta,
         audio: chunk.toString('base64'),
       });
     },
     onDone: () => {
-      sendTtsEvent(ctx.client, { type: TTS_EVENT_TYPE.audioDone });
+      sendClientEvent(ctx.client, { type: TTS_EVENT_TYPE.audioDone });
     },
     onCanceled: () => {
-      sendTtsEvent(ctx.client, { type: TTS_EVENT_TYPE.audioCanceled });
+      sendClientEvent(ctx.client, { type: TTS_EVENT_TYPE.audioCanceled });
     },
     onError: (err) => {
-      sendTtsEvent(ctx.client, {
+      sendClientEvent(ctx.client, {
         type: TTS_EVENT_TYPE.audioError,
         message: err.message,
       });

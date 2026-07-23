@@ -22,6 +22,8 @@ import {
   ASSISTANT_PROFILE_REPOSITORY,
   type AssistantProfileRepository,
 } from '~/agent/personality/domain/ports/assistant-profile-repository';
+import { ToolDispatcher } from '~/agent/tools/infrastructure/tool-dispatcher';
+import { ToolRegistry } from '~/agent/tools/infrastructure/tool-registry';
 import { env } from '~/config/env';
 import { UsersService } from '~/users/users.service';
 
@@ -29,6 +31,7 @@ import { CLOSE_UNAUTHORIZED } from './constants/close-codes';
 import { extractHandshakeToken } from './utils/extract-handshake-token';
 import { wireRelay } from './utils/wire-relay';
 import { wireSystemPrompt } from './utils/wire-system-prompt';
+import { wireToolDispatcher } from './utils/wire-tool-dispatcher';
 import { wireTtsTap } from './utils/wire-tts-tap';
 
 @WebSocketGateway({ path: '/agent/ws' })
@@ -46,6 +49,8 @@ export class AgentRealtimeGateway
     @Inject(ASSISTANT_PROFILE_REPOSITORY)
     private readonly profiles: AssistantProfileRepository,
     private readonly users: UsersService,
+    private readonly toolRegistry: ToolRegistry,
+    private readonly toolDispatcher: ToolDispatcher,
   ) {}
 
   handleConnection(client: WebSocket, req: IncomingMessage): void {
@@ -65,6 +70,7 @@ export class AgentRealtimeGateway
       userId,
       profiles: this.profiles,
       users: this.users,
+      registry: this.toolRegistry,
       logger: this.logger,
     });
     wireTtsTap({
@@ -72,6 +78,13 @@ export class AgentRealtimeGateway
       upstream,
       tts: this.tts,
       voiceId: env.TTS_DEFAULT_VOICE_ID,
+    });
+    wireToolDispatcher({
+      client,
+      upstream,
+      dispatcher: this.toolDispatcher,
+      userId,
+      logger: this.logger,
     });
   }
 
