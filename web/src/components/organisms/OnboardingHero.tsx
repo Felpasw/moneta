@@ -1,19 +1,14 @@
 "use client";
 
 import { motion, type Variants } from "motion/react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 import { BarLoader } from "@/components/atoms/BarLoader";
 import { MicButton } from "@/components/atoms/MicButton";
 import { VoiceOrb } from "@/components/atoms/VoiceOrb";
-import { MicState, useAgentSession } from "@/hooks/useAgentSession";
+import type { MicState } from "@/hooks/useAgentSession";
 
 const WELCOME_TITLE = "Bem-vindo à Moneta";
 const WELCOME_SUBTITLE = "Toma um segundo pro seu assistente respirar…";
-const MIC_DENIED_TOAST =
-  "Permita o microfone nas configurações do navegador pra conversar com a Moneta.";
-const MIC_ERROR_TOAST = "Não consegui abrir seu microfone.";
 
 const containerVariants: Variants = {
   initial: {},
@@ -34,23 +29,21 @@ const itemVariants: Variants = {
   },
 };
 
-export function OnboardingHero() {
-  const [micEnabled, setMicEnabled] = useState(false);
-  const { audioElement, isWarming, micStream, micState } = useAgentSession({
-    enabled: true,
-    micEnabled,
-  });
+interface OnboardingHeroProps {
+  audioElement: HTMLAudioElement | null;
+  micStream: MediaStream | null;
+  micState: MicState;
+  isWarming: boolean;
+  onMicToggle: () => void;
+}
 
-  useEffect(() => {
-    if (micState !== MicState.Denied && micState !== MicState.Error) return;
-    const message =
-      micState === MicState.Denied ? MIC_DENIED_TOAST : MIC_ERROR_TOAST;
-    toast.error(message);
-    queueMicrotask(() => setMicEnabled(false));
-  }, [micState]);
-
-  const handleMicToggle = (): void => setMicEnabled((prev) => !prev);
-
+export function OnboardingHero({
+  audioElement,
+  micStream,
+  micState,
+  isWarming,
+  onMicToggle,
+}: OnboardingHeroProps) {
   return (
     <motion.div
       className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16"
@@ -90,7 +83,7 @@ export function OnboardingHero() {
         </motion.div>
       ) : (
         <motion.div variants={itemVariants}>
-          <MicButton state={micState} onToggle={handleMicToggle} />
+          <MicButton state={micState} onToggle={onMicToggle} />
         </motion.div>
       )}
     </motion.div>

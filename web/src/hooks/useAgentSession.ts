@@ -7,15 +7,18 @@ import {
   AgentSessionStatus,
   MicState,
   REALTIME_INPUT_AUDIO_APPEND,
+  ToolEventKind,
   TTS_AUDIO_MIME,
 } from "@/hooks/constants/useAgentSession.constants";
 import type {
+  ToolEvent,
   UseAgentSessionOptions,
   UseAgentSessionResult,
 } from "@/hooks/interfaces/useAgentSession.interface";
 import {
   attachMicGraph,
   buildAgentWsUrl,
+  makeToolDispatcher,
   makeTtsDispatcher,
   resolveInitialSessionState,
 } from "@/hooks/utils/useAgentSession.utils";
@@ -23,7 +26,8 @@ import userManager from "@/utils/userManager";
 
 // Re-export pra manter path @/hooks/useAgentSession como fonte de
 // importação dos consumers (enums + helper testado).
-export { AgentSessionStatus, MicState };
+export { AgentSessionStatus, MicState, ToolEventKind };
+export type { ToolEvent };
 export { buildAgentWsUrl } from "@/hooks/utils/useAgentSession.utils";
 
 export function useAgentSession({
@@ -44,6 +48,7 @@ export function useAgentSession({
   );
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const [micState, setMicState] = useState<MicState>(MicState.Off);
+  const [toolEvents, setToolEvents] = useState<ToolEvent[]>([]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const chunksRef = useRef<Uint8Array[]>([]);
@@ -98,12 +103,19 @@ export function useAgentSession({
       },
     });
 
+    const dispatchTool = makeToolDispatcher((event) => {
+      setToolEvents((prev) => [...prev, event]);
+    });
+
     ws.onopen = () => setStatus(AgentSessionStatus.Listening);
     ws.onerror = () => {
       setStatus(AgentSessionStatus.Error);
       setError("connection error");
     };
-    ws.onmessage = (ev: MessageEvent<unknown>) => dispatchTts(ev.data);
+    ws.onmessage = (ev: MessageEvent<unknown>) => {
+      dispatchTts(ev.data);
+      dispatchTool(ev.data);
+    };
 
     return () => {
       ws.close();
@@ -181,5 +193,6 @@ export function useAgentSession({
     isWarming,
     micStream,
     micState,
+    toolEvents,
   };
 }

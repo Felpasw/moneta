@@ -2,11 +2,15 @@ import {
   AgentSessionStatus,
   MIC_PROCESSOR_BUFFER_SIZE,
   REALTIME_TARGET_SAMPLE_RATE,
+  TOOL_EVENT,
+  ToolEventKind,
   TTS_EVENT,
 } from "@/hooks/constants/useAgentSession.constants";
 import type {
   InitialSessionState,
   MicGraph,
+  ToolEnvelope,
+  ToolEvent,
   TtsEnvelope,
   TtsHandlers,
   WebkitAudioWindow,
@@ -62,6 +66,40 @@ export function makeTtsDispatcher(
       return;
     }
     routes[envelope.type]?.(envelope);
+  };
+}
+
+// -----------------------------------------------------------------------------
+// Tool envelope dispatcher (tool.pending / tool.result / tool.error)
+// -----------------------------------------------------------------------------
+
+const TOOL_KIND_BY_TYPE: Record<string, ToolEventKind> = {
+  [TOOL_EVENT.pending]: ToolEventKind.Pending,
+  [TOOL_EVENT.result]: ToolEventKind.Result,
+  [TOOL_EVENT.error]: ToolEventKind.Error,
+};
+
+export function makeToolDispatcher(
+  onEvent: (event: ToolEvent) => void,
+): (raw: unknown) => void {
+  return (raw: unknown) => {
+    if (typeof raw !== "string") return;
+    let envelope: ToolEnvelope;
+    try {
+      envelope = JSON.parse(raw) as ToolEnvelope;
+    } catch {
+      return;
+    }
+    const kind = TOOL_KIND_BY_TYPE[envelope.type];
+    if (!kind || !envelope.callId) return;
+    onEvent({
+      kind,
+      callId: envelope.callId,
+      toolName: envelope.toolName,
+      args: envelope.args,
+      result: envelope.result,
+      message: envelope.message,
+    });
   };
 }
 
