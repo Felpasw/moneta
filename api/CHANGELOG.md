@@ -6,6 +6,20 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.5.0](https://github.com/Felpasw/moneta/compare/api-v0.4.0...api-v0.5.0) (2026-07-23)
+
+
+### ✨ Features
+
+* **agent:** kickoff de onboarding com nome do usuário [MNT-83] ([5b98cf3](https://github.com/Felpasw/moneta/commit/5b98cf39c851261ad6ea104da7d6b0ae2200a237))
+* **auth:** expõe onboardedAt no snapshot + redirect condicional pós-login [MNT-193] ([7d0bbf5](https://github.com/Felpasw/moneta/commit/7d0bbf57d74920cc3a9d0f34c300132140c16bd2))
+
+
+### 🐛 Correções
+
+* **agent:** compat com Realtime GA v2 + relay text/binary + logs [MNT-50] ([6e5a1d9](https://github.com/Felpasw/moneta/commit/6e5a1d9c29f7ef899d76f4461ad9104709c45c56))
+* **api:** destrava build + DI (Prisma env, enum casts, paths, ctor) ([284c802](https://github.com/Felpasw/moneta/commit/284c8027101363a1762dff5a13e4025e9c248c68))
+
 ## [0.4.0](https://github.com/Felpasw/moneta/compare/api-v0.3.0...api-v0.4.0) (2026-07-21)
 
 
