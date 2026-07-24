@@ -17,7 +17,14 @@ export const ONBOARDING_TOOL_STEP: Record<string, number> = {
   complete_onboarding: 4,
 };
 
-export interface OnboardingBank {
+export interface OnboardingBankExtras {
+  creditLimit?: number;
+  closeDay?: number;
+  dueDay?: number;
+  overdraftLimit?: number;
+}
+
+export interface OnboardingBank extends OnboardingBankExtras {
   accountId: string;
   bankName: string;
   balance?: number;
@@ -45,6 +52,16 @@ interface CompleteOnboardingResult {
   ok?: boolean;
 }
 
+interface ConfigureAccountDetailsArgs {
+  accounts?: Array<{
+    accountId?: string;
+    creditLimit?: number;
+    closeDay?: number;
+    dueDay?: number;
+    overdraftLimit?: number;
+  }>;
+}
+
 const toolNameByCallId = (events: readonly ToolEvent[]): Map<string, string> => {
   const map = new Map<string, string>();
   for (const event of events) {
@@ -68,6 +85,40 @@ export const deriveActiveStep = (events: readonly ToolEvent[]): number => {
   return index;
 };
 
+const collectConfigureExtras = (
+  events: readonly ToolEvent[],
+  names: Map<string, string>,
+): Map<string, OnboardingBankExtras> => {
+  const extras = new Map<string, OnboardingBankExtras>();
+  const successCallIds = new Set<string>();
+
+  for (const event of events) {
+    if (event.kind !== ToolEventKind.Result) continue;
+    if (names.get(event.callId) === "configure_account_details") {
+      successCallIds.add(event.callId);
+    }
+  }
+
+  for (const event of events) {
+    if (event.kind !== ToolEventKind.Pending) continue;
+    if (event.toolName !== "configure_account_details") continue;
+    if (!successCallIds.has(event.callId)) continue;
+    const args = event.args as ConfigureAccountDetailsArgs | undefined;
+    for (const patch of args?.accounts ?? []) {
+      if (!patch.accountId) continue;
+      const current = extras.get(patch.accountId) ?? {};
+      extras.set(patch.accountId, {
+        creditLimit: patch.creditLimit ?? current.creditLimit,
+        closeDay: patch.closeDay ?? current.closeDay,
+        dueDay: patch.dueDay ?? current.dueDay,
+        overdraftLimit: patch.overdraftLimit ?? current.overdraftLimit,
+      });
+    }
+  }
+
+  return extras;
+};
+
 export const buildOnboardingSummary = (
   events: readonly ToolEvent[],
 ): OnboardingSummary => {
@@ -78,6 +129,7 @@ export const buildOnboardingSummary = (
     isComplete: false,
   };
   const balanceByAccount = new Map<string, number>();
+  const extrasByAccount = collectConfigureExtras(events, names);
 
   for (const event of events) {
     if (event.kind !== ToolEventKind.Result) continue;
@@ -113,6 +165,7 @@ export const buildOnboardingSummary = (
   summary.banks = summary.banks.map((bank) => ({
     ...bank,
     balance: balanceByAccount.get(bank.accountId),
+    ...(extrasByAccount.get(bank.accountId) ?? {}),
   }));
 
   return summary;

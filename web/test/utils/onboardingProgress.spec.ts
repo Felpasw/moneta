@@ -130,6 +130,60 @@ describe("buildOnboardingSummary()", () => {
     expect(summary.banks[0].balance).toBeUndefined();
   });
 
+  it("expande banks com creditLimit/closeDay/dueDay/overdraftLimit vindos do configure_account_details", () => {
+    const summary = buildOnboardingSummary([
+      pending("c1", "add_user_banks"),
+      result("c1", {
+        created: [
+          { accountId: "acc-nubank", bankName: "Nubank" },
+          { accountId: "acc-picpay", bankName: "PicPay" },
+        ],
+      }),
+      pending("c2", "configure_account_details", {
+        accounts: [
+          {
+            accountId: "acc-nubank",
+            creditLimit: 7000,
+            closeDay: 15,
+            dueDay: 22,
+            overdraftLimit: 500,
+          },
+          { accountId: "acc-picpay", overdraftLimit: 100 },
+        ],
+      }),
+      result("c2", { updated: [{ accountId: "acc-nubank" }, { accountId: "acc-picpay" }] }),
+    ]);
+
+    expect(summary.banks[0]).toEqual({
+      accountId: "acc-nubank",
+      bankName: "Nubank",
+      balance: undefined,
+      creditLimit: 7000,
+      closeDay: 15,
+      dueDay: 22,
+      overdraftLimit: 500,
+    });
+    expect(summary.banks[1]).toMatchObject({
+      accountId: "acc-picpay",
+      overdraftLimit: 100,
+    });
+    expect(summary.banks[1].creditLimit).toBeUndefined();
+  });
+
+  it("ignora configure_account_details que ainda não teve result (só pending)", () => {
+    const summary = buildOnboardingSummary([
+      pending("c1", "add_user_banks"),
+      result("c1", {
+        created: [{ accountId: "acc-1", bankName: "Nubank" }],
+      }),
+      pending("c2", "configure_account_details", {
+        accounts: [{ accountId: "acc-1", overdraftLimit: 200 }],
+      }),
+    ]);
+
+    expect(summary.banks[0].overdraftLimit).toBeUndefined();
+  });
+
   it("isComplete=true só quando complete_onboarding retorna ok:true", () => {
     const withoutOk = buildOnboardingSummary([
       pending("c1", "complete_onboarding"),

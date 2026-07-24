@@ -6,7 +6,10 @@ import { toast } from "sonner";
 import { OnboardingHero } from "@/components/organisms/OnboardingHero";
 import { OnboardingProgress } from "@/components/organisms/OnboardingProgress";
 import { MicState, useAgentSession } from "@/hooks/useAgentSession";
-import { deriveActiveStep } from "@/utils/onboardingProgress";
+import {
+  buildOnboardingSummary,
+  deriveActiveStep,
+} from "@/utils/onboardingProgress";
 
 const MIC_DENIED_TOAST =
   "Permita o microfone nas configurações do navegador pra conversar com a Moneta.";
@@ -21,6 +24,14 @@ export function OnboardingScreen() {
     () => deriveActiveStep(toolEvents),
     [toolEvents],
   );
+  const summary = useMemo(
+    () => buildOnboardingSummary(toolEvents),
+    [toolEvents],
+  );
+  const hasProgress =
+    summary.nickname !== null ||
+    summary.banks.length > 0 ||
+    summary.isComplete;
 
   useEffect(() => {
     if (micState !== MicState.Denied && micState !== MicState.Error) return;
@@ -34,6 +45,12 @@ export function OnboardingScreen() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      {hasProgress && (
+        <OnboardingProgress
+          toolEvents={toolEvents}
+          className="mx-auto mt-10 w-full max-w-2xl flex-1 px-6"
+        />
+      )}
       <OnboardingHero
         audioElement={audioElement}
         micStream={micStream}
@@ -41,10 +58,7 @@ export function OnboardingScreen() {
         isWarming={isWarming}
         onMicToggle={handleMicToggle}
         activeStep={activeStep}
-      />
-      <OnboardingProgress
-        toolEvents={toolEvents}
-        className="mx-auto mb-16 w-full max-w-md px-6"
+        compact={hasProgress}
       />
     </div>
   );

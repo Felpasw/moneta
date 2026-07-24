@@ -6,7 +6,10 @@ import { useEffect, useMemo } from "react";
 
 import { BankIcon } from "@/components/atoms/BankIcon";
 import type { ToolEvent } from "@/hooks/interfaces/useAgentSession.interface";
-import { buildOnboardingSummary } from "@/utils/onboardingProgress";
+import {
+  buildOnboardingSummary,
+  type OnboardingBank,
+} from "@/utils/onboardingProgress";
 
 const REDIRECT_MS = 1200;
 
@@ -52,6 +55,17 @@ const bankCardVariants: Variants = {
   },
 };
 
+const formatBalance = (value?: number): string =>
+  typeof value === "number" ? CURRENCY_FORMATTER.format(value) : "—";
+
+const hasCreditFields = (bank: OnboardingBank): boolean =>
+  typeof bank.creditLimit === "number" &&
+  typeof bank.closeDay === "number" &&
+  typeof bank.dueDay === "number";
+
+const dayLabel = (day?: number): string =>
+  typeof day === "number" ? String(day).padStart(2, "0") : "—";
+
 interface OnboardingProgressProps {
   toolEvents: readonly ToolEvent[];
   className?: string;
@@ -82,7 +96,7 @@ export function OnboardingProgress({
       initial="initial"
       animate="animate"
     >
-      <div className="flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center gap-8">
         <AnimatePresence mode="popLayout">
           {summary.nickname && (
             <motion.div
@@ -91,10 +105,10 @@ export function OnboardingProgress({
               initial="initial"
               animate="animate"
               exit="exit"
-              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-4 py-1.5 text-sm shadow-sm backdrop-blur"
+              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-5 py-2 text-sm shadow-sm backdrop-blur"
             >
               <span className="text-muted-foreground">Apelido</span>
-              <span className="font-medium text-foreground">
+              <span className="text-base font-semibold text-foreground">
                 {summary.nickname}
               </span>
             </motion.div>
@@ -107,7 +121,7 @@ export function OnboardingProgress({
               initial="initial"
               animate="animate"
               exit="exit"
-              className="grid w-full max-w-md grid-cols-1 gap-2 sm:grid-cols-2"
+              className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2"
               aria-label="Bancos adicionados"
             >
               <AnimatePresence initial={false}>
@@ -119,17 +133,59 @@ export function OnboardingProgress({
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/60 px-4 py-3 shadow-sm backdrop-blur"
+                    className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-background/70 p-5 shadow-md backdrop-blur"
                   >
-                    <BankIcon bankName={bank.bankName} size={32} />
-                    <span className="flex-1 text-sm font-medium text-foreground">
-                      {bank.bankName}
-                    </span>
-                    <span className="text-sm tabular-nums text-muted-foreground">
-                      {typeof bank.balance === "number"
-                        ? CURRENCY_FORMATTER.format(bank.balance)
-                        : "—"}
-                    </span>
+                    <header className="flex items-center gap-3">
+                      <BankIcon bankName={bank.bankName} size={44} />
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate text-base font-semibold text-foreground">
+                          {bank.bankName}
+                        </span>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Conta corrente
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+                          Saldo
+                        </div>
+                        <div className="text-lg font-semibold tabular-nums text-foreground">
+                          {formatBalance(bank.balance)}
+                        </div>
+                      </div>
+                    </header>
+
+                    {(hasCreditFields(bank) ||
+                      typeof bank.overdraftLimit === "number") && (
+                      <div className="flex flex-col gap-2 border-t border-border/40 pt-3 text-sm">
+                        {hasCreditFields(bank) && (
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <div className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+                                Cartão de crédito
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Fecha dia {dayLabel(bank.closeDay)} · vence dia{" "}
+                                {dayLabel(bank.dueDay)}
+                              </div>
+                            </div>
+                            <div className="text-right tabular-nums font-medium text-foreground">
+                              {formatBalance(bank.creditLimit)}
+                            </div>
+                          </div>
+                        )}
+                        {typeof bank.overdraftLimit === "number" && (
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+                              Cheque especial
+                            </div>
+                            <div className="text-right tabular-nums font-medium text-foreground">
+                              {formatBalance(bank.overdraftLimit)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </motion.li>
                 ))}
               </AnimatePresence>
