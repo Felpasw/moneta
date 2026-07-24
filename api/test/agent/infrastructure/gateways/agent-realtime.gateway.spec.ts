@@ -15,13 +15,29 @@ import type {
 import { TreatmentStyle } from '~/agent/personality/domain/constants/treatment-style';
 import type { AssistantProfileRepository } from '~/agent/personality/domain/ports/assistant-profile-repository';
 import type { AssistantProfile } from '~/agent/personality/domain/types/assistant-profile';
+import type { ToolDispatcher } from '~/agent/tools/infrastructure/tool-dispatcher';
+import type { ToolRegistry } from '~/agent/tools/infrastructure/tool-registry';
 import type { TokenService } from '~/auth/domain/services/token-service';
 import { UsersService } from '~/users/users.service';
 
-const makeStubUsers = (
-  isOnboarded = true,
-  name = 'Alice',
-): UsersService =>
+interface RealtimeToolDescriptor {
+  readonly type: 'function';
+  readonly name: string;
+  readonly description: string;
+  readonly parameters: Record<string, unknown>;
+}
+
+const makeStubRegistry = (tools: RealtimeToolDescriptor[] = []): ToolRegistry =>
+  ({
+    toRealtimeToolsList: jest.fn(() => tools),
+  }) as unknown as ToolRegistry;
+
+const makeStubDispatcher = (): ToolDispatcher =>
+  ({
+    dispatch: jest.fn().mockResolvedValue({ ok: true, callId: 'noop' }),
+  }) as unknown as ToolDispatcher;
+
+const makeStubUsers = (isOnboarded = true, name = 'Alice'): UsersService =>
   ({
     findById: jest.fn().mockResolvedValue({
       id: 'user-1',
@@ -232,6 +248,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -256,6 +274,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -278,6 +298,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -300,6 +322,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -323,6 +347,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -347,6 +373,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -371,6 +399,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -394,6 +424,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
       client.readyState = 3;
@@ -420,6 +452,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -442,6 +476,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -465,6 +501,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -488,6 +526,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -534,6 +574,8 @@ describe('AgentRealtimeGateway', () => {
         tts,
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -542,7 +584,10 @@ describe('AgentRealtimeGateway', () => {
         makeReq({ token: 'ok' }),
       );
       upstream.emitMessage(
-        JSON.stringify({ type: 'response.output_text.done', text: 'olá mundo' }),
+        JSON.stringify({
+          type: 'response.output_text.done',
+          text: 'olá mundo',
+        }),
       );
       await flushMicrotasks();
       handles[0].yield(Buffer.from([0xaa, 0xbb]));
@@ -567,6 +612,8 @@ describe('AgentRealtimeGateway', () => {
         tts,
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -600,6 +647,8 @@ describe('AgentRealtimeGateway', () => {
         tts,
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -624,6 +673,8 @@ describe('AgentRealtimeGateway', () => {
         tts,
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -700,6 +751,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         repo,
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -732,6 +785,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         repo,
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -757,6 +812,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         repo,
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -781,6 +838,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(buildProfile()),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -803,6 +862,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         repo,
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -817,6 +878,50 @@ describe('AgentRealtimeGateway', () => {
       expect(findSessionUpdate(upstream)).toBeUndefined();
     });
 
+    it('inclui a lista de tools do registry no session.update.tools', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-1' }));
+      const factory = makeFactory(upstream);
+      const registry = makeStubRegistry([
+        {
+          type: 'function',
+          name: 'set_nickname',
+          description: 'define o apelido do user',
+          parameters: { type: 'object', properties: {} },
+        },
+      ]);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        makeProfileRepo(null),
+        makeStubUsers(),
+        registry,
+        makeStubDispatcher(),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+
+      const session = findFullSessionUpdate(upstream);
+      expect(session).toBeDefined();
+      const tools = session?.tools as
+        Array<{ type?: string; name?: string }> | undefined;
+      expect(tools).toEqual([
+        {
+          type: 'function',
+          name: 'set_nickname',
+          description: 'define o apelido do user',
+          parameters: { type: 'object', properties: {} },
+        },
+      ]);
+    });
+
     it('configura input_audio_format=pcm16 + server_vad no session.update', async () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
@@ -827,6 +932,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -904,6 +1011,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(false),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -932,6 +1041,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(false, 'Felipe'),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 
@@ -957,6 +1068,8 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(true),
+        makeStubRegistry(),
+        makeStubDispatcher(),
       );
       const client = makeClient();
 

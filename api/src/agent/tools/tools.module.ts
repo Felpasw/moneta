@@ -7,6 +7,7 @@ import { CardBillingToolsModule } from './card-billing/card-billing-tools.module
 import { CategoriesToolsModule } from './categories/categories-tools.module';
 import { ToolDispatcher } from './infrastructure/tool-dispatcher';
 import { ToolRegistry } from './infrastructure/tool-registry';
+import { OnboardingToolsModule } from './onboarding/onboarding-tools.module';
 import { TransactionsToolsModule } from './transactions/transactions-tools.module';
 import { TransfersToolsModule } from './transfers/transfers-tools.module';
 
@@ -20,6 +21,7 @@ import { TransfersToolsModule } from './transfers/transfers-tools.module';
     CardBillingToolsModule,
     TransactionsToolsModule,
     TransfersToolsModule,
+    OnboardingToolsModule,
   ],
   providers: [ToolRegistry, ToolDispatcher],
   exports: [ToolRegistry, ToolDispatcher],

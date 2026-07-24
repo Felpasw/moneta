@@ -7,4 +7,7 @@ export default defineConfig({
   datasource: {
     url: env("DATABASE_URL"),
   },
+  migrations: {
+    seed: "ts-node --project prisma/tsconfig.json prisma/seed.ts",
+  },
 });

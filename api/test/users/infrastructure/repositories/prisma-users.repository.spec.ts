@@ -8,6 +8,7 @@ const CREATED_USER = {
   id: 'user-1',
   email: 'alice@example.com',
   name: 'Alice',
+  nickname: null,
   onboardedAt: null,
 };
 
@@ -16,6 +17,9 @@ const makePrismaWithCreate = (createImpl: jest.Mock): PrismaService =>
 
 const makePrismaWithFindUnique = (findUniqueImpl: jest.Mock): PrismaService =>
   ({ user: { findUnique: findUniqueImpl } }) as unknown as PrismaService;
+
+const makePrismaWithUpdate = (updateImpl: jest.Mock): PrismaService =>
+  ({ user: { update: updateImpl } }) as unknown as PrismaService;
 
 describe('PrismaUsersRepository', () => {
   describe('createWithPasswordCredential', () => {
@@ -33,6 +37,7 @@ describe('PrismaUsersRepository', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        nickname: null,
         onboardedAt: null,
       });
       expect(create).toHaveBeenCalledWith({
@@ -43,7 +48,13 @@ describe('PrismaUsersRepository', () => {
             create: { type: 'password', hash: 'hashed' },
           },
         },
-        select: { id: true, email: true, name: true, onboardedAt: true },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          nickname: true,
+          onboardedAt: true,
+        },
       });
     });
 
@@ -88,6 +99,7 @@ describe('PrismaUsersRepository', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        nickname: null,
         onboardedAt: null,
         credentials: [{ hash: 'stored-hash' }],
       });
@@ -102,6 +114,7 @@ describe('PrismaUsersRepository', () => {
         id: 'user-1',
         email: 'alice@example.com',
         name: 'Alice',
+        nickname: null,
         onboardedAt: null,
         passwordHash: 'stored-hash',
       });
@@ -111,6 +124,7 @@ describe('PrismaUsersRepository', () => {
           id: true,
           email: true,
           name: true,
+          nickname: true,
           onboardedAt: true,
           credentials: {
             where: { type: 'password' },
@@ -147,6 +161,22 @@ describe('PrismaUsersRepository', () => {
       const result =
         await repo.findByEmailWithPasswordCredential('alice@example.com');
       expect(result).toBeNull();
+    });
+  });
+
+  describe('updateNickname', () => {
+    it('atualiza apenas o campo nickname e retorna o valor salvo', async () => {
+      const update = jest.fn().mockResolvedValue({ nickname: 'Felps' });
+      const repo = new PrismaUsersRepository(makePrismaWithUpdate(update));
+
+      const result = await repo.updateNickname('user-1', 'Felps');
+
+      expect(result).toEqual({ nickname: 'Felps' });
+      expect(update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { nickname: 'Felps' },
+        select: { nickname: true },
+      });
     });
   });
 });

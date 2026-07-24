@@ -28,7 +28,13 @@ export class PrismaUsersRepository implements UsersRepository {
             create: { type: CredentialType.password, hash: input.passwordHash },
           },
         },
-        select: { id: true, email: true, name: true, onboardedAt: true },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          nickname: true,
+          onboardedAt: true,
+        },
       });
     } catch (e) {
       if (
@@ -44,15 +50,51 @@ export class PrismaUsersRepository implements UsersRepository {
   async findById(id: string): Promise<UserSnapshot | null> {
     return this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, name: true, onboardedAt: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        nickname: true,
+        onboardedAt: true,
+      },
     });
   }
 
   async findByEmail(email: string): Promise<UserSnapshot | null> {
     return this.prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, name: true, onboardedAt: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        nickname: true,
+        onboardedAt: true,
+      },
     });
+  }
+
+  async updateNickname(
+    id: string,
+    nickname: string,
+  ): Promise<{ nickname: string }> {
+    const row = await this.prisma.user.update({
+      where: { id },
+      data: { nickname },
+      select: { nickname: true },
+    });
+    return { nickname: row.nickname! };
+  }
+
+  async markOnboarded(
+    id: string,
+    onboardedAt: Date,
+  ): Promise<{ onboardedAt: Date }> {
+    const row = await this.prisma.user.update({
+      where: { id },
+      data: { onboardedAt },
+      select: { onboardedAt: true },
+    });
+    return { onboardedAt: row.onboardedAt! };
   }
 
   async findByEmailWithPasswordCredential(
@@ -64,6 +106,7 @@ export class PrismaUsersRepository implements UsersRepository {
         id: true,
         email: true,
         name: true,
+        nickname: true,
         onboardedAt: true,
         credentials: {
           where: { type: CredentialType.password },
@@ -77,6 +120,7 @@ export class PrismaUsersRepository implements UsersRepository {
       id: user.id,
       email: user.email,
       name: user.name,
+      nickname: user.nickname,
       onboardedAt: user.onboardedAt,
       passwordHash: user.credentials[0].hash,
     };

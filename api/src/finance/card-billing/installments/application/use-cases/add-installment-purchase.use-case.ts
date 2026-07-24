@@ -53,34 +53,39 @@ export class AddInstallmentPurchaseUseCase {
       throw new InstallmentPurchaseNotAllowedError(input.accountId);
     }
 
-    const installments: InstallmentTransactionInput[] = [];
     const purchase = dayjs.utc(input.occurredAt);
-    for (let i = 1; i <= input.installmentsCount; i++) {
-      const date = purchase.add(i - 1, 'month').toDate();
-      const invoice = await this.cycle.resolveInvoiceForDate({
-        accountId: input.accountId,
-        date,
-        closeDay: account.closeDay,
-        dueDay: account.dueDay,
-      });
-      const amount = this.amountForInstallment({
-        index: i,
-        installmentsCount: input.installmentsCount,
-        installmentAmount,
-        totalAmount,
-      });
-      installments.push({
-        userId: input.userId,
-        accountId: input.accountId,
-        categoryId: input.categoryId,
-        type: TransactionType.Expense,
-        amount,
-        description: `${input.description} (${i}/${input.installmentsCount})`,
-        occurredAt: date,
-        invoiceId: invoice.id,
-        installmentNumber: i,
-      });
-    }
+    const indexes = Array.from(
+      { length: input.installmentsCount },
+      (_, idx) => idx + 1,
+    );
+    const installments: InstallmentTransactionInput[] = await Promise.all(
+      indexes.map(async (i) => {
+        const date = purchase.add(i - 1, 'month').toDate();
+        const invoice = await this.cycle.resolveInvoiceForDate({
+          accountId: input.accountId,
+          date,
+          closeDay: account.closeDay!,
+          dueDay: account.dueDay!,
+        });
+        const amount = this.amountForInstallment({
+          index: i,
+          installmentsCount: input.installmentsCount,
+          installmentAmount,
+          totalAmount,
+        });
+        return {
+          userId: input.userId,
+          accountId: input.accountId,
+          categoryId: input.categoryId,
+          type: TransactionType.Expense,
+          amount,
+          description: `${input.description} (${i}/${input.installmentsCount})`,
+          occurredAt: date,
+          invoiceId: invoice.id,
+          installmentNumber: i,
+        };
+      }),
+    );
 
     return this.groups.createGroupWithInstallments({
       group: {

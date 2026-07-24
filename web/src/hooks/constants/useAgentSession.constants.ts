@@ -21,6 +21,18 @@ export const TTS_EVENT = {
   error: "tts.audio.error",
 } as const;
 
+export const TOOL_EVENT = {
+  pending: "tool.pending",
+  result: "tool.result",
+  error: "tool.error",
+} as const;
+
+export enum ToolEventKind {
+  Pending = "pending",
+  Result = "result",
+  Error = "error",
+}
+
 export const REALTIME_INPUT_AUDIO_APPEND = "input_audio_buffer.append";
 export const REALTIME_TARGET_SAMPLE_RATE = 24000;
 export const MIC_PROCESSOR_BUFFER_SIZE = 4096;

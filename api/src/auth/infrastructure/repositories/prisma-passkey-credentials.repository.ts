@@ -45,7 +45,13 @@ export class PrismaPasskeyCredentialsRepository implements PasskeyCredentialsRep
         counter: true,
         transports: true,
         user: {
-          select: { id: true, email: true, name: true, onboardedAt: true },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            nickname: true,
+            onboardedAt: true,
+          },
         },
       },
     });

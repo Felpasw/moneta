@@ -16,4 +16,12 @@ export class PrismaBanksRepository implements BanksRepository {
       select: { id: true, name: true, compeCode: true, logoUrl: true },
     });
   }
+
+  async findManyByIds(ids: string[]): Promise<Bank[]> {
+    if (ids.length === 0) return [];
+    return this.prisma.bank.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true, compeCode: true, logoUrl: true },
+    });
+  }
 }

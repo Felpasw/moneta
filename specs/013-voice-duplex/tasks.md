@@ -113,50 +113,67 @@ Slice que fecha o loop conversacional: o agente executa tools que persistem no D
 
 ### Tasks
 
-- [ ] **MNT-200** [T][S] Wire do `ToolDispatcher` no gateway + envelopes `tool.pending`/`tool.result`/`tool.error`.
+- [x] **MNT-200** [T][S] Wire do `ToolDispatcher` no gateway + envelopes `tool.pending`/`tool.result`/`tool.error`. ✅ commit `c889e1a`
   - Novo util `wireToolDispatcher(ctx)` que injeta o dispatcher e escuta `response.function_call_arguments.done` do upstream.
   - Registra as tool schemas exportadas pelo `ToolRegistry` no `session.update` (campo `tools`) pra OpenAI conhecer.
   - Envelopes novos em `TTS_EVENT_TYPE` (rename pra `WS_EVENT_TYPE` ou split — a decidir).
   - Testes: mock do dispatcher, valida a sequência `pending → dispatch → result` + envio de `conversation.item.create` upstream com `function_call_output`.
 
-- [ ] **MNT-201** [T][S] Tool `set_nickname` em `api/src/agent/tools/onboarding/set-nickname.tool.ts`.
+- [x] **MNT-201** [T][S] Tool `set_nickname` em `api/src/agent/tools/onboarding/set-nickname.tool.ts`. ✅ commit `1757201`
   - JSON schema: `{ nickname: string(1..50) }`.
   - `execute({ nickname }, ctx)`: `UsersService.updateNickname(ctx.userId, nickname)`.
   - Playbook: "chame depois que o user disser como quer ser chamado. Confirma pra ele que o apelido X foi salvo e mencione uma vez que ele pode mudar em qualquer momento no perfil. Não repita a menção de mudança depois."
   - Testes: use-case unit (mock repo) + registry integration (schema well-formed).
 
-- [ ] **MNT-202** [T][S] Tool `add_user_banks` em `api/src/agent/tools/onboarding/add-user-banks.tool.ts`.
-  - JSON schema: `{ banks: string[] }` (nomes falados).
-  - `execute({ banks }, ctx)`:
-    1. Normaliza cada nome (lowercase + remove acento).
-    2. Query `Bank` com `WHERE unaccent(lower(name)) LIKE '%normalized%' OR compe_code = normalized`.
-    3. Pra cada match único → cria `UserBankAccount` com `bank_id`, `nickname: bankName`, `balance: 0`.
-    4. Retorna `{ created: [{ accountId, bankName }], notFound: [nomeFalado] }`.
-  - Playbook: "sempre confirme por voz antes de chamar. Depois de executar, se `notFound` não vazio, pergunte 'não achei X, você quis dizer outro banco?'. Se `created` vazio, não avance pra saldos."
-  - Testes: fuzzy match unit (edge cases: acento, plural, sigla), use-case com repo real (integration/Postgres).
+- [x] **MNT-202** [T][S] Tool `add_user_banks` em `api/src/agent/tools/onboarding/add-user-banks.tool.ts`. ✅ commit `315b3a3`
+  - **Decisão de design (revista):** o backend NÃO adivinha banco por nome falado. O frontend carrega o catálogo (21 bancos, `list_banks` ou HTTP `/banks`), o user marca visualmente quais tem, e a tool recebe apenas os `bankIds` já confirmados. Zero fuzzy match, zero unaccent, zero raw SQL.
+  - JSON schema: `{ bankIds: string[] (uuid, minItems=1) }`.
+  - `execute({ bankIds }, ctx)`:
+    1. Dedupa IDs.
+    2. `banks.findManyByIds(ids)` — Prisma nativo (`findMany where id in ids`).
+    3. Pra cada bank encontrado → cria `UserBankAccount` com `nickname: bank.name`, `balance: 0`.
+    4. Retorna `{ created: [{ accountId, bankName }], notFound: [bankId] }` (notFound = IDs que o catálogo não conhece — não deveria acontecer no fluxo normal).
+  - Playbook: "chame depois que o user confirmar visualmente na interface. Use SEMPRE os IDs vindos da escolha do user; nunca invente. Se notFound vier preenchido, avise inconsistência e peça pra escolher de novo. Se created vazio, não avance pra saldos."
+  - Testes: use-case unit (mock repo) + tool unit (Zod happy/vazio/não-uuid).
 
-- [ ] **MNT-203** [T][S] Tool `set_account_balances` em `api/src/agent/tools/onboarding/set-account-balances.tool.ts`.
+- [x] **MNT-203** [T][S] Tool `set_account_balances` em `api/src/agent/tools/onboarding/set-account-balances.tool.ts`. ✅ commit `3e53fe4`
   - JSON schema: `{ balances: Array<{ bankName: string, balance: number }> }`.
   - `execute({ balances }, ctx)`:
     1. Fetch `UserBankAccount` do user com JOIN em `Bank`.
-    2. Pra cada `{bankName, balance}` → match com o account do user (mesma normalização do MNT-202).
+    2. Pra cada `{bankName, balance}` → match com o account do user (a definir: como o MNT-202 deixou de fazer fuzzy, o padrão aqui provavelmente também é `accountId` do frontend em vez de nome — reavaliar quando começar a MNT-203).
     3. Update `balance` do account.
     4. Retorna `{ updated: [{ accountId, bankName, balance }], notMatched: [] }`.
   - Playbook: "chame depois que o user disser todos os saldos de uma vez. Se algum banco não bater, pergunte de novo."
   - Testes: unit + integration.
 
-- [ ] **MNT-204** [T][S] Tool `complete_onboarding` em `api/src/agent/tools/onboarding/complete-onboarding.tool.ts`.
+- [x] **MNT-204** [T][S] Tool `configure_account_details` em `api/src/agent/tools/onboarding/configure-account-details.tool.ts`. ✅ commit `a1f339a`
+  - **Decisão de design:** cartão + cheque especial ficam na MESMA row da conta (schema `UserBankAccount` já suporta — campos `creditLimit`/`closeDay`/`dueDay`/`overdraftLimit` opcionais). Uma conta Nubank vira uma única row que contém saldo, limite de cartão e cheque especial juntos. Cobre 95% dos casos brasileiros (fintechs modernas: 1 conta = 1 relação de crédito).
+  - JSON schema: `{ accounts: Array<{ accountId: uuid, creditLimit?: number, closeDay?: 1..31, dueDay?: 1..31, overdraftLimit?: number }> (minItems=1) }`.
+  - Zod:
+    - Se algum dos 3 credit fields (`creditLimit`, `closeDay`, `dueDay`) vier, os 3 precisam vir juntos (`refine`).
+    - `creditLimit`, `overdraftLimit`: `nonnegative`.
+    - `accountId` uuid.
+    - Rejeita duplicata de `accountId` no batch (`refine`).
+  - `execute({ accounts }, ctx)`:
+    - Pra cada `{accountId, ...fields}`: `UserBankAccountsRepository.update({ id, userId, ...fields })` (método já existe pro MNT-84).
+    - Batch em Promise.all (independentes por accountId).
+    - Retorna `{ updated: [{accountId}], notFound: [accountId] }`.
+  - Playbook: "chame durante o onboarding depois dos saldos. Pergunta banco por banco se tem cartão (colhe limite + dia de fecha + dia de vencimento) e/ou cheque especial (colhe limite). Use SEMPRE accountId do contexto; nunca invente. Se user disser não pra tudo, pule sem chamar. Opcional — não bloqueia o `complete_onboarding`."
+  - Testes: unit (mock repo) + tool (Zod: 3-credit-together, dup, negativo, uuid).
+
+- [x] **MNT-205** [T][S] Tool `complete_onboarding` em `api/src/agent/tools/onboarding/complete-onboarding.tool.ts`. ✅ commit `297f7e1`
   - JSON schema: `{}` (sem args).
   - `execute({}, ctx)`:
-    1. Guard: `user.nickname != null && bankAccountCount > 0 && all balances set (nenhum accountBalance = 0 salvo se explicitamente zerado)`.
+    1. Guard obrigatório: `user.nickname != null && bankAccountCount > 0 && todas as accounts com balance definido`.
        - Se falta algo: retorna `{ ok: false, missing: ['nickname'|'banks'|'balances'] }`.
-    2. Set `users.onboarded_at = NOW()`.
-    3. Emite `UserOnboardedEvent` interno.
-    4. Retorna `{ ok: true }`.
-  - Playbook: "chame só depois de ter feito nickname + banks + balances. Se retornar `ok: false`, corrija a etapa que falta antes de tentar de novo."
-  - Testes: unit — guard funciona quando falta etapa, sucesso quando tudo OK.
+    2. Cartão/overdraft são **opcionais** — não entram no guard.
+    3. Set `users.onboarded_at = NOW()`.
+    4. Emite `UserOnboardedEvent` interno.
+    5. Retorna `{ ok: true }`.
+  - Playbook: "chame depois de ter feito nickname + banks + balances (cartão/overdraft são opcionais — pode chamar mesmo sem). Se retornar `ok: false`, corrija a etapa que falta antes de tentar de novo."
+  - Testes: unit — guard cobre nickname/banks/balances; sucesso quando obrigatórios OK; cartão ausente não bloqueia.
 
-- [ ] **MNT-205** [T][S] UI dos cards preview no `/onboarding` — novo organism `OnboardingProgress` que renderiza abaixo do `OnboardingHero`:
+- [x] **MNT-206** [T][S] UI dos cards preview no `/onboarding` — novo organism `OnboardingProgress` que renderiza abaixo do `OnboardingHero`. ✅ commit `c81d8f7` (+ atom `StepIndicator` em `d43456a`). Refac cirúrgico junto: template `OnboardingScreen` sobe o `useAgentSession` pra Hero + Progress compartilharem a mesma conexão WS; Hero vira dumb component.
   - **Nickname**: badge "meu apelido: **X**" aparece com fade + slide da direita quando `tool.result` de `set_nickname` chega.
   - **Banks**: 3+ cards em grid (com logo do banco via `bank.logo_url` se tiver, senão placeholder), cada um em estado `pending → success → confirmed`. Slide-up + stagger de 0.1s.
   - **Balances**: mesmo card do banco ganha um counter animado (motion `useSpring` de 0 → valor).
@@ -169,7 +186,7 @@ Slice que fecha o loop conversacional: o agente executa tools que persistem no D
 - **Editar depois** — mudar nickname/banks/balances vem em `/settings` (outra spec).
 - **Categorias custom** — 10 categorias default já vem seedadas; o user aprende pelo assistente depois.
 - **Múltiplos accounts por banco** — MVP assume 1 conta por banco. Adicionar mais fica como comando conversacional posterior.
-- **Cartões de crédito** — MNT-141+ trata (fase de credit-card billing). Onboarding cobre só contas correntes.
+- **Múltiplas linhas de crédito separadas no mesmo banco** — MVP assume 1 conta = 1 relação de crédito (padrão fintechs). Bancos tradicionais com múltiplos cartões de limites distintos (Bradesco Elo Grafite + Nanquim) ficam pra refac futuro.
 
 ---
 

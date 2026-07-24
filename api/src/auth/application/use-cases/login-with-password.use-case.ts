@@ -97,6 +97,7 @@ export class LoginWithPasswordUseCase {
         id: record.id,
         email: record.email,
         name: record.name,
+        nickname: record.nickname,
         onboardedAt: record.onboardedAt,
       },
       accessToken,
