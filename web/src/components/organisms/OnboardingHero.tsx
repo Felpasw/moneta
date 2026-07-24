@@ -4,8 +4,10 @@ import { motion, type Variants } from "motion/react";
 
 import { BarLoader } from "@/components/atoms/BarLoader";
 import { MicButton } from "@/components/atoms/MicButton";
+import { StepIndicator } from "@/components/atoms/StepIndicator";
 import { VoiceOrb } from "@/components/atoms/VoiceOrb";
 import type { MicState } from "@/hooks/useAgentSession";
+import { ONBOARDING_STEP_LABELS } from "@/utils/onboardingProgress";
 
 const WELCOME_TITLE = "Bem-vindo à Moneta";
 const WELCOME_SUBTITLE = "Toma um segundo pro seu assistente respirar…";
@@ -35,6 +37,7 @@ interface OnboardingHeroProps {
   micState: MicState;
   isWarming: boolean;
   onMicToggle: () => void;
+  activeStep?: number;
 }
 
 export function OnboardingHero({
@@ -43,6 +46,7 @@ export function OnboardingHero({
   micState,
   isWarming,
   onMicToggle,
+  activeStep,
 }: OnboardingHeroProps) {
   return (
     <motion.div
@@ -82,8 +86,17 @@ export function OnboardingHero({
           <BarLoader />
         </motion.div>
       ) : (
-        <motion.div variants={itemVariants}>
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-col items-center gap-8"
+        >
           <MicButton state={micState} onToggle={onMicToggle} />
+          {activeStep !== undefined && (
+            <StepIndicator
+              steps={ONBOARDING_STEP_LABELS as unknown as string[]}
+              activeIndex={activeStep}
+            />
+          )}
         </motion.div>
       )}
     </motion.div>

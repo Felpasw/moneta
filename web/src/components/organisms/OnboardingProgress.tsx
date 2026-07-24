@@ -5,13 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 
 import { BankIcon } from "@/components/atoms/BankIcon";
-import { StepIndicator } from "@/components/atoms/StepIndicator";
 import type { ToolEvent } from "@/hooks/interfaces/useAgentSession.interface";
-import {
-  ONBOARDING_STEP_LABELS,
-  buildOnboardingSummary,
-  deriveActiveStep,
-} from "@/utils/onboardingProgress";
+import { buildOnboardingSummary } from "@/utils/onboardingProgress";
 
 const REDIRECT_MS = 1200;
 
@@ -22,13 +17,39 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat("pt-BR", {
 
 const containerVariants: Variants = {
   initial: {},
-  animate: { transition: { staggerChildren: 0.1 } },
+  animate: { transition: { staggerChildren: 0.12 } },
 };
 
 const itemVariants: Variants = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
-  exit: { opacity: 0, y: -6, transition: { duration: 0.2 } },
+  initial: { opacity: 0, y: 10, scale: 0.96 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+  },
+  exit: {
+    opacity: 0,
+    y: -6,
+    scale: 0.98,
+    transition: { duration: 0.25, ease: "easeIn" },
+  },
+};
+
+const bankCardVariants: Variants = {
+  initial: { opacity: 0, y: 14, scale: 0.94 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    scale: 0.96,
+    transition: { duration: 0.22, ease: "easeIn" },
+  },
 };
 
 interface OnboardingProgressProps {
@@ -43,7 +64,6 @@ export function OnboardingProgress({
   redirectTo = "/",
 }: OnboardingProgressProps) {
   const router = useRouter();
-  const activeIndex = useMemo(() => deriveActiveStep(toolEvents), [toolEvents]);
   const summary = useMemo(
     () => buildOnboardingSummary(toolEvents),
     [toolEvents],
@@ -62,15 +82,7 @@ export function OnboardingProgress({
       initial="initial"
       animate="animate"
     >
-      <StepIndicator
-        steps={ONBOARDING_STEP_LABELS as unknown as string[]}
-        activeIndex={activeIndex}
-      />
-
-      <motion.div
-        variants={itemVariants}
-        className="mt-10 flex flex-col items-center gap-6"
-      >
+      <div className="flex flex-col items-center gap-6">
         <AnimatePresence mode="popLayout">
           {summary.nickname && (
             <motion.div
@@ -103,10 +115,10 @@ export function OnboardingProgress({
                   <motion.li
                     key={bank.accountId}
                     layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    variants={bankCardVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
                     className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/60 px-4 py-3 shadow-sm backdrop-blur"
                   >
                     <BankIcon bankName={bank.bankName} size={32} />
@@ -138,7 +150,7 @@ export function OnboardingProgress({
             </motion.p>
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

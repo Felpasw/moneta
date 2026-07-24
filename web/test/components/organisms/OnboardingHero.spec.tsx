@@ -56,4 +56,25 @@ describe("<OnboardingHero />", () => {
     await user.click(screen.getByRole("button", { name: /ligar mic/i }));
     expect(onMicToggle).toHaveBeenCalledTimes(1);
   });
+
+  it("renderiza StepIndicator com labels do onboarding quando activeStep é passado", () => {
+    render(<OnboardingHero {...baseProps} activeStep={0} />);
+
+    for (const label of ["Apelido", "Bancos", "Saldos", "Ajustes", "Pronto"]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+  });
+
+  it("não renderiza StepIndicator quando activeStep é undefined", () => {
+    render(<OnboardingHero {...baseProps} />);
+
+    expect(screen.queryByText("Apelido")).toBeNull();
+    expect(screen.queryByText("Pronto")).toBeNull();
+  });
+
+  it("esconde StepIndicator enquanto isWarming (loader ativo)", () => {
+    render(<OnboardingHero {...baseProps} isWarming activeStep={2} />);
+
+    expect(screen.queryByText("Saldos")).toBeNull();
+  });
 });

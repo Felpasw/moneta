@@ -63,14 +63,6 @@ afterEach(() => {
 });
 
 describe("OnboardingProgress", () => {
-  it("renderiza os labels dos 5 steps", () => {
-    render(<OnboardingProgress toolEvents={[]} />);
-
-    for (const label of ["Apelido", "Bancos", "Saldos", "Ajustes", "Pronto"]) {
-      expect(screen.getByText(label)).toBeInTheDocument();
-    }
-  });
-
   it("mostra badge do apelido depois que set_nickname resolve", () => {
     render(<OnboardingProgress toolEvents={events.nickname} />);
     expect(screen.getByText("Felps")).toBeInTheDocument();

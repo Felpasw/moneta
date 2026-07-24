@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { OnboardingHero } from "@/components/organisms/OnboardingHero";
 import { OnboardingProgress } from "@/components/organisms/OnboardingProgress";
 import { MicState, useAgentSession } from "@/hooks/useAgentSession";
+import { deriveActiveStep } from "@/utils/onboardingProgress";
 
 const MIC_DENIED_TOAST =
   "Permita o microfone nas configurações do navegador pra conversar com a Moneta.";
@@ -15,6 +16,11 @@ export function OnboardingScreen() {
   const [micEnabled, setMicEnabled] = useState(false);
   const { audioElement, isWarming, micStream, micState, toolEvents } =
     useAgentSession({ enabled: true, micEnabled });
+
+  const activeStep = useMemo(
+    () => deriveActiveStep(toolEvents),
+    [toolEvents],
+  );
 
   useEffect(() => {
     if (micState !== MicState.Denied && micState !== MicState.Error) return;
@@ -34,6 +40,7 @@ export function OnboardingScreen() {
         micState={micState}
         isWarming={isWarming}
         onMicToggle={handleMicToggle}
+        activeStep={activeStep}
       />
       <OnboardingProgress
         toolEvents={toolEvents}
