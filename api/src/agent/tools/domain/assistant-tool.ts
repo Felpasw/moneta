@@ -1,3 +1,5 @@
+import type { ToolSideEffect } from './types/tool-side-effect';
+
 export interface AssistantContext {
   readonly userId: string;
   readonly requestId: string;
@@ -8,6 +10,7 @@ export interface AssistantToolResult {
   readonly ok: boolean;
   readonly data?: unknown;
   readonly error?: string;
+  readonly sideEffects?: readonly ToolSideEffect[];
 }
 
 export interface AssistantTool<TInput = unknown> {
