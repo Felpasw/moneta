@@ -1,3 +1,5 @@
 allowBuilds:
   sharp: true
   unrs-resolver: true
+patchedDependencies:
+  '@edusites/bancos-brasil': patches/@edusites__bancos-brasil.patch

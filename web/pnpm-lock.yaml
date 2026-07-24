@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@edusites/bancos-brasil': 64341020fb3a83bd2b84ba1e68dd198cd3ffc88d93d55dfc590024856d81d969
+
 importers:
 
   .:
@@ -22,7 +25,7 @@ importers:
         version: 8.4.1(@capacitor/core@8.4.1)
       '@edusites/bancos-brasil':
         specifier: ^1.2.0
-        version: 1.2.0
+        version: 1.2.0(patch_hash=64341020fb3a83bd2b84ba1e68dd198cd3ffc88d93d55dfc590024856d81d969)
       '@hookform/resolvers':
         specifier: ^5.4.0
         version: 5.4.0(react-hook-form@7.82.0(react@19.2.4))
@@ -4263,7 +4266,7 @@ snapshots:
 
   '@dotenvx/primitives@0.8.0': {}
 
-  '@edusites/bancos-brasil@1.2.0': {}
+  '@edusites/bancos-brasil@1.2.0(patch_hash=64341020fb3a83bd2b84ba1e68dd198cd3ffc88d93d55dfc590024856d81d969)': {}
 
   '@emnapi/core@1.10.0':
     dependencies:

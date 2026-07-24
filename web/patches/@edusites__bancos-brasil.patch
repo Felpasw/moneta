@@ -1,0 +1,17 @@
+diff --git a/package.json b/package.json
+index 637cd9e1f939841d27d6bca5c70f26c7fe6f0798..d8d3f563fdcb0828c759e311147e75f6fd3742eb 100644
+--- a/package.json
++++ b/package.json
+@@ -27,10 +27,10 @@
+     "gateways",
+     "pagamentos"
+   ],
+-  "main": "./src/index.js",
++  "main": "./src/core.js",
+   "type": "module",
+   "exports": {
+-    ".": "./src/index.js"
++    ".": "./src/core.js"
+   },
+   "files": [
+     "src/index.js",
