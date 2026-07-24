@@ -6,6 +6,31 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.6.0](https://github.com/Felpasw/moneta/compare/api-v0.5.0...api-v0.6.0) (2026-07-24)
+
+
+### ✨ Features
+
+* **api:** expande ONBOARDING_SNIPPET com fluxo das 5 tools de onboarding [MNT-206] ([00cd475](https://github.com/Felpasw/moneta/commit/00cd475e817658225eb00fd4324a46928fb96b70))
+* **api:** força confirmação por voz antes de tools de escrita no onboarding [MNT-206] ([2502d8e](https://github.com/Felpasw/moneta/commit/2502d8e3c21c1891b7752a474cc009fc6a3539f4))
+* **api:** popula logo_url no seed com as keywords do @edusites/bancos-brasil [MNT-206] ([efea0e8](https://github.com/Felpasw/moneta/commit/efea0e87c89d55af7d6798a67ecd75ba229581ef))
+* **api:** tool add_user_banks recebendo bankIds do frontend [MNT-202] ([315b3a3](https://github.com/Felpasw/moneta/commit/315b3a31f9e3cdf151ccf03aa7c0ea0ffc679fa1))
+* **api:** tool complete_onboarding com guard + evento users.onboarded [MNT-205] ([297f7e1](https://github.com/Felpasw/moneta/commit/297f7e1b1dca095d5bf551fd9df3e2b95ba1bf65))
+* **api:** tool configure_account_details (cartão + overdraft merged na conta) [MNT-204] ([a1f339a](https://github.com/Felpasw/moneta/commit/a1f339a490b6b7ab53562f567eeb3b9cd6771db4))
+* **api:** tool set_account_balances (batch com no-negative + no-dup) [MNT-203] ([3e53fe4](https://github.com/Felpasw/moneta/commit/3e53fe47db19803401996e5e86ad7e91dd8ff2ec))
+* **api:** tool set_nickname pro onboarding + UsersService.updateNickname [MNT-201] ([1757201](https://github.com/Felpasw/moneta/commit/1757201a44588c2045564a00515f4501cc7518fd))
+* **api:** wire ToolDispatcher no gateway com envelopes tool.* [MNT-200] ([c889e1a](https://github.com/Felpasw/moneta/commit/c889e1a05870328db2ceae4df867e30f590f03f3))
+
+
+### 🐛 Correções
+
+* **api:** quebra circular Users↔Accounts extraindo OnboardingModule + propaga nickname [MNT-205] ([052676e](https://github.com/Felpasw/moneta/commit/052676e0ffec578839e54beb58b86e885bcb7fc4))
+
+
+### 🔨 Refactoring
+
+* **api:** paralelizar loops async independentes com Promise.all [MNT-202] ([363e7ac](https://github.com/Felpasw/moneta/commit/363e7aca01bba742101cccc27da74a9edc38f684))
+
 ## [0.5.0](https://github.com/Felpasw/moneta/compare/api-v0.4.0...api-v0.5.0) (2026-07-23)
 
 

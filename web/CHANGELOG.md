@@ -6,6 +6,17 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.3.0](https://github.com/Felpasw/moneta/compare/web-v0.2.0...web-v0.3.0) (2026-07-24)
+
+
+### ✨ Features
+
+* **web:** atom StepIndicator (bolinhas + linha animada + progress bar) [MNT-206] ([d43456a](https://github.com/Felpasw/moneta/commit/d43456a1dec24a8e84dc3895fa84e85e84293cae))
+* **web:** BankIcon + useBankIcon hook com logos da @edusites/bancos-brasil [MNT-206] ([15a4f9c](https://github.com/Felpasw/moneta/commit/15a4f9ca244256c553de472ccfb7c54c355dcc9c))
+* **web:** destaca cards de banco + orb compact + mostra fecha/vence/cheque especial [MNT-206] ([d12c2c2](https://github.com/Felpasw/moneta/commit/d12c2c28c873b85b0a109001efebf0cabc920b96))
+* **web:** OnboardingProgress + template OnboardingScreen + toolEvents no hook [MNT-206] ([c81d8f7](https://github.com/Felpasw/moneta/commit/c81d8f77deeb17dfe1295ad3d1c29aa8e7e88187))
+* **web:** sobe StepIndicator pro Hero (perto do MicButton) + reforça fade nos cards [MNT-206] ([1c6ed51](https://github.com/Felpasw/moneta/commit/1c6ed51f00ef0d3ae50d7fc3c8e8dfdb722e33cb))
+
 ## [0.2.0](https://github.com/Felpasw/moneta/compare/web-v0.1.0...web-v0.2.0) (2026-07-23)
 
 
