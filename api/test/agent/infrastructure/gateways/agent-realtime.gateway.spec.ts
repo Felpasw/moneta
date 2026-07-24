@@ -18,6 +18,8 @@ import type { AssistantProfile } from '~/agent/personality/domain/types/assistan
 import type { ToolDispatcher } from '~/agent/tools/infrastructure/tool-dispatcher';
 import type { ToolRegistry } from '~/agent/tools/infrastructure/tool-registry';
 import type { TokenService } from '~/auth/domain/services/token-service';
+import type { ListMyAccountsUseCase } from '~/finance/accounts/application/use-cases/list-my-accounts.use-case';
+import type { UserBankAccount } from '~/finance/accounts/domain/ports/user-bank-accounts-repository';
 import { UsersService } from '~/users/users.service';
 
 interface RealtimeToolDescriptor {
@@ -37,15 +39,42 @@ const makeStubDispatcher = (): ToolDispatcher =>
     dispatch: jest.fn().mockResolvedValue({ ok: true, callId: 'noop' }),
   }) as unknown as ToolDispatcher;
 
-const makeStubUsers = (isOnboarded = true, name = 'Alice'): UsersService =>
-  ({
+interface StubUsersOptions {
+  readonly isOnboarded?: boolean;
+  readonly name?: string;
+  readonly nickname?: string | null;
+}
+
+const makeStubUsers = (
+  isOnboardedOrOpts: boolean | StubUsersOptions = true,
+  name = 'Alice',
+): UsersService => {
+  const opts: StubUsersOptions =
+    typeof isOnboardedOrOpts === 'boolean'
+      ? { isOnboarded: isOnboardedOrOpts, name }
+      : isOnboardedOrOpts;
+  const {
+    isOnboarded = true,
+    name: resolvedName = 'Alice',
+    nickname = null,
+  } = opts;
+  return {
     findById: jest.fn().mockResolvedValue({
       id: 'user-1',
       email: 'alice@example.com',
-      name,
+      name: resolvedName,
+      nickname,
       onboardedAt: isOnboarded ? new Date('2026-01-01') : null,
     }),
-  }) as unknown as UsersService;
+  } as unknown as UsersService;
+};
+
+const makeStubAccounts = (
+  accounts: UserBankAccount[] = [],
+): ListMyAccountsUseCase =>
+  ({
+    execute: jest.fn().mockResolvedValue(accounts),
+  }) as unknown as ListMyAccountsUseCase;
 
 type Listener<T extends unknown[]> = (...args: T) => void;
 
@@ -248,6 +277,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -274,6 +304,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -298,6 +329,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -322,6 +354,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -347,6 +380,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -373,6 +407,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -399,6 +434,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -424,6 +460,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -452,6 +489,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -476,6 +514,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -501,6 +540,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -526,6 +566,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -574,6 +615,7 @@ describe('AgentRealtimeGateway', () => {
         tts,
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -612,6 +654,7 @@ describe('AgentRealtimeGateway', () => {
         tts,
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -647,6 +690,7 @@ describe('AgentRealtimeGateway', () => {
         tts,
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -673,6 +717,7 @@ describe('AgentRealtimeGateway', () => {
         tts,
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -751,6 +796,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         repo,
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -785,6 +831,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         repo,
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -812,6 +859,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         repo,
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -838,6 +886,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(buildProfile()),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -862,6 +911,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         repo,
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -896,6 +946,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         registry,
         makeStubDispatcher(),
       );
@@ -932,6 +983,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -1011,6 +1063,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(false),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -1041,6 +1094,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(false, 'Felipe'),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -1068,6 +1122,7 @@ describe('AgentRealtimeGateway', () => {
         makeNoopTts(),
         makeProfileRepo(null),
         makeStubUsers(true),
+        makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
       );
@@ -1086,6 +1141,43 @@ describe('AgentRealtimeGateway', () => {
       expect(instructions).not.toMatch(/primeira/i);
 
       expect(findEvent(upstream, 'response.create')).toBeUndefined();
+    });
+
+    it('injeta snippet do dashboard-tour + dispara response.create quando user tem nickname+banks mas ainda não é onboarded', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-tour' }));
+      const factory = makeFactory(upstream);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        makeProfileRepo(null),
+        makeStubUsers({
+          isOnboarded: false,
+          name: 'Felipe',
+          nickname: 'Felps',
+        }),
+        makeStubAccounts([{ id: 'acc-1' } as unknown as UserBankAccount]),
+        makeStubRegistry(),
+        makeStubDispatcher(),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      const instructions = readInstructions(upstream);
+      expect(instructions).toBeDefined();
+      expect(instructions).toMatch(/tour|overview|pronto pra come[çc]ar/i);
+      expect(instructions).toContain('Felps');
+      expect(instructions).not.toMatch(/primeira/i);
+
+      expect(findEvent(upstream, 'response.create')).toBeDefined();
     });
   });
 });

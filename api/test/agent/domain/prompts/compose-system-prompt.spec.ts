@@ -1,5 +1,6 @@
 import { BASE_PROMPT } from '~/agent/domain/prompts/base';
 import { composeSystemPrompt } from '~/agent/domain/prompts/compose-system-prompt';
+import { DASHBOARD_TOUR_SNIPPET } from '~/agent/domain/prompts/dashboard-tour';
 import { ONBOARDING_SNIPPET } from '~/agent/domain/prompts/onboarding';
 import { TREATMENT_SNIPPETS } from '~/agent/domain/prompts/treatment';
 import { TreatmentStyle } from '~/agent/personality/domain/constants/treatment-style';
@@ -55,6 +56,50 @@ describe('composeSystemPrompt', () => {
       userName: 'Felipe',
     });
     expect(prompt).not.toContain('Felipe');
+  });
+
+  it('anexa DASHBOARD_TOUR_SNIPPET quando dashboardTour=true (sem onboarding)', () => {
+    const prompt = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      dashboardTour: true,
+    });
+    expect(prompt).toContain(DASHBOARD_TOUR_SNIPPET);
+    expect(prompt).not.toContain(ONBOARDING_SNIPPET);
+  });
+
+  it('dashboardTour e onboarding são mutuamente exclusivos — tour vence quando ambos passados', () => {
+    const prompt = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      dashboardTour: true,
+      onboarding: true,
+    });
+    expect(prompt).toContain(DASHBOARD_TOUR_SNIPPET);
+    expect(prompt).not.toContain(ONBOARDING_SNIPPET);
+  });
+
+  it('injeta userName quando dashboardTour=true', () => {
+    const prompt = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      dashboardTour: true,
+      userName: 'Felipe',
+    });
+    expect(prompt).toContain('Felipe');
+  });
+
+  it('injeta userNickname quando dashboardTour=true (agente reconhece o apelido escolhido no onboarding)', () => {
+    const prompt = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      dashboardTour: true,
+      userNickname: 'Felps',
+    });
+    expect(prompt).toContain('Felps');
+  });
+
+  it('não injeta DASHBOARD_TOUR_SNIPPET quando dashboardTour=false (default)', () => {
+    const prompt = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+    });
+    expect(prompt).not.toContain(DASHBOARD_TOUR_SNIPPET);
   });
 
   it('produces different prompts for different styles', () => {
