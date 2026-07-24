@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { FinanceModule } from './finance/finance.module';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module';
     ToolsModule,
     AgentModule,
     FinanceModule,
+    OnboardingModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

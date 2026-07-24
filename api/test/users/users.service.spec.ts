@@ -9,6 +9,7 @@ const makeRepo = (
   findById: jest.fn(),
   findByEmail: jest.fn(),
   updateNickname: jest.fn(),
+  markOnboarded: jest.fn(),
   ...overrides,
 });
 

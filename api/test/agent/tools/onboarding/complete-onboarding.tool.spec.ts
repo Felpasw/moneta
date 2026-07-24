@@ -1,5 +1,5 @@
 import { CompleteOnboardingTool } from '~/agent/tools/onboarding/complete-onboarding.tool';
-import type { CompleteOnboardingUseCase } from '~/users/application/use-cases/complete-onboarding.use-case';
+import type { CompleteOnboardingUseCase } from '~/onboarding/application/use-cases/complete-onboarding.use-case';
 
 const CTX = { userId: 'user-1', requestId: 'req-1' };
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CompleteOnboardingUseCase } from '../../../users/application/use-cases/complete-onboarding.use-case';
+import { CompleteOnboardingUseCase } from '../../../onboarding/application/use-cases/complete-onboarding.use-case';
 import type {
   AssistantContext,
   AssistantTool,

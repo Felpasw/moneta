@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { CLOCK, type Clock } from '../../../@common/domain/ports/clock';
 import { ListMyAccountsUseCase } from '../../../finance/accounts/application/use-cases/list-my-accounts.use-case';
+import { UsersService } from '../../../users/users.service';
 import {
   USER_ONBOARDED_EVENT,
   type UserOnboardedPayload,
@@ -12,7 +13,6 @@ import type {
   CompleteOnboardingMissing,
   CompleteOnboardingResult,
 } from '../../domain/types/complete-onboarding-result';
-import { UsersService } from '../../users.service';
 
 @Injectable()
 export class CompleteOnboardingUseCase {

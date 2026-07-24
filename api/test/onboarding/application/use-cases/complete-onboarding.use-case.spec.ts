@@ -3,8 +3,8 @@ import type { EventEmitter2 } from '@nestjs/event-emitter';
 import { FixedClock } from '~/@common/infrastructure/clock/fixed-clock';
 import type { ListMyAccountsUseCase } from '~/finance/accounts/application/use-cases/list-my-accounts.use-case';
 import type { UserBankAccount } from '~/finance/accounts/domain/ports/user-bank-accounts-repository';
-import { CompleteOnboardingUseCase } from '~/users/application/use-cases/complete-onboarding.use-case';
-import { USER_ONBOARDED_EVENT } from '~/users/domain/events/user-onboarded.event';
+import { CompleteOnboardingUseCase } from '~/onboarding/application/use-cases/complete-onboarding.use-case';
+import { USER_ONBOARDED_EVENT } from '~/onboarding/domain/events/user-onboarded.event';
 import type { UserSnapshot } from '~/users/domain/ports/users-repository';
 import type { UsersService } from '~/users/users.service';
 

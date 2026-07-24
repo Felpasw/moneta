@@ -77,11 +77,12 @@ export class PrismaUsersRepository implements UsersRepository {
     id: string,
     nickname: string,
   ): Promise<{ nickname: string }> {
-    return this.prisma.user.update({
+    const row = await this.prisma.user.update({
       where: { id },
       data: { nickname },
       select: { nickname: true },
     });
+    return { nickname: row.nickname! };
   }
 
   async markOnboarded(
