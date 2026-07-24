@@ -17,8 +17,15 @@ interface NavItem {
 interface UserProfile {
   name: string;
   email: string;
-  avatarUrl: string;
+  avatarUrl?: string;
 }
+
+const initialsFromName = (name: string): string => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0][0].toUpperCase();
+  return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
+};
 
 interface LogoutItem {
   icon: ReactNode;
@@ -80,11 +87,20 @@ export function AppSidebar({
         variants={itemVariants}
         className="flex items-center space-x-4 p-2"
       >
-        <img
-          src={user.avatarUrl}
-          alt={`${user.name}'s avatar`}
-          className="h-12 w-12 rounded-full object-cover"
-        />
+        {user.avatarUrl ? (
+          <img
+            src={user.avatarUrl}
+            alt={`${user.name}'s avatar`}
+            className="h-12 w-12 rounded-full object-cover"
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground"
+          >
+            {initialsFromName(user.name)}
+          </div>
+        )}
         <div className="flex flex-col truncate">
           <span className="text-lg font-semibold">{user.name}</span>
           <span className="truncate text-sm text-muted-foreground">

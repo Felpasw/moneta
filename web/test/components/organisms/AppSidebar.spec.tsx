@@ -93,6 +93,31 @@ describe("<AppSidebar />", () => {
     expect(onLogout).toHaveBeenCalledTimes(1);
   });
 
+  it("sem avatarUrl, renderiza fallback com iniciais do nome no lugar do <img>", () => {
+    render(
+      <AppSidebar
+        user={{ name: "Felipe Cavalcante", email: "f@moneta.dev" }}
+        navItems={navItems}
+        logoutItem={buildLogoutItem()}
+      />,
+    );
+
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.getByText("FC")).toBeInTheDocument();
+  });
+
+  it("fallback usa apenas a primeira letra quando o nome é single word", () => {
+    render(
+      <AppSidebar
+        user={{ name: "Emma", email: "emma@x.com" }}
+        navItems={navItems}
+        logoutItem={buildLogoutItem()}
+      />,
+    );
+
+    expect(screen.getByText("E")).toBeInTheDocument();
+  });
+
   it("aplica className extra quando passado", () => {
     render(
       <AppSidebar
