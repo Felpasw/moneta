@@ -27,6 +27,10 @@ export const TOOL_EVENT = {
   error: "tool.error",
 } as const;
 
+export const SYSTEM_EVENT = {
+  redirect: "system.redirect",
+} as const;
+
 export enum ToolEventKind {
   Pending = "pending",
   Result = "result",
