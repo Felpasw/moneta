@@ -1143,6 +1143,68 @@ describe('AgentRealtimeGateway', () => {
       expect(findEvent(upstream, 'response.create')).toBeUndefined();
     });
 
+    it('injeta bloco de retomada quando user já tem nickname mas ainda não tem bancos', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-partial' }));
+      const factory = makeFactory(upstream);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        makeProfileRepo(null),
+        makeStubUsers({
+          isOnboarded: false,
+          name: 'Felipe',
+          nickname: 'Felps',
+        }),
+        makeStubAccounts(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      const instructions = readInstructions(upstream);
+      expect(instructions).toMatch(/retomada|voltou|de volta/i);
+      expect(instructions).toContain('Felps');
+      expect(instructions).toMatch(/direto pra etapa de bancos/i);
+    });
+
+    it('NÃO injeta bloco de retomada pra user totalmente novo (sem nickname nem bancos)', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-new' }));
+      const factory = makeFactory(upstream);
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        makeNoopTts(),
+        makeProfileRepo(null),
+        makeStubUsers(false),
+        makeStubAccounts(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      const instructions = readInstructions(upstream);
+      expect(instructions).not.toMatch(/retomada|voltou|de volta/i);
+    });
+
     it('injeta snippet do dashboard-tour + dispara response.create quando user tem nickname+banks mas ainda não é onboarded', async () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-tour' }));

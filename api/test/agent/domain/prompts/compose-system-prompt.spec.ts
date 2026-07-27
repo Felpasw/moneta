@@ -102,6 +102,51 @@ describe('composeSystemPrompt', () => {
     expect(prompt).not.toContain(DASHBOARD_TOUR_SNIPPET);
   });
 
+  it('anexa onboardingResume DEPOIS do ONBOARDING_SNIPPET quando onboarding=true', () => {
+    const resume = '### RETOMADA ### volta pros saldos direto';
+    const prompt = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      onboarding: true,
+      onboardingResume: resume,
+    });
+    expect(prompt).toContain(resume);
+    expect(prompt.indexOf(ONBOARDING_SNIPPET)).toBeLessThan(
+      prompt.indexOf(resume),
+    );
+  });
+
+  it('ignora onboardingResume quando onboarding=false (default)', () => {
+    const resume = '### RETOMADA ###';
+    const prompt = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      onboardingResume: resume,
+    });
+    expect(prompt).not.toContain(resume);
+  });
+
+  it('ignora onboardingResume quando dashboardTour=true (retomada só faz sentido no onboarding mode)', () => {
+    const resume = '### RETOMADA ###';
+    const prompt = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      dashboardTour: true,
+      onboardingResume: resume,
+    });
+    expect(prompt).not.toContain(resume);
+  });
+
+  it('não anexa nada extra quando onboarding=true + onboardingResume null', () => {
+    const promptSem = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      onboarding: true,
+    });
+    const promptComNull = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      onboarding: true,
+      onboardingResume: null,
+    });
+    expect(promptComNull).toBe(promptSem);
+  });
+
   it('produces different prompts for different styles', () => {
     const formal = composeSystemPrompt({
       treatmentStyle: TreatmentStyle.Formal,

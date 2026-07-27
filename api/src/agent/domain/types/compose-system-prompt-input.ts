@@ -6,4 +6,5 @@ export interface ComposeSystemPromptInput {
   readonly dashboardTour?: boolean;
   readonly userName?: string | null;
   readonly userNickname?: string | null;
+  readonly onboardingResume?: string | null;
 }

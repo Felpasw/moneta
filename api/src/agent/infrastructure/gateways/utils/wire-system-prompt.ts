@@ -1,7 +1,9 @@
 import { AgentMode } from '~/agent/domain/constants/agent-mode';
 import { resolveAgentMode } from '~/agent/domain/prompts/agent-mode';
 import { composeSystemPrompt } from '~/agent/domain/prompts/compose-system-prompt';
+import { buildOnboardingResumeBlock } from '~/agent/domain/prompts/onboarding-resume';
 import { DEFAULT_TREATMENT_STYLE } from '~/agent/personality/domain/constants/treatment-style';
+import { deriveOnboardingState } from '~/onboarding/domain/utils/derive-onboarding-state';
 
 import { REALTIME_EVENT_TYPE } from '../constants/realtime-event-types';
 import type { SystemPromptContext } from '../types/system-prompt-context';
@@ -21,12 +23,18 @@ const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
     hasBanks: userAccounts.length > 0,
     onboardedAt: user?.onboardedAt ?? null,
   });
+  const onboardingResume = buildOnboardingResumeBlock({
+    state: deriveOnboardingState({ user, accounts: userAccounts }),
+    nickname: user?.nickname ?? null,
+    banksCount: userAccounts.length,
+  });
   const instructions = composeSystemPrompt({
     treatmentStyle,
     onboarding: mode === AgentMode.Onboarding,
     dashboardTour: mode === AgentMode.DashboardTour,
     userName: user?.name ?? null,
     userNickname: user?.nickname ?? null,
+    onboardingResume,
   });
   const sessionPayload = {
     type: REALTIME_EVENT_TYPE.sessionUpdate,

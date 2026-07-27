@@ -22,13 +22,15 @@ export const composeSystemPrompt = ({
   dashboardTour = false,
   userName = null,
   userNickname = null,
+  onboardingResume = null,
 }: ComposeSystemPromptInput): string => {
   const core = `${BASE_PROMPT}\n\n${TREATMENT_SNIPPETS[treatmentStyle]}`;
   if (dashboardTour) {
     return `${core}\n\n${DASHBOARD_TOUR_SNIPPET}${buildUserLine(userName, userNickname)}`;
   }
   if (onboarding) {
-    return `${core}\n\n${ONBOARDING_SNIPPET}${buildUserLine(userName, userNickname)}`;
+    const resumeBlock = onboardingResume ? `\n\n${onboardingResume}` : '';
+    return `${core}\n\n${ONBOARDING_SNIPPET}${buildUserLine(userName, userNickname)}${resumeBlock}`;
   }
   return core;
 };
