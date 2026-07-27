@@ -22,7 +22,6 @@ export function OnboardingScreen() {
   const {
     audioElement,
     isWarming,
-    micStream,
     micState,
     toolEvents,
     redirectTarget,
@@ -66,7 +65,6 @@ export function OnboardingScreen() {
       )}
       <OnboardingHero
         audioElement={audioElement}
-        micStream={micStream}
         micState={micState}
         isWarming={isWarming}
         onMicToggle={handleMicToggle}

@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { VoiceOrb } from "@/components/atoms/VoiceOrb";
 
@@ -44,6 +44,51 @@ vi.mock("ogl", () => {
   };
 });
 
+const createMediaElementSourceSpy = vi.fn(() => ({
+  connect: vi.fn(),
+  disconnect: vi.fn(),
+}));
+const createMediaStreamSourceSpy = vi.fn(() => ({
+  connect: vi.fn(),
+  disconnect: vi.fn(),
+}));
+const createAnalyserSpy = vi.fn(() => ({
+  connect: vi.fn(),
+  disconnect: vi.fn(),
+  fftSize: 512,
+  smoothingTimeConstant: 0,
+  minDecibels: 0,
+  maxDecibels: 0,
+  frequencyBinCount: 256,
+  getByteFrequencyData: vi.fn(),
+}));
+
+class FakeAudioContext {
+  state = "running";
+  destination = {};
+  createMediaElementSource = createMediaElementSourceSpy;
+  createMediaStreamSource = createMediaStreamSourceSpy;
+  createAnalyser = createAnalyserSpy;
+  resume = vi.fn(async () => undefined);
+  close = vi.fn(async () => undefined);
+}
+
+beforeEach(() => {
+  createMediaElementSourceSpy.mockClear();
+  createMediaStreamSourceSpy.mockClear();
+  createAnalyserSpy.mockClear();
+  (globalThis as unknown as { AudioContext: typeof FakeAudioContext }).AudioContext =
+    FakeAudioContext;
+});
+
+afterEach(() => {
+  delete (globalThis as unknown as { AudioContext?: typeof FakeAudioContext })
+    .AudioContext;
+});
+
+const flushMicrotasks = () =>
+  new Promise<void>((resolve) => setTimeout(resolve, 0));
+
 describe("<VoiceOrb />", () => {
   it("renderiza wrapper com className passado", () => {
     const { container } = render(<VoiceOrb className="my-orb" />);
@@ -54,5 +99,27 @@ describe("<VoiceOrb />", () => {
   it("desmonta sem erros", () => {
     const { unmount } = render(<VoiceOrb />);
     expect(() => unmount()).not.toThrow();
+  });
+
+  it("conecta MediaElementSource quando audioElement é passado", async () => {
+    const audio = document.createElement("audio");
+    render(<VoiceOrb audioElement={audio} />);
+    await flushMicrotasks();
+
+    expect(createMediaElementSourceSpy).toHaveBeenCalledWith(audio);
+    expect(createMediaStreamSourceSpy).not.toHaveBeenCalled();
+  });
+
+  it("NÃO aceita mais a prop audioStream — mic do user nunca dispara o analyser", async () => {
+    const fakeStream = {} as MediaStream;
+    render(
+      <VoiceOrb
+        {...({ audioStream: fakeStream } as unknown as Record<string, never>)}
+      />,
+    );
+    await flushMicrotasks();
+
+    expect(createMediaStreamSourceSpy).not.toHaveBeenCalled();
+    expect(createMediaElementSourceSpy).not.toHaveBeenCalled();
   });
 });

@@ -65,7 +65,7 @@ const MONETA_NAV_ITEMS = [
 
 export function DashboardScreen() {
   const [micEnabled, setMicEnabled] = useState(false);
-  const { audioElement, isWarming, micStream, micState } = useAgentSession({
+  const { audioElement, isWarming, micState } = useAgentSession({
     enabled: true,
     micEnabled,
   });
@@ -99,11 +99,7 @@ export function DashboardScreen() {
 
       <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16">
         <div className="relative size-40 sm:size-48">
-          <VoiceOrb
-            audioElement={audioElement}
-            audioStream={micStream}
-            voiceSensitivity={2.4}
-          />
+          <VoiceOrb audioElement={audioElement} voiceSensitivity={2.4} />
         </div>
         {isWarming ? (
           <BarLoader />
