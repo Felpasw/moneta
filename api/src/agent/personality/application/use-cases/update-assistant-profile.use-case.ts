@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { RPM_AVATAR_URL_PATTERN } from '../../domain/constants/avatar-url';
+import { DICEBEAR_AVATAR_PATTERN } from '../../domain/constants/avatar-url';
 import { InvalidAvatarUrlError } from '../../domain/errors/invalid-avatar-url.error';
 import {
   ASSISTANT_PROFILE_REPOSITORY,
@@ -22,7 +22,7 @@ export class UpdateAssistantProfileUseCase {
   ): Promise<AssistantProfile> {
     if (
       typeof patch.avatarUrl === 'string' &&
-      !RPM_AVATAR_URL_PATTERN.test(patch.avatarUrl)
+      !DICEBEAR_AVATAR_PATTERN.test(patch.avatarUrl)
     ) {
       throw new InvalidAvatarUrlError(patch.avatarUrl);
     }
