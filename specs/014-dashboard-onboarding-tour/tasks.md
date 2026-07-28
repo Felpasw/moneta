@@ -50,7 +50,7 @@ Mesmas do CLAUDE.md global + projeto.
 
 ## Tasks
 
-- [ ] **MNT-207** [T][S] Nova tool `finish_setup()` em `api/src/agent/tools/onboarding/finish-setup.tool.ts`
+- [x] **MNT-207** [T][S] ✅ commit `e4396924` Nova tool `finish_setup()` em `api/src/agent/tools/onboarding/finish-setup.tool.ts`
   - Schema `{}` (sem args), strict
   - Sem side-effect no DB
   - Retorna `{ ok: true }` — mas emite um envelope WS extra `system.redirect` (`{ target: '/dashboard' }`) via wire novo (`wire-system-redirect.ts` ou reusa mecanismo do `sendClientEvent`)
@@ -59,11 +59,11 @@ Mesmas do CLAUDE.md global + projeto.
   - Testes: unit da tool + spec do dispatcher emitindo envelope
   - Wire no `OnboardingToolsModule`
 
-- [ ] **MNT-208** [T][S] `ONBOARDING_SNIPPET` (spec 013) trocado no fim: no lugar de "chame complete_onboarding" agora é "chame finish_setup". Complete_onboarding não é mais responsabilidade do /onboarding.
+- [x] **MNT-208** [T][S] ✅ commit `614d9a48` `ONBOARDING_SNIPPET` (spec 013) trocado no fim: no lugar de "chame complete_onboarding" agora é "chame finish_setup". Complete_onboarding não é mais responsabilidade do /onboarding.
   - Bump version 3 → 4
   - Ajustar exemplo de confirmação: "Fechou {nickname}, posso finalizar seu setup?" (não "finalizar o setup pra fechar" que dá ideia de já terminar tudo)
 
-- [ ] **MNT-209** [T][S] Nova rota `web/src/app/(app)/dashboard/page.tsx` + template `DashboardScreen`
+- [x] **MNT-209** [T][S] ✅ commit `7982021a` Nova rota `web/src/app/(app)/dashboard/page.tsx` + template `DashboardScreen`
   - Server component page renderiza `<DashboardScreen />` (client)
   - Template monta `useAgentSession({ enabled: true, micEnabled: false })` — mic começa off, user liga
   - Renderiza `VoiceOrb` + `MicButton` (reusa organism/atom existentes)
@@ -71,7 +71,7 @@ Mesmas do CLAUDE.md global + projeto.
   - Layout inicial: apenas orb centralizado + mic embaixo (parecido com Hero compact do onboarding)
   - Testes: renderiza template + hook chamado com enabled=true
 
-- [ ] **MNT-210** [T][S] Novo snippet `DASHBOARD_TOUR_SNIPPET` em `api/src/agent/domain/prompts/dashboard-tour.ts`
+- [x] **MNT-210** [T][S] ✅ commit `1c8fc186` Novo snippet `DASHBOARD_TOUR_SNIPPET` em `api/src/agent/domain/prompts/dashboard-tour.ts`
   - Overview curto das features (core listado nas Decisões)
   - Regra de confirmação: pergunta "pronto pra começar?" no fim, aguarda ok, chama `complete_onboarding`
   - Bump version 1
@@ -81,7 +81,7 @@ Mesmas do CLAUDE.md global + projeto.
   - **Simplificação**: usa `hasNickname && hasBanks && !onboardedAt` como discriminador de "dashboard tour" vs "onboarding fresh". Testável isolado
   - Ajusta specs: prompts spec + gateway spec (tour snippet)
 
-- [ ] **MNT-211** [T][S] Frontend consumo do envelope `system.redirect`
+- [x] **MNT-211** [T][S] ✅ commit `a3976d23` Frontend consumo do envelope `system.redirect`
   - Extend `useAgentSession`: novo state `redirectTarget: string | null` + reset no unmount
   - Novo dispatcher `makeSystemDispatcher` paralelo ao TTS/Tool no WS
   - `OnboardingScreen` reage a `redirectTarget` via `useEffect` → `router.push(redirectTarget)`
@@ -92,6 +92,19 @@ Mesmas do CLAUDE.md global + projeto.
   - Chip/badge "Tour em andamento" enquanto agente fala
   - Skip button "pular tour" (chama complete_onboarding direto)
   - Fica pra depois — MVP funciona só com voz
+
+- [x] **MNT-213** [T][S] ✅ commit `3002ddee` AppShell — organism `AppSidebar` (desktop) + BottomBar (mobile)
+  - Decisão: padrão indústria — sidebar full em desktop, bottom bar em mobile
+  - `AppSidebar` (desktop): organism em `web/src/components/organisms/AppSidebar.tsx` com props `user`, `navItems`, `logoutItem`, `className`. Animação stagger via `motion/react`. Landmark `<aside aria-label>` + `<nav>` semântico. React 19 ref-as-prop.
+  - **Pendente**: BottomBar mobile equivalente, wiring no layout `(app)` (`usePathname` pra active), wire de logout via auth store, swap `<img>` → `next/image` (config domínio externo no `next.config.mjs`), adaptação dos nav items pros do Moneta (Dashboard/Transações/Cartões/Categorias/Contas/Configurações)
+  - Nova sub-task pra cada pendente conforme evoluir
+
+- [x] **MNT-214** [T][S] ✅ commit `acbe926b` VoiceOrb reage só ao TTS do agente, não ao mic do user
+  - Remove prop `audioStream` do `VoiceOrb` + branch `createMediaStreamSource` no attach
+  - Remove `audioStream={micStream}` de `OnboardingHero` e `DashboardScreen`
+  - Remove prop `micStream` do `OnboardingHero` (não sobra uso interno) + drop do destructuring nos templates
+  - `useAgentSession.micStream` continua sendo exposto (pode servir pra waveform/VU meter no futuro), só ninguém consome hoje
+  - Testes: mockar `AudioContext` no spec do `VoiceOrb`, spy em `createMediaStreamSource` (nunca chamado) e `createMediaElementSource` (chamado quando `audioElement` é passado)
 
 ## Fora de escopo
 
