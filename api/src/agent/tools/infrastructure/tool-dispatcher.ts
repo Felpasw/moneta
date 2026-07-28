@@ -66,7 +66,12 @@ export class ToolDispatcher {
           message: outcome.error ?? 'Tool reported failure',
         });
       }
-      return { ok: true, callId, data: outcome.data };
+      return {
+        ok: true,
+        callId,
+        data: outcome.data,
+        sideEffects: outcome.sideEffects,
+      };
     } catch (err) {
       if (err instanceof ToolTimeoutError) {
         return buildToolDispatchFailure({

@@ -278,6 +278,79 @@ describe('wireToolDispatcher', () => {
     expect(client.send).not.toHaveBeenCalled();
   });
 
+  it('quando dispatch.ok trás sideEffects kind:redirect, emite envelope system.redirect com target após o tool.result', async () => {
+    const upstream = new FakeUpstream();
+    const client = makeClient();
+    const dispatcher = makeDispatcher(({ callId }) =>
+      Promise.resolve({
+        ok: true,
+        callId,
+        data: { ok: true },
+        sideEffects: [{ kind: 'redirect', target: '/dashboard' }],
+      } as ToolDispatchResult),
+    );
+    wireToolDispatcher({
+      client: client as unknown as Parameters<
+        typeof wireToolDispatcher
+      >[0]['client'],
+      upstream,
+      dispatcher: dispatcher.asPort,
+      userId: 'user-9',
+      logger: noopLogger,
+    });
+
+    upstream.emitMessage(
+      JSON.stringify({
+        type: 'response.function_call_arguments.done',
+        call_id: 'call_finish',
+        name: 'finish_setup',
+        arguments: JSON.stringify({}),
+      }),
+    );
+    await flushMicrotasks();
+    await flushMicrotasks();
+
+    const payloads = clientPayloads(client);
+    const resultIdx = payloads.findIndex((e) => e.type === 'tool.result');
+    const redirectIdx = payloads.findIndex((e) => e.type === 'system.redirect');
+    expect(resultIdx).toBeGreaterThanOrEqual(0);
+    expect(redirectIdx).toBeGreaterThan(resultIdx);
+    expect(payloads[redirectIdx]).toEqual({
+      type: 'system.redirect',
+      target: '/dashboard',
+    });
+  });
+
+  it('não emite envelopes extra quando sideEffects está ausente', async () => {
+    const upstream = new FakeUpstream();
+    const client = makeClient();
+    const dispatcher = makeDispatcher(({ callId }) =>
+      Promise.resolve(okResult(callId, { ok: true })),
+    );
+    wireToolDispatcher({
+      client: client as unknown as Parameters<
+        typeof wireToolDispatcher
+      >[0]['client'],
+      upstream,
+      dispatcher: dispatcher.asPort,
+      userId: 'user-1',
+      logger: noopLogger,
+    });
+
+    upstream.emitMessage(
+      JSON.stringify({
+        type: 'response.function_call_arguments.done',
+        call_id: 'call_1',
+        name: 'set_nickname',
+        arguments: JSON.stringify({ nickname: 'Felipe' }),
+      }),
+    );
+    await flushMicrotasks();
+    await flushMicrotasks();
+
+    expect(findClientEvent(client, 'system.redirect')).toBeUndefined();
+  });
+
   it('ignora eventos de outros tipos', async () => {
     const upstream = new FakeUpstream();
     const client = makeClient();

@@ -35,6 +35,16 @@ export interface UseAgentSessionResult {
   micStream: MediaStream | null;
   micState: MicState;
   toolEvents: ToolEvent[];
+  redirectTarget: string | null;
+}
+
+export interface SystemEnvelope {
+  type: string;
+  target?: string;
+}
+
+export interface SystemHandlers {
+  onRedirect: (target: string) => void;
 }
 
 export interface WebkitAudioWindow extends Window {

@@ -6,6 +6,7 @@ import { UsersModule } from '../../../users/users.module';
 import { AddUserBanksTool } from './add-user-banks.tool';
 import { CompleteOnboardingTool } from './complete-onboarding.tool';
 import { ConfigureAccountDetailsTool } from './configure-account-details.tool';
+import { FinishSetupTool } from './finish-setup.tool';
 import { SetAccountBalancesTool } from './set-account-balances.tool';
 import { SetNicknameTool } from './set-nickname.tool';
 
@@ -16,6 +17,7 @@ import { SetNicknameTool } from './set-nickname.tool';
     AddUserBanksTool,
     SetAccountBalancesTool,
     ConfigureAccountDetailsTool,
+    FinishSetupTool,
     CompleteOnboardingTool,
   ],
 })

@@ -2,6 +2,7 @@ import {
   AgentSessionStatus,
   MIC_PROCESSOR_BUFFER_SIZE,
   REALTIME_TARGET_SAMPLE_RATE,
+  SYSTEM_EVENT,
   TOOL_EVENT,
   ToolEventKind,
   TTS_EVENT,
@@ -9,6 +10,8 @@ import {
 import type {
   InitialSessionState,
   MicGraph,
+  SystemEnvelope,
+  SystemHandlers,
   ToolEnvelope,
   ToolEvent,
   TtsEnvelope,
@@ -100,6 +103,30 @@ export function makeToolDispatcher(
       result: envelope.result,
       message: envelope.message,
     });
+  };
+}
+
+// -----------------------------------------------------------------------------
+// System envelope dispatcher (system.redirect etc.)
+// -----------------------------------------------------------------------------
+
+export function makeSystemDispatcher(
+  handlers: SystemHandlers,
+): (raw: unknown) => void {
+  const routes: Record<string, (env: SystemEnvelope) => void> = {
+    [SYSTEM_EVENT.redirect]: (env) => {
+      if (env.target) handlers.onRedirect(env.target);
+    },
+  };
+  return (raw: unknown) => {
+    if (typeof raw !== "string") return;
+    let envelope: SystemEnvelope;
+    try {
+      envelope = JSON.parse(raw) as SystemEnvelope;
+    } catch {
+      return;
+    }
+    routes[envelope.type]?.(envelope);
   };
 }
 

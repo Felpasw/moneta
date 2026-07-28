@@ -37,11 +37,10 @@ interface AgentSessionShape {
   micStream: MediaStream | null;
   micState: MicState;
   toolEvents: ToolEvent[];
+  redirectTarget: string | null;
 }
 
-const useAgentSessionMock = vi.fn<
-  (opts: { enabled: boolean; micEnabled?: boolean }) => AgentSessionShape
->(() => ({
+const defaultAgentSessionShape = (): AgentSessionShape => ({
   status: AgentSessionStatus.Listening,
   error: null,
   audioElement: null,
@@ -49,7 +48,12 @@ const useAgentSessionMock = vi.fn<
   micStream: null,
   micState: MicState.Off,
   toolEvents: [],
-}));
+  redirectTarget: null,
+});
+
+const useAgentSessionMock = vi.fn<
+  (opts: { enabled: boolean; micEnabled?: boolean }) => AgentSessionShape
+>(defaultAgentSessionShape);
 
 vi.mock("@/hooks/useAgentSession", async () => {
   const actual =
@@ -64,7 +68,8 @@ vi.mock("@/hooks/useAgentSession", async () => {
 });
 
 afterEach(() => {
-  useAgentSessionMock.mockClear();
+  useAgentSessionMock.mockReset();
+  useAgentSessionMock.mockImplementation(defaultAgentSessionShape);
   toastError.mockClear();
   routerPush.mockClear();
 });
@@ -91,13 +96,8 @@ describe("<OnboardingScreen />", () => {
 
   it("dispara toast e reseta mic quando micState=denied", async () => {
     useAgentSessionMock.mockReturnValue({
-      status: AgentSessionStatus.Listening,
-      error: null,
-      audioElement: null,
-      isWarming: false,
-      micStream: null,
+      ...defaultAgentSessionShape(),
       micState: MicState.Denied,
-      toolEvents: [],
     });
     render(<OnboardingScreen />);
 
@@ -112,5 +112,21 @@ describe("<OnboardingScreen />", () => {
     for (const label of ["Apelido", "Bancos", "Saldos", "Ajustes", "Pronto"]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
+  });
+
+  it("dispara router.push quando redirectTarget é setado pelo envelope system.redirect", () => {
+    useAgentSessionMock.mockReturnValue({
+      ...defaultAgentSessionShape(),
+      redirectTarget: "/dashboard",
+    });
+
+    render(<OnboardingScreen />);
+
+    expect(routerPush).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("NÃO dispara router.push quando redirectTarget é null", () => {
+    render(<OnboardingScreen />);
+    expect(routerPush).not.toHaveBeenCalled();
   });
 });

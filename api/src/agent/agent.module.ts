@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module';
+import { AccountsModule } from '../finance/accounts/accounts.module';
 import { UsersModule } from '../users/users.module';
 import { AgentController } from './agent.controller';
 import { AgentService } from './agent.service';
@@ -12,7 +13,14 @@ import { TtsModule } from './infrastructure/tts/tts.module';
 import { PersonalityModule } from './personality/personality.module';
 
 @Module({
-  imports: [AuthModule, UsersModule, LlmModule, TtsModule, PersonalityModule],
+  imports: [
+    AuthModule,
+    UsersModule,
+    AccountsModule,
+    LlmModule,
+    TtsModule,
+    PersonalityModule,
+  ],
   controllers: [AgentController],
   providers: [
     AgentService,

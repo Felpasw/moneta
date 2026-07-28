@@ -9,7 +9,6 @@ interface VoiceOrbProps {
   className?: string;
   hue?: number;
   audioElement?: HTMLAudioElement | null;
-  audioStream?: MediaStream | null;
   voiceSensitivity?: number;
   maxRotationSpeed?: number;
   maxHoverIntensity?: number;
@@ -183,7 +182,6 @@ export const VoiceOrb: FC<VoiceOrbProps> = ({
   className,
   hue = 0,
   audioElement = null,
-  audioStream = null,
   voiceSensitivity = 1.5,
   maxRotationSpeed = 1.2,
   maxHoverIntensity = 0.8,
@@ -224,7 +222,7 @@ export const VoiceOrb: FC<VoiceOrbProps> = ({
     };
 
     const attachAudioSource = async () => {
-      if (!audioElement && !audioStream) return;
+      if (!audioElement) return;
       const win = window as WebkitAudioWindow;
       const Ctor = window.AudioContext || win.webkitAudioContext;
       if (!Ctor) return;
@@ -242,16 +240,10 @@ export const VoiceOrb: FC<VoiceOrbProps> = ({
       analyser.maxDecibels = -10;
       analyserRef.current = analyser;
 
-      if (audioElement) {
-        const source = ctx.createMediaElementSource(audioElement);
-        source.connect(analyser);
-        source.connect(ctx.destination);
-        sourceNodeRef.current = source;
-      } else if (audioStream) {
-        const source = ctx.createMediaStreamSource(audioStream);
-        source.connect(analyser);
-        sourceNodeRef.current = source;
-      }
+      const source = ctx.createMediaElementSource(audioElement);
+      source.connect(analyser);
+      source.connect(ctx.destination);
+      sourceNodeRef.current = source;
 
       dataArrayRef.current = new Uint8Array(
         new ArrayBuffer(analyser.frequencyBinCount),
@@ -378,7 +370,6 @@ export const VoiceOrb: FC<VoiceOrbProps> = ({
   }, [
     hue,
     audioElement,
-    audioStream,
     voiceSensitivity,
     maxRotationSpeed,
     maxHoverIntensity,

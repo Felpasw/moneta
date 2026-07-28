@@ -1,20 +1,40 @@
+import { AgentMode } from '~/agent/domain/constants/agent-mode';
+import { resolveAgentMode } from '~/agent/domain/prompts/agent-mode';
 import { composeSystemPrompt } from '~/agent/domain/prompts/compose-system-prompt';
+import { buildOnboardingResumeBlock } from '~/agent/domain/prompts/onboarding-resume';
 import { DEFAULT_TREATMENT_STYLE } from '~/agent/personality/domain/constants/treatment-style';
+import { deriveOnboardingState } from '~/onboarding/domain/utils/derive-onboarding-state';
 
 import { REALTIME_EVENT_TYPE } from '../constants/realtime-event-types';
 import type { SystemPromptContext } from '../types/system-prompt-context';
 
+const shouldPromptResponseOnOpen = (mode: AgentMode): boolean =>
+  mode === AgentMode.Onboarding || mode === AgentMode.DashboardTour;
+
 const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
-  const [profile, user] = await Promise.all([
+  const [profile, user, userAccounts] = await Promise.all([
     ctx.profiles.findByUserId(ctx.userId),
     ctx.users.findById(ctx.userId),
+    ctx.accounts.execute({ userId: ctx.userId }),
   ]);
   const treatmentStyle = profile?.treatmentStyle ?? DEFAULT_TREATMENT_STYLE;
-  const isOnboarded = user?.onboardedAt != null;
+  const mode = resolveAgentMode({
+    hasNickname: Boolean(user?.nickname),
+    hasBanks: userAccounts.length > 0,
+    onboardedAt: user?.onboardedAt ?? null,
+  });
+  const onboardingResume = buildOnboardingResumeBlock({
+    state: deriveOnboardingState({ user, accounts: userAccounts }),
+    nickname: user?.nickname ?? null,
+    banksCount: userAccounts.length,
+  });
   const instructions = composeSystemPrompt({
     treatmentStyle,
-    onboarding: !isOnboarded,
+    onboarding: mode === AgentMode.Onboarding,
+    dashboardTour: mode === AgentMode.DashboardTour,
     userName: user?.name ?? null,
+    userNickname: user?.nickname ?? null,
+    onboardingResume,
   });
   const sessionPayload = {
     type: REALTIME_EVENT_TYPE.sessionUpdate,
@@ -36,11 +56,9 @@ const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
       },
     },
   };
-  ctx.logger.log(
-    `sending session.update for ${ctx.userId} (onboarding=${!isOnboarded})`,
-  );
+  ctx.logger.log(`sending session.update for ${ctx.userId} (mode=${mode})`);
   ctx.upstream.send(JSON.stringify(sessionPayload));
-  if (!isOnboarded) {
+  if (shouldPromptResponseOnOpen(mode)) {
     ctx.upstream.send(
       JSON.stringify({ type: REALTIME_EVENT_TYPE.responseCreate }),
     );
