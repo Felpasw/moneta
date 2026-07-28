@@ -6,6 +6,17 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.7.0](https://github.com/Felpasw/moneta/compare/api-v0.6.0...api-v0.7.0) (2026-07-28)
+
+
+### ✨ Features
+
+* **api:** add DASHBOARD_TOUR_SNIPPET + dashboardTour mode no compose/wire [MNT-210] ([1c8fc18](https://github.com/Felpasw/moneta/commit/1c8fc186ca7b2381d8aa7a29087a15554397911a))
+* **api:** add finish_setup tool + envelope system.redirect [MNT-207] ([e439692](https://github.com/Felpasw/moneta/commit/e43969242e2435df6b93b76fd8c2153b6325a069))
+* **api:** GET /onboarding/state + value object derivado [MNT-80] ([08cc0f7](https://github.com/Felpasw/moneta/commit/08cc0f773b6d02feaad53f5ef63f6d4441858281))
+* **api:** ONBOARDING_SNIPPET v4 fecha coleta chamando finish_setup [MNT-208] ([614d9a4](https://github.com/Felpasw/moneta/commit/614d9a48bb122ed5183a646b303cf28423e09bbc))
+* **api:** retomada do onboarding — bloco contextual quando volta no meio [MNT-86] ([bab5b08](https://github.com/Felpasw/moneta/commit/bab5b0805eff199b48b7c938dd2007f30951cea3))
+
 ## [0.6.0](https://github.com/Felpasw/moneta/compare/api-v0.5.0...api-v0.6.0) (2026-07-24)
 
 
