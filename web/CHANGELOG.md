@@ -6,6 +6,20 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.4.0](https://github.com/Felpasw/moneta/compare/web-v0.3.0...web-v0.4.0) (2026-07-28)
+
+
+### ✨ Features
+
+* **web:** add /dashboard route + DashboardScreen template com sidebar [MNT-209] ([7982021](https://github.com/Felpasw/moneta/commit/7982021a683fc25bc73d94677823212fb96ed672))
+* **web:** add AppSidebar organism (desktop shell) [MNT-213] ([3002dde](https://github.com/Felpasw/moneta/commit/3002ddeeb74501718dd70ee225e9686449f06155))
+* **web:** consumir envelope system.redirect e navegar pro target [MNT-211] ([a3976d2](https://github.com/Felpasw/moneta/commit/a3976d23cdfecd687e818e2acab2fab52e819ead))
+
+
+### 🔨 Refactoring
+
+* **web:** VoiceOrb reage só ao TTS do agente, remove mic stream [MNT-214] ([acbe926](https://github.com/Felpasw/moneta/commit/acbe926bc189cc48bdc4174262476adc3196638e))
+
 ## [0.3.0](https://github.com/Felpasw/moneta/compare/web-v0.2.0...web-v0.3.0) (2026-07-24)
 
 
