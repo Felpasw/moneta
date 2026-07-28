@@ -2,7 +2,7 @@
 
 Casa canônica de **toda UI/frontend** do projeto. Includes:
 - MNT-98..MNT-111, MNT-193 (nativos)
-- MNT-51, MNT-63..MNT-64, MNT-66..MNT-70 (migradas de 003-assistant)
+- MNT-51, MNT-66 (migradas de 003-assistant — tasks 3D MNT-63/64/67/68/69/70 descartadas com a troca RPM→DiceBear)
 - MNT-71, MNT-44 (migradas de 002-auth)
 - MNT-141..MNT-145 (migradas de 004-transactions)
 - MNT-72, MNT-76..MNT-77, MNT-91 (migradas de 006-visualizations)
@@ -55,13 +55,13 @@ Toda a UI listada aqui depende dos backends terminados nos specs abaixo. Bloquei
 | `POST /auth/signup` + `POST /auth/login` (MNT-13) | 002-auth | MNT-193 (páginas login/signup) |
 | `POST /auth/forgot` + `POST /auth/reset` (MNT-36) | 002-auth | MNT-44 (páginas forgot/reset password) |
 | Gateway WS `/agent/ws` (MNT-50) | 003-assistant | MNT-51 (client WS), MNT-101 (`/chat`) |
-| CRUD `/agent/profile` (MNT-61) | 003-assistant | MNT-66 (`/settings/assistant`), MNT-67 (wizard RPM) |
+| CRUD `/agent/profile` (MNT-61) | 003-assistant | MNT-66 (`/settings/assistant`) |
 | `GET /agent/voices` (MNT-56) + `POST /agent/voices/:id/preview` (MNT-65) | 003-assistant | MNT-66 (seletor de voz) |
 | Tools `create_visualization`/`run_saved_chart` (MNT-75, MNT-89) | 006-visualizations | MNT-76, MNT-77, MNT-91 |
 | Tools de transação/banco/fatura (Fase 5 do 004) | 004-transactions | MNT-141..145 |
 | Tools de onboarding (MNT-81) + `GET /onboarding/state` (MNT-80) | 008-onboarding | MNT-84 (modal), MNT-85 (dismiss) |
 | Backend push (MNT-184, MNT-185, MNT-190) | 011-notifications | MNT-186 (hook), MNT-191 (`/settings/notifications`) |
-| Conta Ready Player Me + subdomain Studio | studio.readyplayer.me (externo) | MNT-63 (avatares default), MNT-67 (wizard) |
+| DiceBear (`@dicebear/core` + `@dicebear/collection` no bundle) | npm (grátis, MIT) | MNT-66 (seletor de avatar) |
 
 ## Convenções
 
@@ -136,18 +136,35 @@ Mesmas do `specs/002-auth/tasks.md`.
 
 ---
 
-## Fase 3 — Assistente (chat, avatar RPM, settings) — migrada de 003-assistant
+## Fase 3 — Assistente (chat, avatar DiceBear, settings) — migrada de 003-assistant
 
 Tasks originalmente no `specs/003-assistant/tasks.md` que são UI/frontend puro. Vivem aqui por serem componentes/páginas do `/web`. Referências cruzadas pro backend continuam apontando pro spec 003.
 
+> **Nota histórica**: o design original previa avatar 3D humanoid via Ready Player Me (`.glb` + three.js + morph targets + lip sync amplitude-driven). Descartado antes de codar — a proposta virou overkill pro escopo do assistente financeiro e o domínio RPM ficou inacessível na avaliação. Substituído por **DiceBear 2D SVG** com CSS pulse pra feedback de estado. Tasks removidas: **MNT-63** (avatares default RPM), **MNT-64** (`<AssistantAvatar>` three.js), **MNT-67** (wizard RPM iframe), **MNT-68** (`useAudioMouth`), **MNT-69** (three.js internals), **MNT-70** ([DEFERRED] visemas fonéticos).
+
 - [ ] **MNT-51** [T][S] Client WS puro (não precisa lib OpenAI) consumindo `/agent/ws` do MNT-50. Hook `useRealtimeSession()` (ou equivalente Capacitor) — abre WS com JWT no handshake (query `?token=` ou subprotocol `bearer.<token>`), gerencia máquina de estado (`idle` / `listening` / `thinking` / `speaking`), reconecta com backoff, expõe API pra enviar áudio do mic e receber texto/áudio TTS envelopado (`tts.audio.delta` / `tts.audio.done` / `tts.audio.canceled` / `tts.audio.error`). Reencaminha `speech_started` do VAD do usuário pro backend disparar barge-in (MNT-57). Base pra MNT-101 (página `/chat`)
-- [ ] **MNT-63** 🛑 [HUMANO] Gerar **4-5 avatares default** no wizard do RPM (variedade de sexo, tom de pele, estilo), copiar URLs `https://models.readyplayer.me/{id}.glb`, salvar em `default-avatars.ts` no `/web`. Serve pra usuários novos antes de eles criarem o próprio, e como fallback se `avatarUrl` do profile ficar inválido
-- [ ] **MNT-64** [T][S] Componente `<AssistantAvatar url={avatarUrl} state={...} mouthOpen={...} />` — carrega GLB via three.js (`@react-three/fiber` + `@react-three/drei`), roda animação `idle` do avatar RPM (built-in) ou animação idle custom (FBX/GLB de mocap grátis do [Mixamo](https://www.mixamo.com)); aplica `mouthOpen` no morph target `jawOpen` do avatar RPM. Transição de estado ajusta pose/expression (thinking = mão no queixo, speaking = idle + mouth). Barge-in interrompe imediato
-- [ ] **MNT-66** [S] Página `/settings/assistant` — 3 blocos: (a) **radio group** de `treatmentStyle` (Formal / Informal / Muito informal) com exemplo curto de fala embaixo de cada opção; (b) seletor de voz — lista `GET /agent/voices` (MNT-56) com botão ▶️ que toca MNT-65; (c) preview do avatar atual (mini `<AssistantAvatar />` estático) + botão **"Criar / editar meu avatar"** que abre o wizard do RPM (MNT-67). **Não tem textarea de instruções livres — decisão de segurança**. Persiste via `PATCH /agent/profile` (MNT-61)
-- [ ] **MNT-67** [T][S] Integração do wizard Ready Player Me: abre iframe `https://<subdomain>.readyplayer.me/avatar?frameApi` (subdomain do projeto — criar em [studio.readyplayer.me](https://studio.readyplayer.me)); escuta `postMessage` do iframe (`v1.avatar.exported`); recebe URL do `.glb`; salva via `PATCH /agent/profile`. Modal com estado (loading/error/success). Fecha ao concluir
-- [ ] **MNT-68** [T][S] Hook `useAudioMouth(audioStream|audioElement)` — Web Audio API: `MediaStreamSource` (ou `MediaElementSource`) → `AnalyserNode` (fftSize=256) → RMS por frame → suavização (low-pass digital, alpha ~0.6) → publica scalar `mouthOpen` [0..1] via ref/state. Cleanup no unmount. Testa com stream mock (nodes de oscillator)
-- [ ] **MNT-69** [T][S] `<AssistantAvatar />` internals (three.js): loader com cache do GLB por URL; `AnimationMixer` pra idle loop; `SkinnedMesh.morphTargetInfluences[jawOpenIdx]` alimentado pelo `mouthOpen` scalar a cada frame. Configuração RPM: `?meshLod=1&textureAtlas=1024&morphTargets=ARKit` na query da URL do GLB pra otimizar bundle mobile
-- [ ] **MNT-70** [DEFERRED] Lip-sync fonético via visemas — usa endpoint ElevenLabs `/v1/text-to-speech/{voice}/stream/with-timestamps`, converte char → fonema → visema Oculus (mapa PT-BR); aplica nos 15 morph targets `viseme_*` do avatar RPM (já inclusos quando `morphTargets=Oculus Visemes` na query GLB). Substitui `mouthOpen` scalar por sequência temporal. Upgrade opcional quando amplitude-driven não bastar
+- [ ] **MNT-66** [T][S] Página `/settings/assistant` — 3 blocos, tudo persistindo via `PATCH /agent/profile` (MNT-61 — precisa ajustar o pattern do `avatarUrl` no backend pra `dicebear:{style}:{seed}`):
+  - **(a) `treatmentStyle`** — `RadioGroup` do shadcn com 3 opções (Formal / Informal / Muito informal). Cada opção mostra embaixo um exemplo curto da fala do assistente naquele tom (constantes locais, não vem do backend). Change dispara `PATCH` imediato (otimista via TanStack Query) + toast de sucesso via sonner.
+  - **(b) Voz** — grid/lista dos itens de `GET /agent/voices` (MNT-56). Cada card mostra `voice.name` + `voice.language` + botão ▶️ que faz `POST /agent/voices/:voiceId/preview` (MNT-65) e toca o áudio MP3 retornado num `<audio>` inline (single active — clicar outra pausa a anterior). Selecionar dispara `PATCH { voiceId }`.
+  - **(c) Avatar DiceBear** — dois controles: (1) `Input` de seed com default = `nickname` do user (fallback: `users.name`) — deixa user personalizar; (2) grid de styles suportados (5-6 curados: `notionists`, `personas`, `lorelei`, `micah`, `avataaars`, `open-peeps`) renderizando cada um com o seed atual pra preview vivo. Selecionar salva `avatarUrl = "dicebear:{style}:{seed}"` via `PATCH`.
+  - **Não tem textarea de instruções livres — decisão de segurança já documentada em MNT-61.**
+  - Testes: renderização condicional dos exemplos por style + interação de mudança (RadioGroup change dispara mutation) + preview de voz (mock do `<audio>` play) + composição da string `dicebear:*:*`.
+- [ ] **MNT-66b** [T][S] Componente `<AssistantAvatar avatarUrl={string} state={'idle'|'thinking'|'speaking'} size?={'sm'|'md'|'lg'} />`:
+  - Parse do `avatarUrl` `dicebear:{style}:{seed}` (fallback `notionists` + `users.name` se inválido/null)
+  - Renderiza SVG via `@dicebear/core` + `@dicebear/collection` (offline, no bundle — sem HTTP em runtime)
+  - `state === 'speaking'` aplica classe Tailwind `animate-pulse ring-2 ring-primary/40` (pulse suave)
+  - `state === 'thinking'` aplica `opacity-70` + `animate-pulse` lento
+  - `state === 'idle'` sem animação
+  - Memoização com `useMemo` sobre `(style, seed)` — SVG só re-renderiza se input mudar
+  - Reutilizado no header do app shell (MNT-98), no chat (MNT-101) e no settings (MNT-66)
+  - Testes: parse do formato, fallback quando string inválida, memoização estável entre re-renders
+- [ ] **MNT-66c** [T][S] Extend `useAgentProfile` hook (novo) em `/web/src/hooks/useAssistantProfile.ts` seguindo o padrão de classe + `use()` do domínio:
+  - `getProfile` (query `['agent', 'profile']` → `GET /agent/profile`)
+  - `listVoices` (query `['agent', 'voices']` → `GET /agent/voices`, staleTime 10min)
+  - `previewVoice` (mutation → `POST /agent/voices/:voiceId/preview` retorna blob de áudio)
+  - `updateProfile` (mutation → `PATCH /agent/profile`, invalida `['agent', 'profile']`)
+  - Interface `IAssistantProfileHooks` em `/web/src/hooks/interfaces/useAssistantProfile.interface.ts`
+  - Service correspondente `assistant-profile.service.ts` + interface — axios singleton (`api`) + toast via sonner em erro (não em cada success)
 
 ---
 

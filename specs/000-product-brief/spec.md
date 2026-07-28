@@ -164,9 +164,9 @@ O núcleo do produto — dados financeiros. Cada CRUD tem REST endpoint + tool w
 
 ### Bloco 4 — Agent + Advisory (`specs/003-assistant` restante + `specs/007-advisory`)
 
-O assistente conversacional em si + as tools de consultoria financeira. Setup dos providers (OpenAI + ElevenLabs), Realtime bridge, TTS streaming, avatar RPM 3D, personalização, memória de conversa. Consome as tools do Bloco 3.
+O assistente conversacional em si + as tools de consultoria financeira. Setup dos providers (OpenAI + ElevenLabs), Realtime bridge, TTS streaming, avatar DiceBear 2D (troca do plano original 3D via RPM — ver nota em `specs/003-assistant/tasks.md`), personalização, memória de conversa. Consome as tools do Bloco 3.
 
-- `specs/003-assistant` (MNT-45..51 + MNT-55..70): providers, Realtime, TTS, RPM, memória, personalização
+- `specs/003-assistant` (MNT-45..51 + MNT-55..62 + MNT-65): providers, Realtime, TTS, memória, personalização (MNT-63/64/67..70 descartadas com a troca de avatar)
 - `specs/007-advisory` (MNT-165..171): tools analíticas + simulação de compra + insights ativos
 
 ### Bloco 5 — Onboarding + UI shell (`specs/008-onboarding` + `specs/009-ui-shell`)
