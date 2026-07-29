@@ -158,13 +158,7 @@ Tasks originalmente no `specs/003-assistant/tasks.md` que são UI/frontend puro.
   - Memoização com `useMemo` sobre `(style, seed)` — SVG só re-renderiza se input mudar
   - Reutilizado no header do app shell (MNT-98), no chat (MNT-101) e no settings (MNT-66)
   - Testes: parse do formato, fallback quando string inválida, memoização estável entre re-renders
-- [ ] **MNT-66c** [T][S] Extend `useAgentProfile` hook (novo) em `/web/src/hooks/useAssistantProfile.ts` seguindo o padrão de classe + `use()` do domínio:
-  - `getProfile` (query `['agent', 'profile']` → `GET /agent/profile`)
-  - `listVoices` (query `['agent', 'voices']` → `GET /agent/voices`, staleTime 10min)
-  - `previewVoice` (mutation → `POST /agent/voices/:voiceId/preview` retorna blob de áudio)
-  - `updateProfile` (mutation → `PATCH /agent/profile`, invalida `['agent', 'profile']`)
-  - Interface `IAssistantProfileHooks` em `/web/src/hooks/interfaces/useAssistantProfile.interface.ts`
-  - Service correspondente `assistant-profile.service.ts` + interface — axios singleton (`api`) + toast via sonner em erro (não em cada success)
+- [x] **MNT-66c** [T][S] ✅ commit `627f233` — Hook `assistantProfileHooks.use()` (classe + `use()` conforme padrão do domínio, `web/src/hooks/useAssistantProfile.ts`) expondo `profile` (query `['agent','profile']` → `GET /agent/profile`), `voices` (query `['agent','voices']` → `GET /agent/voices`, `staleTime: 10min`), `previewVoice` (mutation → `POST /agent/voices/:voiceId/preview`, responseType `arraybuffer` → `Blob(audio/mpeg)`) e `updateProfile` (mutation → `PATCH /agent/profile`, atualiza `queryData` da profile no `onSuccess`). Interface `IAssistantProfileHooks` + `AssistantProfileHooksResult` em `hooks/interfaces/useAssistantProfile.interface.ts`. Service `assistantProfileService` (singleton exportado default, `services/assistantProfile.service.ts`) + interface `IAssistantProfileService` com `AssistantProfile`, `TtsVoice`, `TreatmentStyle` (union `formal|informal|very_informal`), `UpdateProfilePatch`. Testes cobrem: fetch/cache das duas queries, `previewVoice` retornando Blob, `updateProfile` atualizando cache no sucesso e preservando cache no erro (`test/hooks/useAssistantProfile.spec.tsx` + `test/services/assistantProfile.service.spec.ts`). Toast de erro fica no consumer (ainda não wire-up — vem no MNT-66)
 
 ---
 
