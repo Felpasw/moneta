@@ -18,6 +18,7 @@ import type {
 import {
   attachMicGraph,
   buildAgentWsUrl,
+  makeSystemDispatcher,
   makeToolDispatcher,
   makeTtsDispatcher,
   resolveInitialSessionState,
@@ -49,6 +50,7 @@ export function useAgentSession({
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const [micState, setMicState] = useState<MicState>(MicState.Off);
   const [toolEvents, setToolEvents] = useState<ToolEvent[]>([]);
+  const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const chunksRef = useRef<Uint8Array[]>([]);
@@ -107,6 +109,10 @@ export function useAgentSession({
       setToolEvents((prev) => [...prev, event]);
     });
 
+    const dispatchSystem = makeSystemDispatcher({
+      onRedirect: (target) => setRedirectTarget(target),
+    });
+
     ws.onopen = () => setStatus(AgentSessionStatus.Listening);
     ws.onerror = () => {
       setStatus(AgentSessionStatus.Error);
@@ -115,6 +121,7 @@ export function useAgentSession({
     ws.onmessage = (ev: MessageEvent<unknown>) => {
       dispatchTts(ev.data);
       dispatchTool(ev.data);
+      dispatchSystem(ev.data);
     };
 
     return () => {
@@ -128,6 +135,7 @@ export function useAgentSession({
         objectUrlRef.current = null;
       }
       chunksRef.current = [];
+      setRedirectTarget(null);
     };
   }, [enabled]);
 
@@ -194,5 +202,6 @@ export function useAgentSession({
     micStream,
     micState,
     toolEvents,
+    redirectTarget,
   };
 }

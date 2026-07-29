@@ -25,6 +25,7 @@ import {
 import { ToolDispatcher } from '~/agent/tools/infrastructure/tool-dispatcher';
 import { ToolRegistry } from '~/agent/tools/infrastructure/tool-registry';
 import { env } from '~/config/env';
+import { ListMyAccountsUseCase } from '~/finance/accounts/application/use-cases/list-my-accounts.use-case';
 import { UsersService } from '~/users/users.service';
 
 import { CLOSE_UNAUTHORIZED } from './constants/close-codes';
@@ -49,6 +50,7 @@ export class AgentRealtimeGateway
     @Inject(ASSISTANT_PROFILE_REPOSITORY)
     private readonly profiles: AssistantProfileRepository,
     private readonly users: UsersService,
+    private readonly listAccounts: ListMyAccountsUseCase,
     private readonly toolRegistry: ToolRegistry,
     private readonly toolDispatcher: ToolDispatcher,
   ) {}
@@ -70,6 +72,7 @@ export class AgentRealtimeGateway
       userId,
       profiles: this.profiles,
       users: this.users,
+      accounts: this.listAccounts,
       registry: this.toolRegistry,
       logger: this.logger,
     });

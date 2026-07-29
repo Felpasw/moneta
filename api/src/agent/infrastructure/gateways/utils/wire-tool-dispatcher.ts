@@ -1,15 +1,41 @@
 import { randomUUID } from 'node:crypto';
 
+import type { WebSocket } from 'ws';
+
 import type { RealtimeUpstream } from '~/agent/domain/ports/realtime-upstream';
 import type { ToolDispatchResult } from '~/agent/tools/domain/types/tool-dispatch-result';
+import type { ToolSideEffect } from '~/agent/tools/domain/types/tool-side-effect';
 
 import { REALTIME_EVENT_TYPE } from '../constants/realtime-event-types';
+import { SYSTEM_EVENT_TYPE } from '../constants/system-event-types';
 import { TOOL_EVENT_TYPE } from '../constants/tool-event-types';
 import type { ParsedToolCall } from '../types/parsed-tool-call';
 import type { RealtimeFunctionCallEvent } from '../types/realtime-function-call-event';
 import type { ToolDispatcherContext } from '../types/tool-dispatcher-context';
 import { parseRealtimeEvent } from './parse-realtime-event';
 import { sendClientEvent } from './send-client-event';
+
+const SIDE_EFFECT_EMITTERS: Record<
+  ToolSideEffect['kind'],
+  (client: WebSocket, effect: ToolSideEffect) => void
+> = {
+  redirect: (client, effect) => {
+    sendClientEvent(client, {
+      type: SYSTEM_EVENT_TYPE.redirect,
+      target: effect.target,
+    });
+  },
+};
+
+const emitSideEffects = (
+  client: WebSocket,
+  sideEffects: readonly ToolSideEffect[] | undefined,
+): void => {
+  if (!sideEffects) return;
+  for (const effect of sideEffects) {
+    SIDE_EFFECT_EMITTERS[effect.kind](client, effect);
+  }
+};
 
 const sendFunctionCallOutput = (
   upstream: RealtimeUpstream,
@@ -39,6 +65,7 @@ const handleResult = (
       callId: result.callId,
       result: result.data,
     });
+    emitSideEffects(ctx.client, result.sideEffects);
     sendFunctionCallOutput(ctx.upstream, result.callId, {
       ok: true,
       data: result.data,

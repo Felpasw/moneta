@@ -38,7 +38,6 @@ const itemVariants: Variants = {
 
 interface OnboardingHeroProps {
   audioElement: HTMLAudioElement | null;
-  micStream: MediaStream | null;
   micState: MicState;
   isWarming: boolean;
   onMicToggle: () => void;
@@ -48,7 +47,6 @@ interface OnboardingHeroProps {
 
 export function OnboardingHero({
   audioElement,
-  micStream,
   micState,
   isWarming,
   onMicToggle,
@@ -76,11 +74,7 @@ export function OnboardingHero({
         )}
         transition={LAYOUT_TRANSITION}
       >
-        <VoiceOrb
-          audioElement={audioElement}
-          audioStream={micStream}
-          voiceSensitivity={2.4}
-        />
+        <VoiceOrb audioElement={audioElement} voiceSensitivity={2.4} />
       </motion.div>
 
       {!compact && (
