@@ -29,7 +29,10 @@ import { logoutBodySchema, type LogoutBodyDto } from './dto/logout.dto';
 import { loginSchema, type LoginDto } from './dto/login.dto';
 import { refreshBodySchema, type RefreshBodyDto } from './dto/refresh.dto';
 import { signupSchema, type SignupDto } from './dto/signup.dto';
-import { REFRESH_COOKIE } from './infrastructure/constants/cookie';
+import {
+  ACCESS_COOKIE,
+  REFRESH_COOKIE,
+} from './infrastructure/constants/cookie';
 import { CurrentUser } from './infrastructure/decorators/current-user.decorator';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 import type { DecodedToken } from './domain/services/token-service';
@@ -94,11 +97,8 @@ export class AuthController {
         result.refreshToken,
         REFRESH_COOKIE.options,
       );
-      return {
-        user: result.user,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      };
+      res.cookie(ACCESS_COOKIE.name, result.accessToken, ACCESS_COOKIE.options);
+      return { user: result.user };
     } catch (e) {
       if (e instanceof InvalidCredentialsError) {
         throw new UnauthorizedException('Invalid credentials');
@@ -130,11 +130,8 @@ export class AuthController {
         result.refreshToken,
         REFRESH_COOKIE.options,
       );
-      return {
-        user: result.user,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      };
+      res.cookie(ACCESS_COOKIE.name, result.accessToken, ACCESS_COOKIE.options);
+      return { user: result.user };
     } catch (e) {
       if (e instanceof InvalidRefreshTokenError) {
         throw new UnauthorizedException('Invalid refresh token');
@@ -155,6 +152,7 @@ export class AuthController {
       await this.logout.execute({ refreshToken });
     }
     res.clearCookie(REFRESH_COOKIE.name, { path: REFRESH_COOKIE.options.path });
+    res.clearCookie(ACCESS_COOKIE.name, { path: ACCESS_COOKIE.options.path });
   }
 
   @Post('logout-everywhere')
@@ -166,5 +164,6 @@ export class AuthController {
   ) {
     await this.signOutEverywhere.execute({ userId: user.sub });
     res.clearCookie(REFRESH_COOKIE.name, { path: REFRESH_COOKIE.options.path });
+    res.clearCookie(ACCESS_COOKIE.name, { path: ACCESS_COOKIE.options.path });
   }
 }

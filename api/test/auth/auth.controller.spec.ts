@@ -23,6 +23,7 @@ import { IpEmailThrottlerGuard } from '~/auth/infrastructure/guards/ip-email-thr
 import { EmailAlreadyRegisteredError } from '~/users/domain/errors/email-already-registered.error';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
+const ACCESS_COOKIE_NAME = 'access_token';
 
 interface Mocks {
   signup: { execute: jest.Mock };
@@ -161,7 +162,7 @@ describe('AuthController', () => {
   });
 
   describe('POST /auth/login', () => {
-    it('returns 200 with token pair and sets refresh cookie on success', async () => {
+    it('returns 200 with user snapshot and sets access + refresh cookies on success', async () => {
       mocks.login.execute.mockResolvedValue({
         user: {
           id: 'user-1',
@@ -186,15 +187,29 @@ describe('AuthController', () => {
           name: 'Alice',
           onboardedAt: null,
         },
-        accessToken: 'access.jwt',
-        refreshToken: 'refresh.jwt',
       });
-      const cookie = findCookie(res.headers['set-cookie'], REFRESH_COOKIE_NAME);
-      expect(cookie).toBeDefined();
-      expect(cookie).toContain('refresh.jwt');
-      expect(cookie).toContain('HttpOnly');
-      expect(cookie).toContain('SameSite=Lax');
-      expect(cookie).toContain('Path=/auth/refresh');
+      expect(res.body).not.toHaveProperty('accessToken');
+      expect(res.body).not.toHaveProperty('refreshToken');
+
+      const refreshCookie = findCookie(
+        res.headers['set-cookie'],
+        REFRESH_COOKIE_NAME,
+      );
+      expect(refreshCookie).toBeDefined();
+      expect(refreshCookie).toContain('refresh.jwt');
+      expect(refreshCookie).toContain('HttpOnly');
+      expect(refreshCookie).toContain('SameSite=Lax');
+      expect(refreshCookie).toContain('Path=/auth/refresh');
+
+      const accessCookie = findCookie(
+        res.headers['set-cookie'],
+        ACCESS_COOKIE_NAME,
+      );
+      expect(accessCookie).toBeDefined();
+      expect(accessCookie).toContain('access.jwt');
+      expect(accessCookie).toContain('HttpOnly');
+      expect(accessCookie).toContain('SameSite=Lax');
+      expect(accessCookie).toContain('Path=/');
     });
 
     it('propagates a non-null onboardedAt through the login body', async () => {
@@ -216,7 +231,8 @@ describe('AuthController', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(res.body.user.onboardedAt).toBe(onboardedAt.toISOString());
+      const body = res.body as { user: { onboardedAt: string } };
+      expect(body.user.onboardedAt).toBe(onboardedAt.toISOString());
     });
 
     it('returns 401 on InvalidCredentialsError', async () => {
@@ -259,7 +275,15 @@ describe('AuthController', () => {
       expect(mocks.refresh.execute).toHaveBeenCalledWith(
         expect.objectContaining({ refreshToken: 'cookie.refresh.jwt' }),
       );
-      expect(res.body).toMatchObject({ refreshToken: 'new.refresh.jwt' });
+      expect(res.body).not.toHaveProperty('refreshToken');
+      expect(res.body).not.toHaveProperty('accessToken');
+
+      const accessCookie = findCookie(
+        res.headers['set-cookie'],
+        ACCESS_COOKIE_NAME,
+      );
+      expect(accessCookie).toBeDefined();
+      expect(accessCookie).toContain('new.access.jwt');
     });
 
     it('reads refresh from body (mobile fallback) when cookie is absent', async () => {
@@ -369,15 +393,26 @@ describe('AuthController', () => {
       expect(mocks.logout.execute).not.toHaveBeenCalled();
     });
 
-    it('clears the refresh cookie in the response', async () => {
+    it('clears the refresh + access cookies in the response', async () => {
       const res = await request(http)
         .post('/auth/logout')
         .send({ refreshToken: 'body.refresh.jwt' });
 
-      const cookie = findCookie(res.headers['set-cookie'], REFRESH_COOKIE_NAME);
-      expect(cookie).toBeDefined();
-      expect(cookie).toContain('Path=/auth/refresh');
-      expect(cookie).toMatch(/Expires=.+1970/);
+      const refreshCookie = findCookie(
+        res.headers['set-cookie'],
+        REFRESH_COOKIE_NAME,
+      );
+      expect(refreshCookie).toBeDefined();
+      expect(refreshCookie).toContain('Path=/auth/refresh');
+      expect(refreshCookie).toMatch(/Expires=.+1970/);
+
+      const accessCookie = findCookie(
+        res.headers['set-cookie'],
+        ACCESS_COOKIE_NAME,
+      );
+      expect(accessCookie).toBeDefined();
+      expect(accessCookie).toContain('Path=/');
+      expect(accessCookie).toMatch(/Expires=.+1970/);
     });
   });
 
