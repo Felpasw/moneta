@@ -14,7 +14,7 @@ interface TtsTapContext {
   readonly client: WebSocket;
   readonly upstream: RealtimeUpstream;
   readonly tts: TtsService;
-  readonly voiceId: string;
+  readonly getVoiceId: () => Promise<string>;
 }
 
 const debugLogger = new Logger('UpstreamDebug');
@@ -54,7 +54,8 @@ export const wireTtsTap = (ctx: TtsTapContext): void => {
       typeof event.text === 'string' &&
       event.text.length > 0
     ) {
-      void pipeline.speak({ text: event.text, voiceId: ctx.voiceId });
+      const text = event.text;
+      void ctx.getVoiceId().then((voiceId) => pipeline.speak({ text, voiceId }));
       return;
     }
     if (event.type === REALTIME_EVENT_TYPE.inputAudioBufferSpeechStarted) {

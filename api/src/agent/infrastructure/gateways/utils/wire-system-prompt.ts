@@ -7,9 +7,7 @@ import { deriveOnboardingState } from '~/onboarding/domain/utils/derive-onboardi
 
 import { REALTIME_EVENT_TYPE } from '../constants/realtime-event-types';
 import type { SystemPromptContext } from '../types/system-prompt-context';
-
-const shouldPromptResponseOnOpen = (mode: AgentMode): boolean =>
-  mode === AgentMode.Onboarding || mode === AgentMode.DashboardTour;
+import { buildOpenResponsePayload } from './build-open-response-payload';
 
 const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
   const [profile, user, userAccounts] = await Promise.all([
@@ -58,11 +56,12 @@ const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
   };
   ctx.logger.log(`sending session.update for ${ctx.userId} (mode=${mode})`);
   ctx.upstream.send(JSON.stringify(sessionPayload));
-  if (shouldPromptResponseOnOpen(mode)) {
-    ctx.upstream.send(
-      JSON.stringify({ type: REALTIME_EVENT_TYPE.responseCreate }),
-    );
-  }
+  const openResponse = buildOpenResponsePayload({
+    mode,
+    userName: user?.name ?? null,
+    userNickname: user?.nickname ?? null,
+  });
+  ctx.upstream.send(JSON.stringify(openResponse));
 };
 
 export const wireSystemPrompt = (ctx: SystemPromptContext): void => {

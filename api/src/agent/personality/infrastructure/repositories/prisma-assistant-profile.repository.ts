@@ -27,7 +27,9 @@ export class PrismaAssistantProfileRepository implements AssistantProfileReposit
   constructor(private readonly prisma: PrismaService) {}
 
   async findByUserId(userId: string): Promise<AssistantProfile | null> {
-    const row = await this.prisma.assistantProfile.findUnique({ where: { userId } });
+    const row = await this.prisma.assistantProfile.findUnique({
+      where: { userId },
+    });
     return row ? toDomain(row) : null;
   }
 
