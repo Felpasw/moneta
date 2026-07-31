@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import userManager from "@/utils/userManager";
+import userManager, { type AuthUser } from "@/utils/userManager";
+
+const USER: AuthUser = {
+  id: "u1",
+  email: "a@b.com",
+  name: "Alice",
+  onboardedAt: null,
+};
 
 describe("userManager", () => {
   beforeEach(() => {
@@ -16,21 +23,18 @@ describe("userManager", () => {
   });
 
   it("persists user across getUser calls", () => {
-    const user = { id: "u1", email: "a@b.com", name: "Alice" };
+    userManager.setUser(USER);
 
-    userManager.setUser(user);
-
-    expect(userManager.getUser()).toEqual(user);
+    expect(userManager.getUser()).toEqual(USER);
   });
 
   it("merges patch into stored user via updateUser", () => {
-    userManager.setUser({ id: "u1", email: "a@b.com", name: "Alice" });
+    userManager.setUser(USER);
 
     userManager.updateUser({ name: "Alice Silva" });
 
     expect(userManager.getUser()).toEqual({
-      id: "u1",
-      email: "a@b.com",
+      ...USER,
       name: "Alice Silva",
     });
   });
@@ -41,20 +45,11 @@ describe("userManager", () => {
     expect(userManager.getUser()).toBeNull();
   });
 
-  it("holds access token in memory only", () => {
-    userManager.setAccessToken("tok-123");
-
-    expect(userManager.getAccessToken()).toBe("tok-123");
-    expect(window.localStorage.getItem("moneta:accessToken")).toBeNull();
-  });
-
-  it("clear removes user and access token", () => {
-    userManager.setUser({ id: "u1", email: "a@b.com", name: "Alice" });
-    userManager.setAccessToken("tok-123");
+  it("clear removes stored user", () => {
+    userManager.setUser(USER);
 
     userManager.clear();
 
     expect(userManager.getUser()).toBeNull();
-    expect(userManager.getAccessToken()).toBeNull();
   });
 });

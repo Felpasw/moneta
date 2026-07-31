@@ -8,8 +8,6 @@ export interface AuthUser {
 class UserManager {
   private static readonly STORAGE_KEY = "moneta:user";
 
-  private accessToken: string | null = null;
-
   getUser(): AuthUser | null {
     if (typeof window === "undefined") return null;
 
@@ -40,21 +38,8 @@ class UserManager {
     window.localStorage.removeItem(UserManager.STORAGE_KEY);
   }
 
-  getAccessToken(): string | null {
-    return this.accessToken;
-  }
-
-  setAccessToken(token: string): void {
-    this.accessToken = token;
-  }
-
-  clearAccessToken(): void {
-    this.accessToken = null;
-  }
-
   clear(): void {
     this.clearUser();
-    this.clearAccessToken();
   }
 }
 

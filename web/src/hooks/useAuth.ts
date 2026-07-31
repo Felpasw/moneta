@@ -38,7 +38,6 @@ class AuthHooks implements IAuthHooks {
       mutationFn: (credentials) => authService.login(credentials),
       onSuccess: (data) => {
         userManager.setUser(data.user);
-        userManager.setAccessToken(data.accessToken);
         queryClient.setQueryData(AUTH_QUERY_KEYS.profile, data.user);
       },
     });

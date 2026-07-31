@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import authHooks, { AUTH_QUERY_KEYS } from "@/hooks/useAuth";
 import authService from "@/services/auth.service";
-import userManager from "@/utils/userManager";
+import userManager, { type AuthUser } from "@/utils/userManager";
 
 vi.mock("@/services/auth.service", () => ({
   default: {
@@ -17,6 +17,13 @@ vi.mock("@/services/auth.service", () => ({
 }));
 
 const mockedAuth = vi.mocked(authService);
+
+const USER: AuthUser = {
+  id: "u1",
+  email: "a@b.com",
+  name: "Alice",
+  onboardedAt: null,
+};
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -41,13 +48,8 @@ describe("authHooks.use()", () => {
   });
 
   describe("login", () => {
-    it("salva user e accessToken no userManager e popula cache no sucesso", async () => {
-      const payload = {
-        user: { id: "u1", email: "a@b.com", name: "Alice" },
-        accessToken: "acc-1",
-        refreshToken: "ref-1",
-      };
-      mockedAuth.login.mockResolvedValueOnce(payload);
+    it("salva user no userManager e popula cache no sucesso (tokens vêm via cookie httpOnly)", async () => {
+      mockedAuth.login.mockResolvedValueOnce({ user: USER });
 
       const { queryClient, Wrapper } = createWrapper();
       const { result } = renderHook(() => authHooks.use(), { wrapper: Wrapper });
@@ -59,9 +61,8 @@ describe("authHooks.use()", () => {
         });
       });
 
-      expect(userManager.getUser()).toEqual(payload.user);
-      expect(userManager.getAccessToken()).toBe("acc-1");
-      expect(queryClient.getQueryData(AUTH_QUERY_KEYS.profile)).toEqual(payload.user);
+      expect(userManager.getUser()).toEqual(USER);
+      expect(queryClient.getQueryData(AUTH_QUERY_KEYS.profile)).toEqual(USER);
     });
 
     it("não persiste user quando login falha", async () => {
@@ -77,15 +78,12 @@ describe("authHooks.use()", () => {
       });
 
       expect(userManager.getUser()).toBeNull();
-      expect(userManager.getAccessToken()).toBeNull();
     });
   });
 
   describe("signup", () => {
-    it("apenas cadastra e não seta accessToken (backend não emite token no signup)", async () => {
-      mockedAuth.signup.mockResolvedValueOnce({
-        user: { id: "u1", email: "a@b.com", name: "Alice" },
-      });
+    it("apenas cadastra e não seta user (backend não autentica no signup)", async () => {
+      mockedAuth.signup.mockResolvedValueOnce({ user: USER });
 
       const { Wrapper } = createWrapper();
       const { result } = renderHook(() => authHooks.use(), { wrapper: Wrapper });
@@ -99,22 +97,17 @@ describe("authHooks.use()", () => {
       });
 
       expect(mockedAuth.signup).toHaveBeenCalledOnce();
-      expect(userManager.getAccessToken()).toBeNull();
+      expect(userManager.getUser()).toBeNull();
     });
   });
 
   describe("logout", () => {
     it("chama service e limpa userManager + cache no sucesso", async () => {
-      userManager.setUser({ id: "u1", email: "a@b.com", name: "Alice" });
-      userManager.setAccessToken("acc-1");
+      userManager.setUser(USER);
       mockedAuth.logout.mockResolvedValueOnce();
 
       const { queryClient, Wrapper } = createWrapper();
-      queryClient.setQueryData(AUTH_QUERY_KEYS.profile, {
-        id: "u1",
-        email: "a@b.com",
-        name: "Alice",
-      });
+      queryClient.setQueryData(AUTH_QUERY_KEYS.profile, USER);
 
       const { result } = renderHook(() => authHooks.use(), { wrapper: Wrapper });
 
@@ -123,24 +116,19 @@ describe("authHooks.use()", () => {
       });
 
       expect(userManager.getUser()).toBeNull();
-      expect(userManager.getAccessToken()).toBeNull();
       expect(queryClient.getQueryData(AUTH_QUERY_KEYS.profile)).toBeFalsy();
     });
   });
 
   describe("profile", () => {
     it("retorna user cacheado do userManager sem hit no service", async () => {
-      userManager.setUser({ id: "u1", email: "a@b.com", name: "Alice" });
+      userManager.setUser(USER);
 
       const { Wrapper } = createWrapper();
       const { result } = renderHook(() => authHooks.use(), { wrapper: Wrapper });
 
       await waitFor(() => {
-        expect(result.current.profile.data).toEqual({
-          id: "u1",
-          email: "a@b.com",
-          name: "Alice",
-        });
+        expect(result.current.profile.data).toEqual(USER);
       });
 
       expect(mockedAuth.login).not.toHaveBeenCalled();
