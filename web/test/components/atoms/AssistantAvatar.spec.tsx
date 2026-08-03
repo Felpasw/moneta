@@ -2,25 +2,25 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@dicebear/core", () => {
-  const Avatar = vi.fn().mockImplementation(function AvatarMock(
-    this: { toDataUri: () => string; toString: () => string },
-    _style: unknown,
-    options: { seed?: string },
-  ) {
+  const createAvatar = vi.fn((_style: unknown, options: { seed?: string }) => {
     const seed = options?.seed ?? "";
-    this.toDataUri = () =>
-      `data:image/svg+xml;utf8,<svg data-seed="${seed}"></svg>`;
-    this.toString = () => `<svg data-seed="${seed}"></svg>`;
+    return {
+      toDataUri: () => `data:image/svg+xml;utf8,<svg data-seed="${seed}"></svg>`,
+      toString: () => `<svg data-seed="${seed}"></svg>`,
+    };
   });
 
-  return { Avatar };
+  return { createAvatar };
 });
 
-import { Avatar } from "@dicebear/core";
+import { createAvatar } from "@dicebear/core";
 
-import { AssistantAvatar } from "@/components/atoms/AssistantAvatar";
+import {
+  ASSISTANT_AVATAR_STYLES,
+  AssistantAvatar,
+} from "@/components/atoms/AssistantAvatar";
 
-const mockedAvatar = vi.mocked(Avatar);
+const mockedAvatar = vi.mocked(createAvatar);
 
 describe("AssistantAvatar", () => {
   beforeEach(() => {
@@ -39,17 +39,12 @@ describe("AssistantAvatar", () => {
     expect(options).toEqual({ seed: "felps" });
   });
 
-  it("aceita todos os styles curados (notionists/personas/lorelei/micah/avataaars/open-peeps)", () => {
-    const styles = [
-      "notionists",
-      "personas",
-      "lorelei",
-      "micah",
-      "avataaars",
-      "open-peeps",
-    ] as const;
+  it("expõe pelo menos 15 styles curados na whitelist", () => {
+    expect(ASSISTANT_AVATAR_STYLES.length).toBeGreaterThanOrEqual(15);
+  });
 
-    for (const style of styles) {
+  it("aceita todos os styles curados sem cair no fallback", () => {
+    for (const style of ASSISTANT_AVATAR_STYLES) {
       mockedAvatar.mockClear();
       const { unmount } = render(
         <AssistantAvatar avatarUrl={`dicebear:${style}:seed`} />,
@@ -70,7 +65,7 @@ describe("AssistantAvatar", () => {
   it("usa fallback quando o style não está na lista curada", () => {
     render(
       <AssistantAvatar
-        avatarUrl="dicebear:bottts:felps"
+        avatarUrl="dicebear:identicon:felps"
         fallbackSeed="fallback"
       />,
     );

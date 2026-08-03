@@ -1,25 +1,44 @@
 "use client";
 
-import { Avatar } from "@dicebear/core";
+import { createAvatar } from "@dicebear/core";
 import {
+  adventurer,
   avataaars,
+  bigSmile,
+  bottts,
+  croodles,
+  dylan,
+  funEmoji,
   lorelei,
   micah,
+  miniavs,
   notionists,
   openPeeps,
   personas,
+  pixelArt,
+  thumbs,
 } from "@dicebear/collection";
 import { useMemo } from "react";
 
 import { cn } from "@/lib/utils";
 
-export type AssistantAvatarStyle =
-  | "notionists"
-  | "personas"
-  | "lorelei"
-  | "micah"
-  | "avataaars"
-  | "open-peeps";
+export enum AssistantAvatarStyle {
+  NOTIONISTS = "notionists",
+  PERSONAS = "personas",
+  LORELEI = "lorelei",
+  MICAH = "micah",
+  AVATAAARS = "avataaars",
+  OPEN_PEEPS = "open-peeps",
+  ADVENTURER = "adventurer",
+  BIG_SMILE = "big-smile",
+  BOTTTS = "bottts",
+  CROODLES = "croodles",
+  DYLAN = "dylan",
+  FUN_EMOJI = "fun-emoji",
+  MINIAVS = "miniavs",
+  PIXEL_ART = "pixel-art",
+  THUMBS = "thumbs",
+}
 
 export type AssistantAvatarState = "idle" | "thinking" | "speaking";
 
@@ -33,26 +52,29 @@ interface AssistantAvatarProps {
   className?: string;
 }
 
-export const ASSISTANT_AVATAR_STYLES: readonly AssistantAvatarStyle[] = [
-  "notionists",
-  "personas",
-  "lorelei",
-  "micah",
-  "avataaars",
-  "open-peeps",
-];
+export const ASSISTANT_AVATAR_STYLES: readonly AssistantAvatarStyle[] =
+  Object.values(AssistantAvatarStyle);
 
-const FALLBACK_STYLE: AssistantAvatarStyle = "notionists";
+const FALLBACK_STYLE: AssistantAvatarStyle = AssistantAvatarStyle.NOTIONISTS;
 const DEFAULT_FALLBACK_SEED = "user";
 const AVATAR_URL_PATTERN = /^dicebear:([a-z0-9]+(?:-[a-z0-9]+)*):([A-Za-z0-9_-]{1,128})$/;
 
 const STYLE_MODULES: Record<AssistantAvatarStyle, unknown> = {
-  notionists,
-  personas,
-  lorelei,
-  micah,
-  avataaars,
-  "open-peeps": openPeeps,
+  [AssistantAvatarStyle.NOTIONISTS]: notionists,
+  [AssistantAvatarStyle.PERSONAS]: personas,
+  [AssistantAvatarStyle.LORELEI]: lorelei,
+  [AssistantAvatarStyle.MICAH]: micah,
+  [AssistantAvatarStyle.AVATAAARS]: avataaars,
+  [AssistantAvatarStyle.OPEN_PEEPS]: openPeeps,
+  [AssistantAvatarStyle.ADVENTURER]: adventurer,
+  [AssistantAvatarStyle.BIG_SMILE]: bigSmile,
+  [AssistantAvatarStyle.BOTTTS]: bottts,
+  [AssistantAvatarStyle.CROODLES]: croodles,
+  [AssistantAvatarStyle.DYLAN]: dylan,
+  [AssistantAvatarStyle.FUN_EMOJI]: funEmoji,
+  [AssistantAvatarStyle.MINIAVS]: miniavs,
+  [AssistantAvatarStyle.PIXEL_ART]: pixelArt,
+  [AssistantAvatarStyle.THUMBS]: thumbs,
 };
 
 const STATE_CLASSES: Record<AssistantAvatarState, string> = {
@@ -102,8 +124,8 @@ export function AssistantAvatar({
   const { style, seed } = parseAvatarUrl(avatarUrl, fallbackSeed);
 
   const dataUri = useMemo(() => {
-    const styleModule = STYLE_MODULES[style];
-    return new Avatar(styleModule, { seed }).toDataUri();
+    const styleModule = STYLE_MODULES[style] as Parameters<typeof createAvatar>[0];
+    return createAvatar(styleModule, { seed }).toDataUri();
   }, [style, seed]);
 
   return (
