@@ -18,16 +18,16 @@ import type {
   TtsHandlers,
   WebkitAudioWindow,
 } from "@/hooks/interfaces/useAgentSession.interface";
+import { useUserStore } from "@/stores/userStore";
 import { float32ToPcm16Base64 } from "@/utils/pcm";
-import userManager from "@/utils/userManager";
 
 // -----------------------------------------------------------------------------
 // URL / decoding helpers
 // -----------------------------------------------------------------------------
 
-export function buildAgentWsUrl(apiUrl: string, token: string): string {
+export function buildAgentWsUrl(apiUrl: string): string {
   const base = apiUrl.replace(/^http/, "ws");
-  return `${base}/agent/ws?token=${encodeURIComponent(token)}`;
+  return `${base}/agent/ws`;
 }
 
 export function base64ToUint8Array(b64: string): Uint8Array {
@@ -172,11 +172,11 @@ export function resolveInitialSessionState(
       isWarming: false,
     };
   }
-  const hasToken = userManager.getAccessToken() !== null;
-  if (!hasToken) {
+  const hasSession = useUserStore.getState().user !== null;
+  if (!hasSession) {
     return {
       status: AgentSessionStatus.Error,
-      error: "missing access token",
+      error: "missing session",
       isWarming: false,
     };
   }
