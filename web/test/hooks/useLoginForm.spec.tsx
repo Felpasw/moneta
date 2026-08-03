@@ -51,7 +51,7 @@ describe("useLoginForm()", () => {
     expect(result.current.status).toBe("idle");
   });
 
-  it("redireciona pra / quando user.onboardedAt já veio preenchido", async () => {
+  it("redireciona pra /dashboard quando user.onboardedAt já veio preenchido", async () => {
     loginMutateAsync.mockResolvedValueOnce({
       user: { id: "u1", onboardedAt: "2026-01-01T00:00:00.000Z" },
       accessToken: "t",
@@ -69,7 +69,7 @@ describe("useLoginForm()", () => {
       email: "prima@moneta.com",
       password: "hunter22!",
     });
-    expect(routerPush).toHaveBeenCalledWith("/");
+    expect(routerPush).toHaveBeenCalledWith("/dashboard");
   });
 
   it("redireciona pra /onboarding quando user.onboardedAt é null", async () => {
@@ -87,7 +87,7 @@ describe("useLoginForm()", () => {
     });
 
     expect(routerPush).toHaveBeenCalledWith("/onboarding");
-    expect(routerPush).not.toHaveBeenCalledWith("/");
+    expect(routerPush).not.toHaveBeenCalledWith("/dashboard");
   });
 
   it("não chama mutateAsync quando validação falha", async () => {

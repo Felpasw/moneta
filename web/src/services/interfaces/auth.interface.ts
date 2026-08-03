@@ -1,4 +1,4 @@
-import type { AuthUser } from "@/utils/userManager";
+import type { AuthUser } from "@/stores/userStore";
 
 export interface LoginCredentials {
   email: string;

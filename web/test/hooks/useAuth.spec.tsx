@@ -1,11 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import authHooks, { AUTH_QUERY_KEYS } from "@/hooks/useAuth";
+import authHooks from "@/hooks/useAuth";
 import authService from "@/services/auth.service";
-import userManager, { type AuthUser } from "@/utils/userManager";
+import { useUserStore, type AuthUser } from "@/stores/userStore";
 
 vi.mock("@/services/auth.service", () => ({
   default: {
@@ -39,19 +39,19 @@ const createWrapper = () => {
 
 describe("authHooks.use()", () => {
   beforeEach(() => {
-    userManager.clear();
+    useUserStore.setState({ user: null });
     vi.clearAllMocks();
   });
 
   afterEach(() => {
-    userManager.clear();
+    useUserStore.setState({ user: null });
   });
 
   describe("login", () => {
-    it("salva user no userManager e popula cache no sucesso (tokens vêm via cookie httpOnly)", async () => {
+    it("salva user no store no sucesso (tokens vêm via cookie httpOnly)", async () => {
       mockedAuth.login.mockResolvedValueOnce({ user: USER });
 
-      const { queryClient, Wrapper } = createWrapper();
+      const { Wrapper } = createWrapper();
       const { result } = renderHook(() => authHooks.use(), { wrapper: Wrapper });
 
       await act(async () => {
@@ -61,8 +61,7 @@ describe("authHooks.use()", () => {
         });
       });
 
-      expect(userManager.getUser()).toEqual(USER);
-      expect(queryClient.getQueryData(AUTH_QUERY_KEYS.profile)).toEqual(USER);
+      expect(useUserStore.getState().user).toEqual(USER);
     });
 
     it("não persiste user quando login falha", async () => {
@@ -77,7 +76,7 @@ describe("authHooks.use()", () => {
           .catch(() => undefined);
       });
 
-      expect(userManager.getUser()).toBeNull();
+      expect(useUserStore.getState().user).toBeNull();
     });
   });
 
@@ -97,42 +96,54 @@ describe("authHooks.use()", () => {
       });
 
       expect(mockedAuth.signup).toHaveBeenCalledOnce();
-      expect(userManager.getUser()).toBeNull();
+      expect(useUserStore.getState().user).toBeNull();
     });
   });
 
   describe("logout", () => {
-    it("chama service e limpa userManager + cache no sucesso", async () => {
-      userManager.setUser(USER);
+    it("chama service e limpa store no sucesso", async () => {
+      useUserStore.setState({ user: USER });
       mockedAuth.logout.mockResolvedValueOnce();
 
-      const { queryClient, Wrapper } = createWrapper();
-      queryClient.setQueryData(AUTH_QUERY_KEYS.profile, USER);
-
+      const { Wrapper } = createWrapper();
       const { result } = renderHook(() => authHooks.use(), { wrapper: Wrapper });
 
       await act(async () => {
         await result.current.logout.mutateAsync();
       });
 
-      expect(userManager.getUser()).toBeNull();
-      expect(queryClient.getQueryData(AUTH_QUERY_KEYS.profile)).toBeFalsy();
+      expect(useUserStore.getState().user).toBeNull();
     });
   });
 
-  describe("profile", () => {
-    it("retorna user cacheado do userManager sem hit no service", async () => {
-      userManager.setUser(USER);
+  describe("refresh", () => {
+    it("salva user no store no sucesso", async () => {
+      mockedAuth.refresh.mockResolvedValueOnce({ user: USER });
 
       const { Wrapper } = createWrapper();
       const { result } = renderHook(() => authHooks.use(), { wrapper: Wrapper });
 
-      await waitFor(() => {
-        expect(result.current.profile.data).toEqual(USER);
+      await act(async () => {
+        await result.current.refresh.mutateAsync();
       });
 
-      expect(mockedAuth.login).not.toHaveBeenCalled();
-      expect(mockedAuth.signup).not.toHaveBeenCalled();
+      expect(useUserStore.getState().user).toEqual(USER);
+    });
+
+    it("limpa user quando refresh falha", async () => {
+      useUserStore.setState({ user: USER });
+      mockedAuth.refresh.mockRejectedValueOnce(new Error("401"));
+
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(() => authHooks.use(), { wrapper: Wrapper });
+
+      await act(async () => {
+        await result.current.refresh
+          .mutateAsync()
+          .catch(() => undefined);
+      });
+
+      expect(useUserStore.getState().user).toBeNull();
     });
   });
 });
