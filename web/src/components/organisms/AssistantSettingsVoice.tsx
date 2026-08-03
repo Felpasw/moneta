@@ -1,8 +1,8 @@
 "use client";
 
 import { Play } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useVoicePreview } from "@/hooks/useVoicePreview";
 import { cn } from "@/lib/utils";
 import type { TtsVoice } from "@/services/interfaces/assistantProfile.interface";
 
@@ -23,52 +23,10 @@ export function AssistantSettingsVoice({
   disabled,
   className,
 }: AssistantSettingsVoiceProps) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const currentBlobUrlRef = useRef<string | null>(null);
-  const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (currentBlobUrlRef.current !== null) {
-        URL.revokeObjectURL(currentBlobUrlRef.current);
-        currentBlobUrlRef.current = null;
-      }
-    };
-  }, []);
-
-  const stopPreview = useCallback(() => {
-    if (audioRef.current !== null) {
-      audioRef.current.pause();
-    }
-    if (currentBlobUrlRef.current !== null) {
-      URL.revokeObjectURL(currentBlobUrlRef.current);
-      currentBlobUrlRef.current = null;
-    }
-    setPreviewingVoiceId(null);
-  }, []);
-
-  const handlePreview = async (voiceId: string) => {
-    if (disabled) return;
-
-    stopPreview();
-
-    try {
-      const blob = await onPreview(voiceId);
-      const url = URL.createObjectURL(blob);
-      currentBlobUrlRef.current = url;
-
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.addEventListener("ended", () => {
-        setPreviewingVoiceId((prev) => (prev === voiceId ? null : prev));
-      });
-
-      setPreviewingVoiceId(voiceId);
-      await audio.play();
-    } catch {
-      setPreviewingVoiceId(null);
-    }
-  };
+  const { previewingVoiceId, play } = useVoicePreview({
+    fetchPreview: onPreview,
+    disabled,
+  });
 
   const handleSelect = (voiceId: string) => {
     if (disabled) return;
@@ -144,7 +102,7 @@ export function AssistantSettingsVoice({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handlePreview(voice.voiceId)}
+                  onClick={() => play(voice.voiceId)}
                   disabled={disabled}
                   aria-label={`Ouvir preview de ${voice.name}`}
                   className={cn(

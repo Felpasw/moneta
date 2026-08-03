@@ -5,10 +5,10 @@ import { useState } from "react";
 import { AnimatedInput } from "@/components/atoms/AnimatedInput";
 import {
   AssistantAvatar,
-  ASSISTANT_AVATAR_STYLES,
   type AssistantAvatarStyle,
 } from "@/components/atoms/AssistantAvatar";
 import { cn } from "@/lib/utils";
+import { composeAvatarUrl, parseAvatarUrl } from "@/utils/dicebearAvatarUrl";
 
 import { CURATED_AVATAR_STYLE_OPTIONS } from "./assistantSettings.constants";
 
@@ -19,30 +19,6 @@ interface AssistantSettingsAvatarProps {
   disabled?: boolean;
   className?: string;
 }
-
-const AVATAR_URL_PATTERN = /^dicebear:([a-z0-9]+(?:-[a-z0-9]+)*):([A-Za-z0-9_-]{1,128})$/;
-
-interface ParsedAvatarUrl {
-  style: AssistantAvatarStyle | null;
-  seed: string | null;
-}
-
-const parseAvatarUrl = (avatarUrl: string | null): ParsedAvatarUrl => {
-  if (!avatarUrl) return { style: null, seed: null };
-
-  const match = AVATAR_URL_PATTERN.exec(avatarUrl);
-  if (!match) return { style: null, seed: null };
-
-  const [, styleRaw, seed] = match;
-  if (!(ASSISTANT_AVATAR_STYLES as readonly string[]).includes(styleRaw)) {
-    return { style: null, seed: null };
-  }
-
-  return { style: styleRaw as AssistantAvatarStyle, seed };
-};
-
-const composeAvatarUrl = (style: AssistantAvatarStyle, seed: string): string =>
-  `dicebear:${style}:${seed}`;
 
 export function AssistantSettingsAvatar({
   avatarUrl,
