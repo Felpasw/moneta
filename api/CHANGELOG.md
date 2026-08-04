@@ -6,6 +6,21 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.8.0](https://github.com/Felpasw/moneta/compare/api-v0.7.0...api-v0.8.0) (2026-08-04)
+
+
+### ✨ Features
+
+* **agent:** aceita access_token via cookie no handshake do WS [MNT-66] ([c855e9f](https://github.com/Felpasw/moneta/commit/c855e9fb8985cd5873f2aba2479d67bd4e1b3a90))
+* **agent:** personaliza voiceId e saudação de open no gateway realtime [MNT-66] ([c574987](https://github.com/Felpasw/moneta/commit/c57498785a8e60cd25a6946f36bc3257ebb1f3be))
+* **auth:** move access token para cookie HttpOnly [MNT-66] ([95cda36](https://github.com/Felpasw/moneta/commit/95cda360f84f0f348da80a14a8be9d1d292ddbae))
+
+
+### 🐛 Correções
+
+* **agent/personality:** valida avatarUrl no formato DiceBear ([556e36d](https://github.com/Felpasw/moneta/commit/556e36d6af0a8235812d05092fe778b704d875ef))
+* **auth:** rejeita rotação de session já revogada [MNT-66] ([3ffe40f](https://github.com/Felpasw/moneta/commit/3ffe40febe4510c35d943bf5fbb78d4b8f75b01c))
+
 ## [0.7.0](https://github.com/Felpasw/moneta/compare/api-v0.6.0...api-v0.7.0) (2026-07-28)
 
 

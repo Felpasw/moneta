@@ -6,6 +6,32 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.5.0](https://github.com/Felpasw/moneta/compare/web-v0.4.0...web-v0.5.0) (2026-08-04)
+
+
+### ✨ Features
+
+* **web/avatar:** expand DiceBear style catalog from 6 to 15 [MNT-66] ([33aab65](https://github.com/Felpasw/moneta/commit/33aab650a7aa2a8a7a9f7359f9dd58ba40a2444c))
+* **web:** adiciona atom AssistantAvatar DiceBear [MNT-66] ([5733c85](https://github.com/Felpasw/moneta/commit/5733c852de1e53b3fd362ec24839dcdc7a19b481))
+* **web:** adiciona service + hook de personalização do assistente ([627f233](https://github.com/Felpasw/moneta/commit/627f2338ad115d46a5b8051ae34a8885f42f1540))
+* **web:** página /settings/assistant com tom, voz e avatar [MNT-66] ([2464cc7](https://github.com/Felpasw/moneta/commit/2464cc7a32f44fc10ee149918c2021c5f4d87597))
+* **web:** proxy Next 16 redireciona rota protegida sem cookie [MNT-99] ([b97f572](https://github.com/Felpasw/moneta/commit/b97f572e54e4d8f6038d8a5145ac7ef3775e563b))
+
+
+### 🐛 Correções
+
+* **web:** add missing dock-tabs component imported since 2464cc7 [MNT-66] ([2b78546](https://github.com/Felpasw/moneta/commit/2b785460c2e13387887766fdd68cc10a815de675))
+* **web:** add zustand dep and ripple-cell animation used since 2464cc7 [MNT-66] ([c1e64fb](https://github.com/Felpasw/moneta/commit/c1e64fb5c6b37df2d358fb769fd647cc34c55823))
+
+
+### 🔨 Refactoring
+
+* **web/agent:** migrate useAgentSession to zustand agentSessionStore [MNT-66] ([84dd6d4](https://github.com/Felpasw/moneta/commit/84dd6d4bcfaa62fce5cb0e11b3a18b6980426397))
+* **web/auth:** consome access token via cookie HttpOnly [MNT-66] ([ead54fc](https://github.com/Felpasw/moneta/commit/ead54fcd33030bc3a32db04adc516b7d4f7dd9c0))
+* **web/auth:** migrate userManager util to zustand userStore [MNT-66] ([65962c8](https://github.com/Felpasw/moneta/commit/65962c8be3511ae9be34bd93c3ca7eae32225cd6))
+* **web:** AppSidebar reuses nameInitials util and Next Link [MNT-66] ([203e453](https://github.com/Felpasw/moneta/commit/203e453c523c45a72bae93a81bc967240a8d0ca1))
+* **web:** extract UI logic into hooks and util [MNT-66] ([1114971](https://github.com/Felpasw/moneta/commit/1114971aa98e31e2132ae3f938323be522561e2d))
+
 ## [0.4.0](https://github.com/Felpasw/moneta/compare/web-v0.3.0...web-v0.4.0) (2026-07-28)
 
 
