@@ -10,8 +10,8 @@ import type { MicState } from "@/hooks/useAgentSession";
 import { cn } from "@/lib/utils";
 import { ONBOARDING_STEP_LABELS } from "@/utils/onboardingProgress";
 
-const WELCOME_TITLE = "Bem-vindo à Moneta";
-const WELCOME_SUBTITLE = "Toma um segundo pro seu assistente respirar…";
+const WELCOME_TITLE = "Welcome to Moneta";
+const WELCOME_SUBTITLE = "Give your assistant a second to breathe…";
 
 const LAYOUT_TRANSITION = {
   layout: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },

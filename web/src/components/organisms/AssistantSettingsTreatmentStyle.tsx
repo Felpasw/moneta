@@ -1,11 +1,14 @@
 "use client";
 
+import { motion } from "motion/react";
+
 import {
   AnimatedRadioGroup,
   type AnimatedRadioOption,
 } from "@/components/atoms/AnimatedRadioGroup";
 import { cn } from "@/lib/utils";
 import type { TreatmentStyle } from "@/services/interfaces/assistantProfile.interface";
+import { SETTINGS_STAGGER_ITEM } from "@/utils/settingsStagger";
 
 import { TREATMENT_STYLE_OPTIONS } from "./assistantSettings.constants";
 
@@ -35,26 +38,28 @@ export function AssistantSettingsTreatmentStyle({
       aria-labelledby="assistant-treatment-style-heading"
       className={cn("space-y-4", className)}
     >
-      <header className="space-y-1">
+      <motion.header variants={SETTINGS_STAGGER_ITEM} className="space-y-1">
         <h2
           id="assistant-treatment-style-heading"
           className="text-lg font-heading font-medium"
         >
-          Tom de tratamento
+          Speaking tone
         </h2>
         <p className="text-sm text-muted-foreground">
-          Escolha como o assistente fala com você.
+          Pick how the assistant talks to you.
         </p>
-      </header>
+      </motion.header>
 
-      <AnimatedRadioGroup<TreatmentStyle>
-        name="assistant-treatment-style"
-        ariaLabel="Tom de tratamento"
-        options={RADIO_OPTIONS}
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-      />
+      <motion.div variants={SETTINGS_STAGGER_ITEM}>
+        <AnimatedRadioGroup<TreatmentStyle>
+          name="assistant-treatment-style"
+          ariaLabel="Speaking tone"
+          options={RADIO_OPTIONS}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+        />
+      </motion.div>
     </section>
   );
 }

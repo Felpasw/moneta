@@ -6,10 +6,10 @@ import Link from "next/link";
 import { HeroShutterText } from "@/components/atoms/HeroShutterText";
 import { MotionButton } from "@/components/atoms/MotionButton";
 
-const SUBTITLE = "Assistente financeiro · voz e IA";
-const CTA_LABEL = "Entrar";
+const SUBTITLE = "Financial assistant · voice and AI";
+const CTA_LABEL = "Sign in";
 const CTA_HREF = "/login";
-const SIGNUP_LABEL = "Cadastrar";
+const SIGNUP_LABEL = "Sign up";
 const SIGNUP_HREF = "/signup";
 
 export default function Home() {

@@ -16,8 +16,8 @@ type OpenResponsePayload =
     };
 
 const buildFreeGreetingInstructions = (label: string | null): string => {
-  const salute = label ? `Chame o usuário de ${label} e dê` : 'Dê';
-  return `${salute} boas-vindas de volta em uma única frase curta, no tom já configurado, e pergunte no que pode ajudar hoje. Não invente informações da conta nem retome tópicos anteriores sem contexto explícito.`;
+  const salute = label ? `Address the user as ${label} and give` : 'Give';
+  return `${salute} a short welcome-back in a single sentence, in the tone already configured, and ask what you can help with today. Do not invent account details or revisit prior topics without explicit context. Speak in English.`;
 };
 
 export const buildOpenResponsePayload = (

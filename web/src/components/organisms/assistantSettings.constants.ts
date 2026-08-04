@@ -12,20 +12,19 @@ export const TREATMENT_STYLE_OPTIONS: readonly TreatmentStyleOption[] = [
   {
     value: "formal",
     label: "Formal",
-    example:
-      "Bom dia, Felipe. Como posso auxiliá-lo com suas finanças hoje?",
+    example: "Good morning, Felipe. How may I assist you with your finances today?",
     accentClass: "text-blue-400 border-blue-400",
   },
   {
     value: "informal",
     label: "Informal",
-    example: "E aí, Felipe! No que te ajudo hoje?",
+    example: "Hey Felipe! How can I help you today?",
     accentClass: "text-fuchsia-400 border-fuchsia-400",
   },
   {
     value: "very_informal",
-    label: "Muito informal",
-    example: "Fala pae, de boa? Bora dar uma olhada nessa grana ae?",
+    label: "Very informal",
+    example: "Yo dude, all good? Let's take a look at your cash?",
     accentClass: "text-emerald-400 border-emerald-400",
   },
 ];

@@ -8,7 +8,7 @@ import { InteractiveHoverButton } from "@/components/atoms/InteractiveHoverButto
 import { LOGIN_MESSAGES, useLoginForm } from "@/hooks/useLoginForm";
 
 const FORGOT_PASSWORD_HREF = "/forgot-password";
-const SUCCESS_LABEL = "Beleza!";
+const SUCCESS_LABEL = "Nice!";
 
 const containerVariants: Variants = {
   initial: {},

@@ -10,7 +10,7 @@ import { PasswordStrengthMeter } from "@/components/molecules/PasswordStrengthMe
 import { SIGNUP_MESSAGES, useSignupForm } from "@/hooks/useSignupForm";
 
 const LOGIN_HREF = "/login";
-const SUCCESS_LABEL = "Beleza!";
+const SUCCESS_LABEL = "Nice!";
 
 const containerVariants: Variants = {
   initial: {},

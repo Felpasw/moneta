@@ -13,8 +13,8 @@ import {
 } from "@/utils/onboardingProgress";
 
 const MIC_DENIED_TOAST =
-  "Permita o microfone nas configurações do navegador pra conversar com a Moneta.";
-const MIC_ERROR_TOAST = "Não consegui abrir seu microfone.";
+  "Allow microphone access in your browser settings to talk to Moneta.";
+const MIC_ERROR_TOAST = "Couldn't open your microphone.";
 
 export function OnboardingScreen() {
   const router = useRouter();
