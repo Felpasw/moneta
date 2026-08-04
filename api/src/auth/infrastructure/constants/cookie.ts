@@ -12,3 +12,14 @@ export const REFRESH_COOKIE = {
     maxAge: JWT_TTL_SECONDS.refresh * MS_PER_SECOND,
   },
 };
+
+export const ACCESS_COOKIE = {
+  name: 'access_token',
+  options: {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: JWT_TTL_SECONDS.access * MS_PER_SECOND,
+  },
+};

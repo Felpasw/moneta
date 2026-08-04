@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { RPM_AVATAR_URL_PATTERN } from '../domain/constants/avatar-url';
+import { DICEBEAR_AVATAR_PATTERN } from '../domain/constants/avatar-url';
 import { TreatmentStyle } from '../domain/constants/treatment-style';
 
 export const updateProfileSchema = z
@@ -9,8 +9,9 @@ export const updateProfileSchema = z
     voiceId: z.string().min(1).max(255).optional(),
     avatarUrl: z
       .union([
-        z.string().regex(RPM_AVATAR_URL_PATTERN, {
-          message: 'avatarUrl must point to a Ready Player Me asset',
+        z.string().regex(DICEBEAR_AVATAR_PATTERN, {
+          message:
+            'avatarUrl must match the DiceBear pattern "dicebear:{style}:{seed}"',
         }),
         z.null(),
       ])

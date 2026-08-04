@@ -24,6 +24,7 @@ import { JwtTokenService } from '~/auth/infrastructure/jwt-token.service';
 import { PasskeyController } from '~/auth/passkey.controller';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
+const ACCESS_COOKIE_NAME = 'access_token';
 
 interface Mocks {
   enrollBegin: { execute: jest.Mock };
@@ -231,7 +232,7 @@ describe('PasskeyController', () => {
   });
 
   describe('POST /auth/passkey/login/finish', () => {
-    it('returns 200 with tokens + user snapshot and sets refresh cookie', async () => {
+    it('returns 200 with user snapshot and sets access + refresh cookies', async () => {
       mocks.authFinish.execute.mockResolvedValue({
         user: { id: 'user-1', email: 'alice@example.com', name: 'Alice' },
         accessToken: 'new.access.jwt',
@@ -246,15 +247,28 @@ describe('PasskeyController', () => {
         });
 
       expect(res.status).toBe(200);
-      expect(res.body).toMatchObject({
+      expect(res.body).toEqual({
         user: { id: 'user-1', email: 'alice@example.com', name: 'Alice' },
-        accessToken: 'new.access.jwt',
-        refreshToken: 'new.refresh.jwt',
       });
-      const cookie = findCookie(res.headers['set-cookie'], REFRESH_COOKIE_NAME);
-      expect(cookie).toBeDefined();
-      expect(cookie).toContain('new.refresh.jwt');
-      expect(cookie).toContain('HttpOnly');
+      expect(res.body).not.toHaveProperty('accessToken');
+      expect(res.body).not.toHaveProperty('refreshToken');
+
+      const refreshCookie = findCookie(
+        res.headers['set-cookie'],
+        REFRESH_COOKIE_NAME,
+      );
+      expect(refreshCookie).toBeDefined();
+      expect(refreshCookie).toContain('new.refresh.jwt');
+      expect(refreshCookie).toContain('HttpOnly');
+
+      const accessCookie = findCookie(
+        res.headers['set-cookie'],
+        ACCESS_COOKIE_NAME,
+      );
+      expect(accessCookie).toBeDefined();
+      expect(accessCookie).toContain('new.access.jwt');
+      expect(accessCookie).toContain('HttpOnly');
+      expect(accessCookie).toContain('Path=/');
     });
 
     it('returns 401 on PasskeyAuthenticationFailedError', async () => {

@@ -643,6 +643,47 @@ describe('AgentRealtimeGateway', () => {
       expect(findTtsEvent(client, 'tts.audio.done')).toBeDefined();
     });
 
+    it('usa o voiceId do profile do user (não a env default) ao sintetizar', async () => {
+      const upstream = new FakeUpstream();
+      const tokens = makeTokenService(() => ({ sub: 'user-1' }));
+      const factory = makeFactory(upstream);
+      const capturedVoices: string[] = [];
+      const tts: TtsService = {
+        async *synthesizeStream(params: SynthesizeStreamParams) {
+          capturedVoices.push(params.voiceId);
+          yield Buffer.from([0x01]);
+        },
+        listVoices: (): Promise<TtsVoice[]> => Promise.resolve([]),
+      };
+      const gateway = new AgentRealtimeGateway(
+        tokens,
+        factory.asPort,
+        tts,
+        makeProfileRepo(buildProfile({ voiceId: 'custom-voice-42' })),
+        makeStubUsers(),
+        makeStubAccounts(),
+        makeStubRegistry(),
+        makeStubDispatcher(),
+      );
+      const client = makeClient();
+
+      gateway.handleConnection(
+        client as unknown as Parameters<typeof gateway.handleConnection>[0],
+        makeReq({ token: 'ok' }),
+      );
+      upstream.emitOpen();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      upstream.emitMessage(
+        JSON.stringify({ type: 'response.output_text.done', text: 'oi' }),
+      );
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      expect(capturedVoices).toContain('custom-voice-42');
+    });
+
     it('cancels in-flight synthesis on input_audio_buffer.speech_started (barge-in) and emits tts.audio.canceled', async () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-1' }));
@@ -1112,7 +1153,7 @@ describe('AgentRealtimeGateway', () => {
       expect(instructions).toContain('Felipe');
     });
 
-    it('não injeta snippet nem dispara response.create quando user já é onboarded', async () => {
+    it('não injeta snippet de onboarding e dispara response.create com saudação de volta quando user já é onboarded', async () => {
       const upstream = new FakeUpstream();
       const tokens = makeTokenService(() => ({ sub: 'user-old' }));
       const factory = makeFactory(upstream);
@@ -1121,7 +1162,7 @@ describe('AgentRealtimeGateway', () => {
         factory.asPort,
         makeNoopTts(),
         makeProfileRepo(null),
-        makeStubUsers(true),
+        makeStubUsers({ isOnboarded: true, name: 'Felipe', nickname: 'Felpa' }),
         makeStubAccounts(),
         makeStubRegistry(),
         makeStubDispatcher(),
@@ -1140,7 +1181,13 @@ describe('AgentRealtimeGateway', () => {
       expect(instructions).toBeDefined();
       expect(instructions).not.toMatch(/primeira/i);
 
-      expect(findEvent(upstream, 'response.create')).toBeUndefined();
+      const responseCreate = findEvent(upstream, 'response.create');
+      expect(responseCreate).toBeDefined();
+      const oneShotInstructions = (
+        responseCreate as { response?: { instructions?: string } }
+      ).response?.instructions;
+      expect(oneShotInstructions).toContain('Felpa');
+      expect(oneShotInstructions?.toLowerCase()).toContain('volta');
     });
 
     it('injeta bloco de retomada quando user já tem nickname mas ainda não tem bancos', async () => {

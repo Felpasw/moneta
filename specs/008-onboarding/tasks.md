@@ -63,9 +63,9 @@ Mesmas do `specs/002-auth/tasks.md`.
 
 ### Pendente
 
-- [ ] **MNT-80** [T][S] Value object `OnboardingState` derivado do estado real: `{ needsNickname, needsBanks, completed }`. Use-case `GetOnboardingState(userId)` + endpoint `GET /onboarding/state`.
+- [x] **MNT-80** [T][S] ✅ commit `08cc0f77` Value object `OnboardingState` derivado do estado real: `{ needsNickname, needsBanks, completed }`. Use-case `GetOnboardingState(userId)` + endpoint `GET /onboarding/state`.
   - Decisão: `needsBalances` dropado do value object. `UserBankAccount.balance` é `Decimal @default(0)` não-nullable, então não dá pra distinguir "não passou pela etapa de saldos" de "passou e legit registrou 0". Alternativa correta (`balanceSetAt` timestamp) exige migration + tocar setBalance/setAccountBalances — fica pra spec futuro se precisar. Fonte de verdade pra "saldos coletados" fica sendo o tool.result da sessão do assistente (MNT-86 usa o mesmo mecanismo).
-- [ ] **MNT-86** [T][P] Retomada real: se user desistir no meio e voltar, snippet do assistente adapta ("vejo que você já cadastrou {N} bancos, vamos direto pros saldos"). Requer expandir `ONBOARDING_SNIPPET` pra listar as 5 etapas + ler estado atual via `GetOnboardingState`. **Ainda não implementado** — hoje o assistente re-cumprimenta do zero.
+- [x] **MNT-86** [T][P] ✅ commit `bab5b080` Retomada real: bloco contextual `buildOnboardingResumeBlock` anexado DEPOIS do `ONBOARDING_SNIPPET` no `wireSystemPrompt`, adapta baseado em `OnboardingState` derivado (só apelido → vai pros bancos; apelido+bancos → vai pros saldos). Snippet canônico intocado.
 - [ ] **MNT-87** [T][P] Golden tests de conversação: fixtures `{ initialState, userMessage, expectedToolCall }` em `api/test/fixtures/onboarding-flows.json`. Casos:
   - Feliz: user novo, responde tudo em ordem
   - Skip: user diz "depois", assistente encerra elegante (dismiss)

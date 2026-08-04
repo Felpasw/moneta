@@ -1,5 +1,6 @@
-import type { PrismaService } from '~/infrastructure/prisma/prisma.service';
+import { InvalidRefreshTokenReason } from '~/auth/domain/errors/invalid-refresh-token.error';
 import { PrismaSessionsRepository } from '~/auth/infrastructure/repositories/prisma-sessions.repository';
+import type { PrismaService } from '~/infrastructure/prisma/prisma.service';
 
 const NOW = new Date('2026-07-15T12:00:00Z');
 const EXPIRES = new Date('2026-08-14T12:00:00Z');
@@ -129,7 +130,13 @@ describe('PrismaSessionsRepository', () => {
           revokedAt: true,
           expiresAt: true,
           user: {
-            select: { id: true, email: true, name: true, onboardedAt: true },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              nickname: true,
+              onboardedAt: true,
+            },
           },
         },
       });
@@ -168,8 +175,22 @@ describe('PrismaSessionsRepository', () => {
   });
 
   describe('rotate', () => {
-    it('revokes the previous session and creates the new one atomically', async () => {
-      const update = jest.fn().mockResolvedValue({});
+    const rotateInput = {
+      previousSessionId: 'session-old',
+      next: {
+        userId: 'user-1',
+        refreshTokenHash: 'new-hash',
+        userAgent: 'jest',
+        ip: '127.0.0.1',
+        expiresAt: NEW_EXPIRES,
+      },
+      now: NOW,
+    };
+
+    const buildTxHarness = (options: { updateManyCount: number }) => {
+      const updateMany = jest
+        .fn()
+        .mockResolvedValue({ count: options.updateManyCount });
       const create = jest.fn().mockResolvedValue({
         id: 'session-new',
         userId: 'user-1',
@@ -181,25 +202,22 @@ describe('PrismaSessionsRepository', () => {
         .mockImplementation(
           async (callback: (tx: unknown) => Promise<unknown>) =>
             callback({
-              session: { update, create },
+              session: { updateMany, create },
             }),
         );
       const repo = new PrismaSessionsRepository(makePrisma({ transaction }));
+      return { repo, updateMany, create };
+    };
 
-      const result = await repo.rotate({
-        previousSessionId: 'session-old',
-        next: {
-          userId: 'user-1',
-          refreshTokenHash: 'new-hash',
-          userAgent: 'jest',
-          ip: '127.0.0.1',
-          expiresAt: NEW_EXPIRES,
-        },
-        now: NOW,
+    it('revokes the previous session (only if not revoked) and creates the new one atomically', async () => {
+      const { repo, updateMany, create } = buildTxHarness({
+        updateManyCount: 1,
       });
 
-      expect(update).toHaveBeenCalledWith({
-        where: { id: 'session-old' },
+      const result = await repo.rotate(rotateInput);
+
+      expect(updateMany).toHaveBeenCalledWith({
+        where: { id: 'session-old', revokedAt: null },
         data: { revokedAt: NOW },
       });
       expect(create).toHaveBeenCalledWith({
@@ -218,6 +236,16 @@ describe('PrismaSessionsRepository', () => {
         createdAt: NOW,
         expiresAt: NEW_EXPIRES,
       });
+    });
+
+    it('throws InvalidRefreshTokenError(SESSION_REVOKED) and skips create when previous session is already revoked', async () => {
+      const { repo, create } = buildTxHarness({ updateManyCount: 0 });
+
+      await expect(repo.rotate(rotateInput)).rejects.toMatchObject({
+        name: 'InvalidRefreshTokenError',
+        reason: InvalidRefreshTokenReason.SESSION_REVOKED,
+      });
+      expect(create).not.toHaveBeenCalled();
     });
   });
 });

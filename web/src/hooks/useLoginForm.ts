@@ -61,7 +61,7 @@ export function useLoginForm() {
       setIsSuccess(true);
       form.reset();
       await new Promise((resolve) => setTimeout(resolve, SUCCESS_HOLD_MS));
-      const destination = user.onboardedAt ? "/" : "/onboarding";
+      const destination = user.onboardedAt ? "/dashboard" : "/onboarding";
       router.push(destination);
     } catch {
       toast.error(LOGIN_MESSAGES.errorToast);

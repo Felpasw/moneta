@@ -1,4 +1,4 @@
-import type { AuthUser } from "@/utils/userManager";
+import type { AuthUser } from "@/stores/userStore";
 
 export interface LoginCredentials {
   email: string;
@@ -13,8 +13,6 @@ export interface SignupData {
 
 export interface LoginResponse {
   user: AuthUser;
-  accessToken: string;
-  refreshToken: string;
 }
 
 export interface SignupResponse {

@@ -6,7 +6,6 @@ import type {
 
 export interface UseAgentSessionOptions {
   enabled: boolean;
-  micEnabled?: boolean;
 }
 
 export interface ToolEvent {

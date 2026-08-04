@@ -99,7 +99,7 @@ Mesmas do CLAUDE.md global + projeto.
   - **Pendente**: BottomBar mobile equivalente, wiring no layout `(app)` (`usePathname` pra active), wire de logout via auth store, swap `<img>` → `next/image` (config domínio externo no `next.config.mjs`), adaptação dos nav items pros do Moneta (Dashboard/Transações/Cartões/Categorias/Contas/Configurações)
   - Nova sub-task pra cada pendente conforme evoluir
 
-- [ ] **MNT-214** [T][S] VoiceOrb reage só ao TTS do agente, não ao mic do user
+- [x] **MNT-214** [T][S] ✅ commit `acbe926b` VoiceOrb reage só ao TTS do agente, não ao mic do user
   - Remove prop `audioStream` do `VoiceOrb` + branch `createMediaStreamSource` no attach
   - Remove `audioStream={micStream}` de `OnboardingHero` e `DashboardScreen`
   - Remove prop `micStream` do `OnboardingHero` (não sobra uso interno) + drop do destructuring nos templates

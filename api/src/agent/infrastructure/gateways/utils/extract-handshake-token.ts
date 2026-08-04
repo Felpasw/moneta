@@ -1,11 +1,26 @@
 import type { IncomingMessage } from 'node:http';
 
+import { ACCESS_COOKIE } from '~/auth/infrastructure/constants/cookie';
+
 import {
   BEARER_SUBPROTOCOL_PREFIX,
   HANDSHAKE_TOKEN_QUERY_PARAM,
 } from '../constants/auth-transport';
 
 type TokenStrategy = (req: IncomingMessage) => string | null;
+
+const fromCookie: TokenStrategy = (req) => {
+  const raw = req.headers.cookie;
+  if (typeof raw !== 'string' || raw.length === 0) return null;
+  const target = `${ACCESS_COOKIE.name}=`;
+  const pair = raw
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(target));
+  if (!pair) return null;
+  const value = pair.slice(target.length);
+  return value.length > 0 ? decodeURIComponent(value) : null;
+};
 
 const fromQueryParam: TokenStrategy = (req) => {
   const url = req.url ?? '';
@@ -28,6 +43,7 @@ const fromBearerSubprotocol: TokenStrategy = (req) => {
 };
 
 const STRATEGIES: readonly TokenStrategy[] = [
+  fromCookie,
   fromQueryParam,
   fromBearerSubprotocol,
 ];

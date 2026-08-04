@@ -2,10 +2,12 @@
 
 import { motion, type Variants } from "motion/react";
 import { ChevronRight } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode, Ref } from "react";
 import { Fragment } from "react";
 
 import { cn } from "@/lib/utils";
+import { nameInitials } from "@/utils/nameInitials";
 
 interface NavItem {
   icon: ReactNode;
@@ -19,13 +21,6 @@ interface UserProfile {
   email: string;
   avatarUrl?: string;
 }
-
-const initialsFromName = (name: string): string => {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "?";
-  if (words.length === 1) return words[0][0].toUpperCase();
-  return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
-};
 
 interface LogoutItem {
   icon: ReactNode;
@@ -98,7 +93,7 @@ export function AppSidebar({
             aria-hidden="true"
             className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground"
           >
-            {initialsFromName(user.name)}
+            {nameInitials(user.name)}
           </div>
         )}
         <div className="flex flex-col truncate">
@@ -120,15 +115,16 @@ export function AppSidebar({
             {item.isSeparator ? (
               <motion.div variants={itemVariants} className="h-6" />
             ) : null}
-            <motion.a
-              href={item.href}
-              variants={itemVariants}
-              className="group flex items-center rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-              <span className="mr-3 h-5 w-5">{item.icon}</span>
-              <span>{item.label}</span>
-              <ChevronRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
-            </motion.a>
+            <motion.div variants={itemVariants}>
+              <Link
+                href={item.href}
+                className="group flex items-center rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                <span className="mr-3 h-5 w-5">{item.icon}</span>
+                <span>{item.label}</span>
+                <ChevronRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+              </Link>
+            </motion.div>
           </Fragment>
         ))}
       </nav>

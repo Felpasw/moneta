@@ -76,11 +76,15 @@ export class AgentRealtimeGateway
       registry: this.toolRegistry,
       logger: this.logger,
     });
+    const voiceIdPromise: Promise<string> = this.profiles
+      .findByUserId(userId)
+      .then((profile) => profile?.voiceId ?? env.TTS_DEFAULT_VOICE_ID)
+      .catch(() => env.TTS_DEFAULT_VOICE_ID);
     wireTtsTap({
       client,
       upstream,
       tts: this.tts,
-      voiceId: env.TTS_DEFAULT_VOICE_ID,
+      getVoiceId: () => voiceIdPromise,
     });
     wireToolDispatcher({
       client,

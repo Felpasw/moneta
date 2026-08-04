@@ -3,6 +3,7 @@
 import { Mesh, Program, Renderer, Triangle, Vec3 } from "ogl";
 import { useEffect, useRef, type FC } from "react";
 
+import { useVoiceLevel } from "@/hooks/useVoiceLevel";
 import { cn } from "@/lib/utils";
 
 interface VoiceOrbProps {
@@ -13,10 +14,6 @@ interface VoiceOrbProps {
   maxRotationSpeed?: number;
   maxHoverIntensity?: number;
   onVoiceDetected?: (detected: boolean) => void;
-}
-
-interface WebkitAudioWindow extends Window {
-  webkitAudioContext?: typeof AudioContext;
 }
 
 const VERT_SHADER = `
@@ -178,6 +175,10 @@ const FRAG_SHADER = `
   }
 `;
 
+const BASE_ROTATION_SPEED = 0.3;
+const VOICE_DETECTION_THRESHOLD = 0.1;
+const ROTATION_TRIGGER_THRESHOLD = 0.05;
+
 export const VoiceOrb: FC<VoiceOrbProps> = ({
   className,
   hue = 0,
@@ -187,80 +188,21 @@ export const VoiceOrb: FC<VoiceOrbProps> = ({
   maxHoverIntensity = 0.8,
   onVoiceDetected,
 }) => {
-  const ctnDom = useRef<HTMLDivElement>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceNodeRef = useRef<AudioNode | null>(null);
-  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const voiceDetectedCallbackRef = useRef(onVoiceDetected);
+
+  const { getLevel } = useVoiceLevel({
+    audioElement,
+    sensitivity: voiceSensitivity,
+  });
 
   useEffect(() => {
     voiceDetectedCallbackRef.current = onVoiceDetected;
   }, [onVoiceDetected]);
 
   useEffect(() => {
-    const container = ctnDom.current;
+    const container = containerRef.current;
     if (!container) return;
-
-    const teardownAudio = () => {
-      if (sourceNodeRef.current) {
-        sourceNodeRef.current.disconnect();
-        sourceNodeRef.current = null;
-      }
-      if (analyserRef.current) {
-        analyserRef.current.disconnect();
-        analyserRef.current = null;
-      }
-      if (
-        audioContextRef.current &&
-        audioContextRef.current.state !== "closed"
-      ) {
-        audioContextRef.current.close().catch(() => undefined);
-      }
-      audioContextRef.current = null;
-      dataArrayRef.current = null;
-    };
-
-    const attachAudioSource = async () => {
-      if (!audioElement) return;
-      const win = window as WebkitAudioWindow;
-      const Ctor = window.AudioContext || win.webkitAudioContext;
-      if (!Ctor) return;
-
-      const ctx = new Ctor();
-      audioContextRef.current = ctx;
-      if (ctx.state === "suspended") {
-        await ctx.resume().catch(() => undefined);
-      }
-
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.3;
-      analyser.minDecibels = -90;
-      analyser.maxDecibels = -10;
-      analyserRef.current = analyser;
-
-      const source = ctx.createMediaElementSource(audioElement);
-      source.connect(analyser);
-      source.connect(ctx.destination);
-      sourceNodeRef.current = source;
-
-      dataArrayRef.current = new Uint8Array(
-        new ArrayBuffer(analyser.frequencyBinCount),
-      );
-    };
-
-    const analyzeAudio = () => {
-      if (!analyserRef.current || !dataArrayRef.current) return 0;
-      analyserRef.current.getByteFrequencyData(dataArrayRef.current);
-      let sum = 0;
-      for (let i = 0; i < dataArrayRef.current.length; i++) {
-        const value = dataArrayRef.current[i] / 255;
-        sum += value * value;
-      }
-      const rms = Math.sqrt(sum / dataArrayRef.current.length);
-      return Math.min(rms * voiceSensitivity * 3.0, 1);
-    };
 
     const renderer = new Renderer({
       alpha: true,
@@ -319,9 +261,6 @@ export const VoiceOrb: FC<VoiceOrbProps> = ({
     let rafId = 0;
     let lastTime = 0;
     let currentRot = 0;
-    const baseRotationSpeed = 0.3;
-
-    attachAudioSource().catch(() => teardownAudio());
 
     const update = (t: number) => {
       rafId = requestAnimationFrame(update);
@@ -330,13 +269,12 @@ export const VoiceOrb: FC<VoiceOrbProps> = ({
       program.uniforms.iTime.value = t * 0.001;
       program.uniforms.hue.value = hue;
 
-      const audioActive = Boolean(analyserRef.current && dataArrayRef.current);
-      if (audioActive) {
-        const voiceLevel = analyzeAudio();
-        voiceDetectedCallbackRef.current?.(voiceLevel > 0.1);
+      const voiceLevel = getLevel();
+      if (voiceLevel !== null) {
+        voiceDetectedCallbackRef.current?.(voiceLevel > VOICE_DETECTION_THRESHOLD);
         const voiceRotationSpeed =
-          baseRotationSpeed + voiceLevel * maxRotationSpeed * 2.0;
-        if (voiceLevel > 0.05) {
+          BASE_ROTATION_SPEED + voiceLevel * maxRotationSpeed * 2.0;
+        if (voiceLevel > ROTATION_TRIGGER_THRESHOLD) {
           currentRot += dt * voiceRotationSpeed;
         }
         program.uniforms.hover.value = Math.min(voiceLevel * 2.0, 1.0);
@@ -345,7 +283,7 @@ export const VoiceOrb: FC<VoiceOrbProps> = ({
           maxHoverIntensity,
         );
       } else {
-        currentRot += dt * baseRotationSpeed;
+        currentRot += dt * BASE_ROTATION_SPEED;
         program.uniforms.hover.value = 0;
         program.uniforms.hoverIntensity.value = 0;
         voiceDetectedCallbackRef.current?.(false);
@@ -364,18 +302,13 @@ export const VoiceOrb: FC<VoiceOrbProps> = ({
       if (container.contains(gl.canvas)) {
         container.removeChild(gl.canvas);
       }
-      teardownAudio();
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [
-    hue,
-    audioElement,
-    voiceSensitivity,
-    maxRotationSpeed,
-    maxHoverIntensity,
-  ]);
+  }, [hue, maxRotationSpeed, maxHoverIntensity, getLevel]);
 
-  return <div ref={ctnDom} className={cn("relative h-full w-full", className)} />;
+  return (
+    <div ref={containerRef} className={cn("relative h-full w-full", className)} />
+  );
 };
 
 export default VoiceOrb;

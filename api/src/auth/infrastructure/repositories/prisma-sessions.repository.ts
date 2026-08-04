@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
+import {
+  InvalidRefreshTokenError,
+  InvalidRefreshTokenReason,
+} from '../../domain/errors/invalid-refresh-token.error';
 import type {
   CreateSessionInput,
   RotateSessionInput,
@@ -8,6 +11,7 @@ import type {
   SessionWithUser,
   SessionsRepository,
 } from '../../domain/ports/sessions-repository';
+import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 
 @Injectable()
 export class PrismaSessionsRepository implements SessionsRepository {
@@ -63,10 +67,15 @@ export class PrismaSessionsRepository implements SessionsRepository {
 
   async rotate(input: RotateSessionInput): Promise<Session> {
     return this.prisma.$transaction(async (tx) => {
-      await tx.session.update({
-        where: { id: input.previousSessionId },
+      const revoked = await tx.session.updateMany({
+        where: { id: input.previousSessionId, revokedAt: null },
         data: { revokedAt: input.now },
       });
+      if (revoked.count === 0) {
+        throw new InvalidRefreshTokenError(
+          InvalidRefreshTokenReason.SESSION_REVOKED,
+        );
+      }
       return tx.session.create({
         data: {
           userId: input.next.userId,

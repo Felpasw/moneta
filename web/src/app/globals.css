@@ -158,3 +158,20 @@
 .animate-bar-loader {
   animation: bar-loader 1.2s ease-in-out infinite;
 }
+
+@keyframes ripple-cell {
+  0% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: currentColor;
+  }
+  60%,
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-ripple-cell {
+  animation: ripple-cell 1.5s ease infinite;
+}

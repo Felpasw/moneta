@@ -5,7 +5,7 @@
  * Regra: `use()` chama todos os hooks no topo em ordem fixa, sem `if`/loop.
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import authService from "@/services/auth.service";
 import type {
@@ -14,33 +14,24 @@ import type {
   SignupData,
   SignupResponse,
 } from "@/services/interfaces/auth.interface";
-import userManager, { type AuthUser } from "@/utils/userManager";
+import { userStoreActions } from "@/stores/userStore";
 
-import type { AuthHooksResult, IAuthHooks } from "./interfaces/useAuth.interface";
+import type {
+  AuthHooksResult,
+  IAuthHooks,
+} from "./interfaces/useAuth.interface";
 
 export const AUTH_QUERY_KEYS = {
   all: ["auth"] as const,
-  profile: ["auth", "profile"] as const,
 };
 
 class AuthHooks implements IAuthHooks {
   use(): AuthHooksResult {
     const queryClient = useQueryClient();
 
-    const profile = useQuery<AuthUser | null>({
-      queryKey: AUTH_QUERY_KEYS.profile,
-      queryFn: () => userManager.getUser(),
-      staleTime: Infinity,
-      gcTime: Infinity,
-    });
-
     const login = useMutation<LoginResponse, unknown, LoginCredentials>({
       mutationFn: (credentials) => authService.login(credentials),
-      onSuccess: (data) => {
-        userManager.setUser(data.user);
-        userManager.setAccessToken(data.accessToken);
-        queryClient.setQueryData(AUTH_QUERY_KEYS.profile, data.user);
-      },
+      onSuccess: (data) => userStoreActions.setUser(data.user),
     });
 
     const signup = useMutation<SignupResponse, unknown, SignupData>({
@@ -50,12 +41,18 @@ class AuthHooks implements IAuthHooks {
     const logout = useMutation<void, unknown, void>({
       mutationFn: () => authService.logout(),
       onSuccess: () => {
-        userManager.clear();
+        userStoreActions.clear();
         queryClient.removeQueries({ queryKey: AUTH_QUERY_KEYS.all });
       },
     });
 
-    return { profile, login, signup, logout };
+    const refresh = useMutation<LoginResponse, unknown, void>({
+      mutationFn: () => authService.refresh(),
+      onSuccess: (data) => userStoreActions.setUser(data.user),
+      onError: () => userStoreActions.clear(),
+    });
+
+    return { login, signup, logout, refresh };
   }
 }
 

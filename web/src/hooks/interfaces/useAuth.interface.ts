@@ -1,4 +1,4 @@
-import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
 
 import type {
   LoginCredentials,
@@ -6,13 +6,12 @@ import type {
   SignupData,
   SignupResponse,
 } from "@/services/interfaces/auth.interface";
-import type { AuthUser } from "@/utils/userManager";
 
 export interface AuthHooksResult {
-  profile: UseQueryResult<AuthUser | null>;
   login: UseMutationResult<LoginResponse, unknown, LoginCredentials>;
   signup: UseMutationResult<SignupResponse, unknown, SignupData>;
   logout: UseMutationResult<void, unknown, void>;
+  refresh: UseMutationResult<LoginResponse, unknown, void>;
 }
 
 export interface IAuthHooks {

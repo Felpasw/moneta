@@ -60,26 +60,38 @@ describe('UpdateAssistantProfileUseCase', () => {
     expect(update).toHaveBeenCalledWith('u-1', { avatarUrl: null });
   });
 
-  it('accepts a valid Ready Player Me avatarUrl', async () => {
+  it.each([
+    'dicebear:notionists:felps',
+    'dicebear:avataaars:Felipe',
+    'dicebear:open-peeps:user_123',
+    'dicebear:pixel-art:seed-with-hyphens',
+  ])('accepts a valid DiceBear avatarUrl (%s)', async (avatarUrl) => {
     const { repo, update } = buildRepo();
     const useCase = new UpdateAssistantProfileUseCase(repo);
 
-    await useCase.execute('u-1', {
-      avatarUrl: 'https://models.readyplayer.me/abc.glb',
-    });
+    await useCase.execute('u-1', { avatarUrl });
 
-    expect(update).toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith('u-1', { avatarUrl });
   });
 
-  it('rejects an avatarUrl that does not point to a Ready Player Me asset', async () => {
-    const { repo, update } = buildRepo();
-    const useCase = new UpdateAssistantProfileUseCase(repo);
+  it.each([
+    'https://models.readyplayer.me/abc.glb',
+    'https://evil.example.com/x.glb',
+    'dicebear:notionists',
+    'dicebear::seed',
+    'dicebear:Notionists:felps',
+    'notionists:felps',
+    '',
+  ])(
+    'rejects an avatarUrl that does not match the DiceBear format (%s)',
+    async (avatarUrl) => {
+      const { repo, update } = buildRepo();
+      const useCase = new UpdateAssistantProfileUseCase(repo);
 
-    await expect(
-      useCase.execute('u-1', {
-        avatarUrl: 'https://evil.example.com/x.glb',
-      }),
-    ).rejects.toBeInstanceOf(InvalidAvatarUrlError);
-    expect(update).not.toHaveBeenCalled();
-  });
+      await expect(
+        useCase.execute('u-1', { avatarUrl }),
+      ).rejects.toBeInstanceOf(InvalidAvatarUrlError);
+      expect(update).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import { API_URL } from "@/globals";
 import {
@@ -23,7 +23,11 @@ import {
   makeTtsDispatcher,
   resolveInitialSessionState,
 } from "@/hooks/utils/useAgentSession.utils";
-import userManager from "@/utils/userManager";
+import {
+  agentSessionActions as actions,
+  useAgentSessionStore,
+} from "@/stores/agentSessionStore";
+import { useUserStore } from "@/stores/userStore";
 
 // Re-export pra manter path @/hooks/useAgentSession como fonte de
 // importação dos consumers (enums + helper testado).
@@ -33,24 +37,9 @@ export { buildAgentWsUrl } from "@/hooks/utils/useAgentSession.utils";
 
 export function useAgentSession({
   enabled,
-  micEnabled = false,
 }: UseAgentSessionOptions): UseAgentSessionResult {
-  const [status, setStatus] = useState<AgentSessionStatus>(
-    () => resolveInitialSessionState(enabled).status,
-  );
-  const [error, setError] = useState<string | null>(
-    () => resolveInitialSessionState(enabled).error,
-  );
-  const [isWarming, setIsWarming] = useState<boolean>(
-    () => resolveInitialSessionState(enabled).isWarming,
-  );
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(
-    null,
-  );
-  const [micStream, setMicStream] = useState<MediaStream | null>(null);
-  const [micState, setMicState] = useState<MicState>(MicState.Off);
-  const [toolEvents, setToolEvents] = useState<ToolEvent[]>([]);
-  const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
+  const state = useAgentSessionStore();
+  const micEnabled = state.micEnabled;
 
   const wsRef = useRef<WebSocket | null>(null);
   const chunksRef = useRef<Uint8Array[]>([]);
@@ -59,83 +48,92 @@ export function useAgentSession({
 
   // Receive side — WS + TTS playback
   useEffect(() => {
+    actions.hydrateInitial(resolveInitialSessionState(enabled));
     if (!enabled) return undefined;
-    const token = userManager.getAccessToken();
-    if (!token) return undefined;
+    if (useUserStore.getState().user === null) return undefined;
 
-    const ws = new WebSocket(buildAgentWsUrl(API_URL, token));
-    wsRef.current = ws;
+    let cancelled = false;
+    let ws: WebSocket | null = null;
 
-    const playAssembledChunks = (): void => {
-      const bytes = chunksRef.current;
-      chunksRef.current = [];
-      if (bytes.length === 0) return;
-      const blob = new Blob(bytes as BlobPart[], { type: TTS_AUDIO_MIME });
-      const url = URL.createObjectURL(blob);
-      objectUrlRef.current = url;
-      const audio = new Audio(url);
-      audio.crossOrigin = "anonymous";
-      audioRef.current = audio;
-      audio.onplay = () => {
-        setStatus(AgentSessionStatus.Speaking);
-        setIsWarming(false);
-      };
-      audio.onended = () => {
-        setStatus(AgentSessionStatus.Listening);
-        URL.revokeObjectURL(url);
-        objectUrlRef.current = null;
-        setAudioElement(null);
-      };
-      setAudioElement(audio);
-      audio.play().catch(() => {
-        setStatus(AgentSessionStatus.Error);
-        setError("autoplay blocked");
-      });
-    };
+    // StrictMode double-mount em dev cria WS #1, cleanup imediato, WS #2 —
+    // o backend loga upstream 1006 do #1. Defer via setTimeout(0) faz o
+    // cleanup rodar antes de qualquer `new WebSocket` acontecer.
+    const boot = setTimeout(() => {
+      if (cancelled) return;
 
-    const dispatchTts = makeTtsDispatcher({
-      onDelta: (bytes) => chunksRef.current.push(bytes),
-      onDone: playAssembledChunks,
-      onCanceled: () => {
+      ws = new WebSocket(buildAgentWsUrl(API_URL));
+      wsRef.current = ws;
+
+      const playAssembledChunks = (): void => {
+        const bytes = chunksRef.current;
         chunksRef.current = [];
-      },
-      onError: () => {
-        setStatus(AgentSessionStatus.Error);
-        setError("tts stream error");
-      },
-    });
+        if (bytes.length === 0) return;
+        const blob = new Blob(bytes as BlobPart[], { type: TTS_AUDIO_MIME });
+        const url = URL.createObjectURL(blob);
+        objectUrlRef.current = url;
+        const audio = new Audio(url);
+        audio.crossOrigin = "anonymous";
+        audioRef.current = audio;
+        audio.onplay = () => {
+          actions.setStatus(AgentSessionStatus.Speaking);
+          actions.setIsWarming(false);
+        };
+        audio.onended = () => {
+          actions.setStatus(AgentSessionStatus.Listening);
+          URL.revokeObjectURL(url);
+          objectUrlRef.current = null;
+          actions.setAudioElement(null);
+        };
+        actions.setAudioElement(audio);
+        audio.play().catch(() => {
+          actions.setStatus(AgentSessionStatus.Error);
+          actions.setError("autoplay blocked");
+        });
+      };
 
-    const dispatchTool = makeToolDispatcher((event) => {
-      setToolEvents((prev) => [...prev, event]);
-    });
+      const dispatchTts = makeTtsDispatcher({
+        onDelta: (bytes) => chunksRef.current.push(bytes),
+        onDone: playAssembledChunks,
+        onCanceled: () => {
+          chunksRef.current = [];
+        },
+        onError: () => {
+          actions.setStatus(AgentSessionStatus.Error);
+          actions.setError("tts stream error");
+        },
+      });
 
-    const dispatchSystem = makeSystemDispatcher({
-      onRedirect: (target) => setRedirectTarget(target),
-    });
+      const dispatchTool = makeToolDispatcher(actions.appendToolEvent);
 
-    ws.onopen = () => setStatus(AgentSessionStatus.Listening);
-    ws.onerror = () => {
-      setStatus(AgentSessionStatus.Error);
-      setError("connection error");
-    };
-    ws.onmessage = (ev: MessageEvent<unknown>) => {
-      dispatchTts(ev.data);
-      dispatchTool(ev.data);
-      dispatchSystem(ev.data);
-    };
+      const dispatchSystem = makeSystemDispatcher({
+        onRedirect: actions.setRedirectTarget,
+      });
+
+      ws.onopen = () => actions.setStatus(AgentSessionStatus.Listening);
+      ws.onerror = () => {
+        actions.setStatus(AgentSessionStatus.Error);
+        actions.setError("connection error");
+      };
+      ws.onmessage = (ev: MessageEvent<unknown>) => {
+        dispatchTts(ev.data);
+        dispatchTool(ev.data);
+        dispatchSystem(ev.data);
+      };
+    }, 0);
 
     return () => {
-      ws.close();
+      cancelled = true;
+      clearTimeout(boot);
+      ws?.close();
       wsRef.current = null;
       audioRef.current?.pause();
       audioRef.current = null;
-      setAudioElement(null);
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
         objectUrlRef.current = null;
       }
       chunksRef.current = [];
-      setRedirectTarget(null);
+      actions.resetSession();
     };
   }, [enabled]);
 
@@ -146,7 +144,7 @@ export function useAgentSession({
     let stopped = false;
     let teardown: (() => void) | null = null;
     queueMicrotask(() => {
-      if (!stopped) setMicState(MicState.Requesting);
+      if (!stopped) actions.setMicState(MicState.Requesting);
     });
 
     const sendFrame = (audio: string): void => {
@@ -167,18 +165,18 @@ export function useAgentSession({
         const graph = attachMicGraph({ stream, onFrame: sendFrame });
         if (!graph) {
           stream.getTracks().forEach((t) => t.stop());
-          setMicState(MicState.Error);
+          actions.setMicState(MicState.Error);
           return;
         }
         teardown = () => {
           graph.teardown();
           stream.getTracks().forEach((t) => t.stop());
         };
-        setMicStream(stream);
-        setMicState(MicState.Live);
+        actions.setMicStream(stream);
+        actions.setMicState(MicState.Live);
       } catch (err) {
         const name = (err as DOMException | Error).name;
-        setMicState(
+        actions.setMicState(
           name === "NotAllowedError" ? MicState.Denied : MicState.Error,
         );
       }
@@ -189,19 +187,9 @@ export function useAgentSession({
     return () => {
       stopped = true;
       teardown?.();
-      setMicStream(null);
-      setMicState(MicState.Off);
+      actions.resetMic();
     };
   }, [micEnabled]);
 
-  return {
-    status,
-    error,
-    audioElement,
-    isWarming,
-    micStream,
-    micState,
-    toolEvents,
-    redirectTarget,
-  };
+  return state;
 }

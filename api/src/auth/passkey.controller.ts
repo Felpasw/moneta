@@ -30,7 +30,10 @@ import {
   type AuthPasskeyFinishBodyDto,
   type EnrollPasskeyFinishBodyDto,
 } from './dto/passkey.dto';
-import { REFRESH_COOKIE } from './infrastructure/constants/cookie';
+import {
+  ACCESS_COOKIE,
+  REFRESH_COOKIE,
+} from './infrastructure/constants/cookie';
 import { CurrentUser } from './infrastructure/decorators/current-user.decorator';
 import { IpEmailThrottlerGuard } from './infrastructure/guards/ip-email-throttler.guard';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
@@ -110,11 +113,8 @@ export class PasskeyController {
         result.refreshToken,
         REFRESH_COOKIE.options,
       );
-      return {
-        user: result.user,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      };
+      res.cookie(ACCESS_COOKIE.name, result.accessToken, ACCESS_COOKIE.options);
+      return { user: result.user };
     } catch (e) {
       if (e instanceof PasskeyAuthenticationFailedError) {
         throw new UnauthorizedException('Passkey authentication failed');
