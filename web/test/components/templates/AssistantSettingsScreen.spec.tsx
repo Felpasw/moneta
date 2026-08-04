@@ -117,7 +117,7 @@ describe("AssistantSettingsScreen", () => {
     });
   });
 
-  it("renderiza as 3 seções (tom, voz, avatar) quando os dados carregam", async () => {
+  it("renderiza 3 tabs (Tom, Voz, Avatar) e abre em Tom por default", async () => {
     const { Wrapper } = wrap();
     render(
       <Wrapper>
@@ -126,13 +126,38 @@ describe("AssistantSettingsScreen", () => {
     );
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("heading", { name: /tom de tratamento/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: /tom/i })).toBeInTheDocument();
     });
-    expect(screen.getByRole("heading", { name: /^voz$/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /voz/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /avatar/i })).toBeInTheDocument();
+
     expect(
-      screen.getByRole("heading", { name: /^avatar$/i }),
+      screen.getByRole("heading", { name: /tom de tratamento/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /^voz$/i })).toBeNull();
+    expect(screen.queryByRole("heading", { name: /^avatar$/i })).toBeNull();
+  });
+
+  it("troca de tab mostra a seção correspondente", async () => {
+    const { Wrapper } = wrap();
+    render(
+      <Wrapper>
+        <AssistantSettingsScreen />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: /voz/i })).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("tab", { name: /voz/i }));
+    expect(
+      await screen.findByRole("heading", { name: /^voz$/i }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("tab", { name: /avatar/i }));
+    expect(
+      await screen.findByRole("heading", { name: /^avatar$/i }),
     ).toBeInTheDocument();
   });
 
@@ -184,6 +209,11 @@ describe("AssistantSettingsScreen", () => {
     );
 
     await waitFor(() => {
+      expect(screen.getByRole("tab", { name: /voz/i })).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByRole("tab", { name: /voz/i }));
+
+    await waitFor(() => {
       expect(
         screen.getByRole("button", { name: /selecionar adam/i }),
       ).toBeInTheDocument();
@@ -207,6 +237,11 @@ describe("AssistantSettingsScreen", () => {
         <AssistantSettingsScreen />
       </Wrapper>,
     );
+
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: /avatar/i })).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByRole("tab", { name: /avatar/i }));
 
     await waitFor(() => {
       expect(
