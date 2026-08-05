@@ -1,22 +1,19 @@
 export type TransactionDirection = "income" | "expense";
 export type InvoiceStatus = "open" | "closed" | "paid";
+export type BankKind = "checking" | "credit";
 
-export interface AccountRow {
+export interface CheckingBankRow {
   id: string;
+  kind: "checking";
   nickname: string;
   bankName: string;
   balance: number;
   overdraftLimit: number | null;
 }
 
-export interface AccountsSummary {
-  totalBalance: number;
-  count: number;
-  totalOverdraft: number;
-}
-
-export interface CardRow {
+export interface CreditBankRow {
   id: string;
+  kind: "credit";
   nickname: string;
   bankName: string;
   limit: number;
@@ -25,6 +22,14 @@ export interface CardRow {
   usagePct: number;
   invoiceStatus: InvoiceStatus | null;
   dueDate: Date | null;
+}
+
+export type BankRow = CheckingBankRow | CreditBankRow;
+
+export interface BanksSummary {
+  totalBalance: number;
+  checkingCount: number;
+  totalOverdraft: number;
 }
 
 export interface CategoryRow {
@@ -113,9 +118,10 @@ const FULL_MONTH = new Intl.DateTimeFormat("en-US", { month: "long" });
 const dayKey = (d: Date): string =>
   `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 
-export const MOCK_ACCOUNT_ROWS: AccountRow[] = [
+export const MOCK_BANK_ROWS: BankRow[] = [
   {
     id: "acc-nubank-checking",
+    kind: "checking",
     nickname: "Main checking",
     bankName: "Nubank",
     balance: 4820.53,
@@ -123,6 +129,7 @@ export const MOCK_ACCOUNT_ROWS: AccountRow[] = [
   },
   {
     id: "acc-itau-checking",
+    kind: "checking",
     nickname: "Salary account",
     bankName: "Itaú Unibanco",
     balance: 1235.9,
@@ -130,22 +137,15 @@ export const MOCK_ACCOUNT_ROWS: AccountRow[] = [
   },
   {
     id: "acc-inter-checking",
+    kind: "checking",
     nickname: "Savings",
     bankName: "Banco Inter",
     balance: 12480,
     overdraftLimit: null,
   },
-];
-
-export const MOCK_ACCOUNTS_SUMMARY: AccountsSummary = {
-  totalBalance: 18536.43,
-  count: 3,
-  totalOverdraft: 1500,
-};
-
-export const MOCK_CARD_ROWS: CardRow[] = [
   {
     id: "acc-nubank-card",
+    kind: "credit",
     nickname: "Nubank Ultravioleta",
     bankName: "Nubank",
     limit: 12000,
@@ -157,6 +157,7 @@ export const MOCK_CARD_ROWS: CardRow[] = [
   },
   {
     id: "acc-c6-card",
+    kind: "credit",
     nickname: "C6 Carbon",
     bankName: "Banco C6",
     limit: 8000,
@@ -168,6 +169,7 @@ export const MOCK_CARD_ROWS: CardRow[] = [
   },
   {
     id: "acc-bradesco-card",
+    kind: "credit",
     nickname: "Bradesco Elo Nanquim",
     bankName: "Bradesco",
     limit: 5000,
@@ -178,6 +180,12 @@ export const MOCK_CARD_ROWS: CardRow[] = [
     dueDate: dayOfMonth(22, -1),
   },
 ];
+
+export const MOCK_BANKS_SUMMARY: BanksSummary = {
+  totalBalance: 18536.43,
+  checkingCount: 3,
+  totalOverdraft: 1500,
+};
 
 export const MOCK_CATEGORY_ROWS: CategoryRow[] = [
   {

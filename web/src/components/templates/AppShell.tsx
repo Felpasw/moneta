@@ -3,12 +3,11 @@
 import {
   ArrowLeftRight,
   Bot,
-  CreditCard,
+  Landmark,
   LayoutDashboard,
   LogOut,
   Settings,
   Tags,
-  Wallet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -47,17 +46,10 @@ const MONETA_DOCK_ITEMS: Omit<DockItem, "onClick">[] = [
     color: DOCK_ICON_COLOR,
   },
   {
-    id: "cards",
-    name: "Cards",
-    href: "/cards",
-    icon: <CreditCard className={ICON_CLASS} />,
-    color: DOCK_ICON_COLOR,
-  },
-  {
-    id: "accounts",
-    name: "Accounts",
-    href: "/accounts",
-    icon: <Wallet className={ICON_CLASS} />,
+    id: "banks",
+    name: "Banks",
+    href: "/banks",
+    icon: <Landmark className={ICON_CLASS} />,
     color: DOCK_ICON_COLOR,
   },
   {
