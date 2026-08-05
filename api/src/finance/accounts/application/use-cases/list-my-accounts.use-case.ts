@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import {
   USER_BANK_ACCOUNTS_REPOSITORY,
-  type UserBankAccount,
+  type UserBankAccountWithBank,
   type UserBankAccountsRepository,
 } from '../../domain/ports/user-bank-accounts-repository';
 
@@ -13,7 +13,7 @@ export class ListMyAccountsUseCase {
     private readonly accounts: UserBankAccountsRepository,
   ) {}
 
-  async execute(input: { userId: string }): Promise<UserBankAccount[]> {
+  async execute(input: { userId: string }): Promise<UserBankAccountWithBank[]> {
     return this.accounts.listByUserId(input.userId);
   }
 }

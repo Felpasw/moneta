@@ -1,5 +1,5 @@
 import { ListMyAccountsUseCase } from '~/finance/accounts/application/use-cases/list-my-accounts.use-case';
-import type { UserBankAccount } from '~/finance/accounts/domain/ports/user-bank-accounts-repository';
+import type { UserBankAccountWithBank } from '~/finance/accounts/domain/ports/user-bank-accounts-repository';
 
 const buildUseCase = () => {
   const accounts = { listByUserId: jest.fn() };
@@ -8,9 +8,9 @@ const buildUseCase = () => {
 };
 
 describe('ListMyAccountsUseCase', () => {
-  it('returns the accounts owned by the given user', async () => {
+  it('returns the accounts owned by the given user with the bank nested', async () => {
     const { useCase, accounts } = buildUseCase();
-    const owned: UserBankAccount[] = [
+    const owned: UserBankAccountWithBank[] = [
       {
         id: 'a-1',
         userId: 'user-1',
@@ -21,6 +21,12 @@ describe('ListMyAccountsUseCase', () => {
         overdraftLimit: null,
         closeDay: null,
         dueDay: null,
+        bank: {
+          id: 'bank-1',
+          name: 'Nubank',
+          compeCode: '260',
+          logoUrl: null,
+        },
       },
     ];
     accounts.listByUserId.mockResolvedValue(owned);

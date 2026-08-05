@@ -6,6 +6,7 @@ import type {
   AddUserBankAccountInput,
   UpdateUserBankAccountInput,
   UserBankAccount,
+  UserBankAccountWithBank,
   UserBankAccountsRepository,
 } from '../../domain/ports/user-bank-accounts-repository';
 
@@ -21,8 +22,24 @@ const ACCOUNT_SELECT = {
   dueDay: true,
 } satisfies Prisma.UserBankAccountSelect;
 
+const ACCOUNT_WITH_BANK_SELECT = {
+  ...ACCOUNT_SELECT,
+  bank: {
+    select: {
+      id: true,
+      name: true,
+      compeCode: true,
+      logoUrl: true,
+    },
+  },
+} satisfies Prisma.UserBankAccountSelect;
+
 type PrismaAccountRow = Prisma.UserBankAccountGetPayload<{
   select: typeof ACCOUNT_SELECT;
+}>;
+
+type PrismaAccountWithBankRow = Prisma.UserBankAccountGetPayload<{
+  select: typeof ACCOUNT_WITH_BANK_SELECT;
 }>;
 
 const toDomain = (row: PrismaAccountRow): UserBankAccount => ({
@@ -32,17 +49,27 @@ const toDomain = (row: PrismaAccountRow): UserBankAccount => ({
   overdraftLimit: row.overdraftLimit?.toNumber() ?? null,
 });
 
+const toDomainWithBank = (
+  row: PrismaAccountWithBankRow,
+): UserBankAccountWithBank => {
+  const { bank, ...account } = row;
+  return {
+    ...toDomain(account),
+    bank,
+  };
+};
+
 @Injectable()
 export class PrismaUserBankAccountsRepository implements UserBankAccountsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listByUserId(userId: string): Promise<UserBankAccount[]> {
+  async listByUserId(userId: string): Promise<UserBankAccountWithBank[]> {
     const rows = await this.prisma.userBankAccount.findMany({
       where: { userId },
       orderBy: { nickname: 'asc' },
-      select: ACCOUNT_SELECT,
+      select: ACCOUNT_WITH_BANK_SELECT,
     });
-    return rows.map(toDomain);
+    return rows.map(toDomainWithBank);
   }
 
   async findById(id: string, userId: string): Promise<UserBankAccount | null> {
