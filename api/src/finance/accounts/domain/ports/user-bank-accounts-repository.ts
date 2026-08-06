@@ -20,6 +20,17 @@ export interface UserBankAccountWithBank extends UserBankAccount {
   bank: Bank;
 }
 
+export interface AccountsSummary {
+  totalBalance: number;
+  checkingCount: number;
+  totalOverdraft: number;
+}
+
+export interface ListAccountsResult {
+  items: UserBankAccountWithBank[];
+  summary: AccountsSummary;
+}
+
 export interface AddUserBankAccountInput {
   userId: string;
   bankId: string;

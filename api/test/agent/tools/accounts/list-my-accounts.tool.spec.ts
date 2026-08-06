@@ -9,13 +9,17 @@ const buildTool = () => {
 };
 
 describe('ListMyAccountsTool', () => {
-  it('lists accounts of the user from ctx.userId', async () => {
+  it('wraps use-case result (items + summary) as tool data', async () => {
     const { tool, listMyAccounts } = buildTool();
-    listMyAccounts.execute.mockResolvedValue([]);
+    const payload = {
+      items: [],
+      summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 },
+    };
+    listMyAccounts.execute.mockResolvedValue(payload);
 
     const result = await tool.execute({}, CTX);
 
-    expect(result).toEqual({ ok: true, data: [] });
+    expect(result).toEqual({ ok: true, data: payload });
     expect(listMyAccounts.execute).toHaveBeenCalledWith({ userId: 'user-1' });
   });
 });

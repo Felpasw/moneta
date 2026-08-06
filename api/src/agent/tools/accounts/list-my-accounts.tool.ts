@@ -10,14 +10,14 @@ import { ListMyAccountsUseCase } from '../../../finance/accounts/application/use
 export class ListMyAccountsTool implements AssistantTool {
   readonly name = 'list_my_accounts';
   readonly description =
-    'Returns all bank accounts owned by the current user, including balance, credit limit, and overdraft limit.';
+    'Returns all bank accounts owned by the current user (items) plus a summary aggregating checking accounts (totalBalance, checkingCount, totalOverdraft).';
   readonly jsonSchema = {
     type: 'object',
     properties: {},
     additionalProperties: false,
   };
   readonly playbook =
-    'Retorna todas as contas do user (com saldo, limite de crédito e cheque especial). Sem input; o dono é sempre o user da sessão. Use pra responder quanto tenho, quais minhas contas, ou pra obter o id de uma conta antes de operações que precisam dele. Read-only, seguro chamar sem confirmação.';
+    'Retorna `{ items, summary }`. `items` = todas as contas do user (com saldo, limite de crédito, cheque especial e bank embed). `summary` agrega SÓ checking accounts: `totalBalance` = soma dos saldos, `checkingCount` = quantas checking, `totalOverdraft` = soma dos cheques especiais. Sem input; o dono é sempre o user da sessão. Use `summary.totalBalance` pra responder "quanto tenho no total" (sem somar do lado do agent). Use `items[].id` antes de operações que precisam do id. Read-only, seguro chamar sem confirmação.';
 
   constructor(private readonly listMyAccounts: ListMyAccountsUseCase) {}
 
