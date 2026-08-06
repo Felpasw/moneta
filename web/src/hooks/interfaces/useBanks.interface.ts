@@ -1,9 +1,9 @@
-import type { UseQueryResult } from "@tanstack/react-query";
+import type { UseSuspenseQueryResult } from "@tanstack/react-query";
 
 import type { Bank } from "@/services/interfaces/banks.interface";
 
 export interface BanksHooksResult {
-  list: UseQueryResult<Bank[]>;
+  list: UseSuspenseQueryResult<Bank[]>;
 }
 
 export interface IBanksHooks {

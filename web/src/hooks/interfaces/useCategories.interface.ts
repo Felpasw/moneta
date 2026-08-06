@@ -1,4 +1,7 @@
-import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
+import type {
+  UseMutationResult,
+  UseSuspenseQueryResult,
+} from "@tanstack/react-query";
 
 import type {
   AddCategoryInput,
@@ -12,7 +15,7 @@ export interface RenameCategoryVariables {
 }
 
 export interface CategoriesHooksResult {
-  list: UseQueryResult<Category[]>;
+  list: UseSuspenseQueryResult<Category[]>;
   create: UseMutationResult<Category, unknown, AddCategoryInput>;
   rename: UseMutationResult<Category, unknown, RenameCategoryVariables>;
   remove: UseMutationResult<void, unknown, string>;

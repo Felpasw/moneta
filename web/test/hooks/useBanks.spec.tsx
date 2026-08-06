@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import banksHooks, { BANKS_QUERY_KEYS } from "@/hooks/useBanks";
@@ -21,7 +21,9 @@ const createWrapper = () => {
   });
 
   const Wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={null}>{children}</Suspense>
+    </QueryClientProvider>
   );
 
   return { queryClient, Wrapper };
@@ -41,7 +43,7 @@ describe("banksHooks.use()", () => {
   });
 
   describe("list", () => {
-    it("fetcha e cacheia o catálogo na query key correta", async () => {
+    it("suspende até resolver e cacheia o catálogo na query key correta", async () => {
       mockedService.list.mockResolvedValueOnce(BANKS);
       const { Wrapper, queryClient } = createWrapper();
 
@@ -49,21 +51,10 @@ describe("banksHooks.use()", () => {
         wrapper: Wrapper,
       });
 
-      await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
+      await waitFor(() => expect(result.current).not.toBeNull());
       expect(result.current.list.data).toEqual(BANKS);
       expect(queryClient.getQueryData(BANKS_QUERY_KEYS.list)).toEqual(BANKS);
       expect(mockedService.list).toHaveBeenCalledTimes(1);
-    });
-
-    it("expõe isError quando o service falha", async () => {
-      mockedService.list.mockRejectedValueOnce(new Error("boom"));
-      const { Wrapper } = createWrapper();
-
-      const { result } = renderHook(() => banksHooks.use(), {
-        wrapper: Wrapper,
-      });
-
-      await waitFor(() => expect(result.current.list.isError).toBe(true));
     });
   });
 });

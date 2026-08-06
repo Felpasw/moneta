@@ -6,7 +6,11 @@
  * `if`/loop.
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 
 import categoriesService from "@/services/categories.service";
 import type {
@@ -32,7 +36,7 @@ class CategoriesHooks implements ICategoriesHooks {
     const invalidateList = () =>
       queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEYS.list });
 
-    const list = useQuery<Category[]>({
+    const list = useSuspenseQuery<Category[]>({
       queryKey: CATEGORIES_QUERY_KEYS.list,
       queryFn: () => categoriesService.list(),
     });

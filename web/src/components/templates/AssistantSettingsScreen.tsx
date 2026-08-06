@@ -5,7 +5,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { AssistantAvatar } from "@/components/atoms/AssistantAvatar";
-import { RippleLoader } from "@/components/atoms/RippleLoader";
 import { AssistantSettingsAvatar } from "@/components/organisms/AssistantSettingsAvatar";
 import { AssistantSettingsTreatmentStyle } from "@/components/organisms/AssistantSettingsTreatmentStyle";
 import { AssistantSettingsVoice } from "@/components/organisms/AssistantSettingsVoice";
@@ -44,36 +43,12 @@ export function AssistantSettingsScreen() {
   const user = useUserStore((s) => s.user);
   const [activeTab, setActiveTab] = useState<TabId>(TAB_ID.TONE);
 
-  const isLoading = profile.isLoading || voices.isLoading;
-  const hasError =
-    profile.isError || (profile.data === undefined && !profile.isLoading);
-
   const patch = (input: UpdateProfilePatch) => {
     updateProfile.mutate(input, {
       onSuccess: () => toast.success(TOAST_SUCCESS_MESSAGE),
       onError: () => toast.error(TOAST_ERROR_MESSAGE),
     });
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center min-h-[60vh]">
-        <RippleLoader label="Loading assistant preferences" />
-      </div>
-    );
-  }
-
-  if (hasError || profile.data === undefined) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center text-sm text-muted-foreground">
-        Couldn&apos;t load your preferences. Try again in a bit.
-      </div>
-    );
-  }
-
-  const currentProfile = profile.data;
-  const defaultSeed = user?.name ?? FALLBACK_SEED;
-  const mutationPending = updateProfile.isPending;
 
   return (
     <main className="mx-auto flex min-h-full max-w-[1600px] flex-1 flex-col justify-center gap-8 px-4 py-8">
@@ -87,9 +62,9 @@ export function AssistantSettingsScreen() {
             className="absolute inset-0 rounded-full bg-primary/10 blur-2xl"
           />
           <AssistantAvatar
-            avatarUrl={currentProfile.avatarUrl}
+            avatarUrl={profile.data.avatarUrl}
             size="lg"
-            fallbackSeed={defaultSeed}
+            fallbackSeed={user?.name ?? FALLBACK_SEED}
             className="relative h-40 w-40 ring-4 ring-primary/30"
           />
         </div>
@@ -120,30 +95,30 @@ export function AssistantSettingsScreen() {
         >
           {activeTab === TAB_ID.TONE && (
             <AssistantSettingsTreatmentStyle
-              value={currentProfile.treatmentStyle}
+              value={profile.data.treatmentStyle}
               onChange={(next: TreatmentStyle) =>
                 patch({ treatmentStyle: next })
               }
-              disabled={mutationPending}
+              disabled={updateProfile.isPending}
             />
           )}
 
           {activeTab === TAB_ID.VOICE && (
             <AssistantSettingsVoice
-              voices={voices.data ?? []}
-              selectedVoiceId={currentProfile.voiceId}
+              voices={voices.data}
+              selectedVoiceId={profile.data.voiceId}
               onSelect={(voiceId) => patch({ voiceId })}
               onPreview={(voiceId) => previewVoice.mutateAsync(voiceId)}
-              disabled={mutationPending}
+              disabled={updateProfile.isPending}
             />
           )}
 
           {activeTab === TAB_ID.AVATAR && (
             <AssistantSettingsAvatar
-              avatarUrl={currentProfile.avatarUrl}
-              defaultSeed={defaultSeed}
+              avatarUrl={profile.data.avatarUrl}
+              defaultSeed={user?.name ?? FALLBACK_SEED}
               onChange={(avatarUrl) => patch({ avatarUrl })}
-              disabled={mutationPending}
+              disabled={updateProfile.isPending}
             />
           )}
         </motion.div>

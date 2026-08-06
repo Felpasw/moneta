@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import api from "@/api";
 import accountsService from "@/services/accounts.service";
-import type { UserBankAccount } from "@/services/interfaces/accounts.interface";
+import type {
+  ListAccountsResult,
+  UserBankAccount,
+  UserBankAccountWithBank,
+} from "@/services/interfaces/accounts.interface";
 
 vi.mock("@/api", () => ({
   default: {
@@ -30,6 +34,16 @@ const ACCOUNT: UserBankAccount = {
   dueDay: null,
 };
 
+const ACCOUNT_WITH_BANK: UserBankAccountWithBank = {
+  ...ACCOUNT,
+  bank: { id: "b-1", name: "Nubank", compeCode: "260", logoUrl: null },
+};
+
+const LIST_RESULT: ListAccountsResult = {
+  items: [ACCOUNT_WITH_BANK],
+  summary: { totalBalance: 100, checkingCount: 1, totalOverdraft: 500 },
+};
+
 describe("accountsService", () => {
   beforeEach(() => {
     mockedGet.mockReset();
@@ -42,13 +56,13 @@ describe("accountsService", () => {
     vi.clearAllMocks();
   });
 
-  it("list — GET /accounts", async () => {
-    mockedGet.mockResolvedValueOnce({ data: [ACCOUNT] });
+  it("list — GET /accounts com items + summary do backend", async () => {
+    mockedGet.mockResolvedValueOnce({ data: LIST_RESULT });
 
     const result = await accountsService.list();
 
     expect(mockedGet).toHaveBeenCalledWith("/accounts");
-    expect(result).toEqual([ACCOUNT]);
+    expect(result).toEqual(LIST_RESULT);
   });
 
   it("create — POST /accounts com o input", async () => {

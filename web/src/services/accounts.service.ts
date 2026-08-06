@@ -3,14 +3,15 @@ import api from "@/api";
 import type {
   AddBankAccountInput,
   IAccountsService,
+  ListAccountsResult,
   SetBalanceInput,
   UpdateBankAccountInput,
   UserBankAccount,
 } from "./interfaces/accounts.interface";
 
 class AccountsService implements IAccountsService {
-  async list(): Promise<UserBankAccount[]> {
-    const { data } = await api.get<UserBankAccount[]>("/accounts");
+  async list(): Promise<ListAccountsResult> {
+    const { data } = await api.get<ListAccountsResult>("/accounts");
 
     return data;
   }

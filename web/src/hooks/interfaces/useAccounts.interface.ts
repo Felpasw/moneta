@@ -1,7 +1,11 @@
-import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
+import type {
+  UseMutationResult,
+  UseSuspenseQueryResult,
+} from "@tanstack/react-query";
 
 import type {
   AddBankAccountInput,
+  ListAccountsResult,
   SetBalanceInput,
   UpdateBankAccountInput,
   UserBankAccount,
@@ -18,7 +22,7 @@ export interface SetBalanceVariables {
 }
 
 export interface AccountsHooksResult {
-  list: UseQueryResult<UserBankAccount[]>;
+  list: UseSuspenseQueryResult<ListAccountsResult>;
   create: UseMutationResult<UserBankAccount, unknown, AddBankAccountInput>;
   update: UseMutationResult<UserBankAccount, unknown, UpdateAccountVariables>;
   remove: UseMutationResult<void, unknown, string>;

@@ -59,11 +59,11 @@ describe("AssistantSettingsVoice", () => {
       />,
     );
 
-    const adamSelect = screen.getByRole("button", { name: /selecionar adam/i });
+    const adamSelect = screen.getByRole("button", { name: /select adam/i });
     expect(adamSelect.getAttribute("aria-pressed")).toBe("true");
 
     const bellaSelect = screen.getByRole("button", {
-      name: /selecionar bella/i,
+      name: /select bella/i,
     });
     expect(bellaSelect.getAttribute("aria-pressed")).toBe("false");
   });
@@ -80,7 +80,7 @@ describe("AssistantSettingsVoice", () => {
     );
 
     await userEvent.click(
-      screen.getByRole("button", { name: /selecionar rachel/i }),
+      screen.getByRole("button", { name: /select rachel/i }),
     );
 
     expect(onSelect).toHaveBeenCalledTimes(1);
@@ -99,7 +99,7 @@ describe("AssistantSettingsVoice", () => {
     );
 
     await userEvent.click(
-      screen.getByRole("button", { name: /selecionar bella/i }),
+      screen.getByRole("button", { name: /select bella/i }),
     );
 
     expect(onSelect).not.toHaveBeenCalled();
@@ -119,7 +119,7 @@ describe("AssistantSettingsVoice", () => {
     );
 
     await userEvent.click(
-      screen.getByRole("button", { name: /ouvir preview de bella/i }),
+      screen.getByRole("button", { name: /preview bella/i }),
     );
 
     expect(onPreview).toHaveBeenCalledWith("v-1");
@@ -141,10 +141,10 @@ describe("AssistantSettingsVoice", () => {
     );
 
     await userEvent.click(
-      screen.getByRole("button", { name: /ouvir preview de bella/i }),
+      screen.getByRole("button", { name: /preview bella/i }),
     );
     await userEvent.click(
-      screen.getByRole("button", { name: /ouvir preview de adam/i }),
+      screen.getByRole("button", { name: /preview adam/i }),
     );
 
     expect(audioPauseMock).toHaveBeenCalled();
@@ -166,10 +166,10 @@ describe("AssistantSettingsVoice", () => {
     );
 
     await userEvent.click(
-      screen.getByRole("button", { name: /selecionar rachel/i }),
+      screen.getByRole("button", { name: /select rachel/i }),
     );
     await userEvent.click(
-      screen.getByRole("button", { name: /ouvir preview de bella/i }),
+      screen.getByRole("button", { name: /preview bella/i }),
     );
 
     expect(onSelect).not.toHaveBeenCalled();
@@ -187,7 +187,7 @@ describe("AssistantSettingsVoice", () => {
     );
 
     expect(
-      screen.getByText(/nenhuma voz disponível/i),
+      screen.getByText(/no voices available/i),
     ).toBeInTheDocument();
   });
 });

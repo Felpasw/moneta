@@ -5,11 +5,16 @@
  * Regra: `use()` chama todos os hooks no topo em ordem fixa, sem `if`/loop.
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 
 import accountsService from "@/services/accounts.service";
 import type {
   AddBankAccountInput,
+  ListAccountsResult,
   UserBankAccount,
 } from "@/services/interfaces/accounts.interface";
 
@@ -32,7 +37,7 @@ class AccountsHooks implements IAccountsHooks {
     const invalidateList = () =>
       queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEYS.list });
 
-    const list = useQuery<UserBankAccount[]>({
+    const list = useSuspenseQuery<ListAccountsResult>({
       queryKey: ACCOUNTS_QUERY_KEYS.list,
       queryFn: () => accountsService.list(),
     });

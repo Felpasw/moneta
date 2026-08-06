@@ -5,7 +5,7 @@
  * Regra: `use()` chama todos os hooks no topo em ordem fixa, sem `if`/loop.
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import banksService from "@/services/banks.service";
 import type { Bank } from "@/services/interfaces/banks.interface";
@@ -22,7 +22,7 @@ export const BANKS_QUERY_KEYS = {
 
 class BanksHooks implements IBanksHooks {
   use(): BanksHooksResult {
-    const list = useQuery<Bank[]>({
+    const list = useSuspenseQuery<Bank[]>({
       queryKey: BANKS_QUERY_KEYS.list,
       queryFn: () => banksService.list(),
     });

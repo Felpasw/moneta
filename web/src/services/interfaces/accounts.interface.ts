@@ -1,3 +1,5 @@
+import type { Bank } from "./banks.interface";
+
 export interface UserBankAccount {
   id: string;
   userId: string;
@@ -8,6 +10,21 @@ export interface UserBankAccount {
   overdraftLimit: number | null;
   closeDay: number | null;
   dueDay: number | null;
+}
+
+export interface UserBankAccountWithBank extends UserBankAccount {
+  bank: Bank;
+}
+
+export interface AccountsSummary {
+  totalBalance: number;
+  checkingCount: number;
+  totalOverdraft: number;
+}
+
+export interface ListAccountsResult {
+  items: UserBankAccountWithBank[];
+  summary: AccountsSummary;
 }
 
 export interface AddBankAccountInput {
@@ -33,7 +50,7 @@ export interface SetBalanceInput {
 }
 
 export interface IAccountsService {
-  list(): Promise<UserBankAccount[]>;
+  list(): Promise<ListAccountsResult>;
   create(input: AddBankAccountInput): Promise<UserBankAccount>;
   update(id: string, patch: UpdateBankAccountInput): Promise<UserBankAccount>;
   remove(id: string): Promise<void>;

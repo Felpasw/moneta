@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@dicebear/core", () => {
@@ -69,7 +69,11 @@ const wrap = () => {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   const Wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={<div data-testid="suspense-fallback" />}>
+        {children}
+      </Suspense>
+    </QueryClientProvider>
   );
   return { queryClient, Wrapper };
 };
@@ -86,23 +90,7 @@ describe("AssistantSettingsScreen", () => {
     vi.clearAllMocks();
   });
 
-  it("mostra loading enquanto o profile/voices carregam", () => {
-    mockedService.getProfile.mockReturnValueOnce(new Promise(() => {}));
-    mockedService.listVoices.mockReturnValueOnce(new Promise(() => {}));
-
-    const { Wrapper } = wrap();
-    render(
-      <Wrapper>
-        <AssistantSettingsScreen />
-      </Wrapper>,
-    );
-
-    expect(screen.getByRole("status", { name: /carregando/i })).toBeInTheDocument();
-  });
-
-  it("mostra erro quando o profile falha", async () => {
-    mockedService.getProfile.mockRejectedValueOnce(new Error("500"));
-
+  it("renderiza 3 tabs (Tone, Voice, Avatar) e abre em Tone por default", async () => {
     const { Wrapper } = wrap();
     render(
       <Wrapper>
@@ -111,30 +99,15 @@ describe("AssistantSettingsScreen", () => {
     );
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/não foi possível carregar/i),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: /tone/i })).toBeInTheDocument();
     });
-  });
-
-  it("renderiza 3 tabs (Tom, Voz, Avatar) e abre em Tom por default", async () => {
-    const { Wrapper } = wrap();
-    render(
-      <Wrapper>
-        <AssistantSettingsScreen />
-      </Wrapper>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByRole("tab", { name: /tom/i })).toBeInTheDocument();
-    });
-    expect(screen.getByRole("tab", { name: /voz/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /voice/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /avatar/i })).toBeInTheDocument();
 
     expect(
-      screen.getByRole("heading", { name: /tom de tratamento/i }),
+      screen.getByRole("heading", { name: /speaking tone/i }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /^voz$/i })).toBeNull();
+    expect(screen.queryByRole("heading", { name: /^voice$/i })).toBeNull();
     expect(screen.queryByRole("heading", { name: /^avatar$/i })).toBeNull();
   });
 
@@ -147,12 +120,12 @@ describe("AssistantSettingsScreen", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("tab", { name: /voz/i })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: /voice/i })).toBeInTheDocument();
     });
 
-    await userEvent.click(screen.getByRole("tab", { name: /voz/i }));
+    await userEvent.click(screen.getByRole("tab", { name: /voice/i }));
     expect(
-      await screen.findByRole("heading", { name: /^voz$/i }),
+      await screen.findByRole("heading", { name: /^voice$/i }),
     ).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("tab", { name: /avatar/i }));
@@ -170,7 +143,7 @@ describe("AssistantSettingsScreen", () => {
     );
 
     const hero = await screen.findByRole("region", {
-      name: /prévia do assistente/i,
+      name: /assistant preview/i,
     });
     expect(hero).toBeInTheDocument();
     const avatar = hero.querySelector("img");
@@ -209,18 +182,18 @@ describe("AssistantSettingsScreen", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("tab", { name: /voz/i })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: /voice/i })).toBeInTheDocument();
     });
-    await userEvent.click(screen.getByRole("tab", { name: /voz/i }));
+    await userEvent.click(screen.getByRole("tab", { name: /voice/i }));
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /selecionar adam/i }),
+        screen.getByRole("button", { name: /select adam/i }),
       ).toBeInTheDocument();
     });
 
     await userEvent.click(
-      screen.getByRole("button", { name: /selecionar adam/i }),
+      screen.getByRole("button", { name: /select adam/i }),
     );
 
     await waitFor(() => {
@@ -245,17 +218,17 @@ describe("AssistantSettingsScreen", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /escolher.*avataaars/i }),
+        screen.getByRole("button", { name: /choose.*avataaars/i }),
       ).toBeInTheDocument();
     });
 
     await userEvent.click(
-      screen.getByRole("button", { name: /escolher.*avataaars/i }),
+      screen.getByRole("button", { name: /choose.*avataaars/i }),
     );
 
     await waitFor(() => {
       expect(mockedService.updateProfile).toHaveBeenCalledWith({
-        avatarUrl: "dicebear:avataaars:felps",
+        avatarUrl: "dicebear:avataaars:cuzi",
       });
     });
   });

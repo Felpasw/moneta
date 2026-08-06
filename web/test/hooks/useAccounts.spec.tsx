@@ -1,11 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import accountsHooks, { ACCOUNTS_QUERY_KEYS } from "@/hooks/useAccounts";
 import accountsService from "@/services/accounts.service";
-import type { UserBankAccount } from "@/services/interfaces/accounts.interface";
+import type {
+  ListAccountsResult,
+  UserBankAccount,
+  UserBankAccountWithBank,
+} from "@/services/interfaces/accounts.interface";
 
 vi.mock("@/services/accounts.service", () => ({
   default: {
@@ -25,7 +29,9 @@ const createWrapper = () => {
   });
 
   const Wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={null}>{children}</Suspense>
+    </QueryClientProvider>
   );
 
   return { queryClient, Wrapper };
@@ -43,6 +49,21 @@ const ACCOUNT: UserBankAccount = {
   dueDay: null,
 };
 
+const ACCOUNT_WITH_BANK: UserBankAccountWithBank = {
+  ...ACCOUNT,
+  bank: { id: "b-1", name: "Nubank", compeCode: "260", logoUrl: null },
+};
+
+const LIST_RESULT: ListAccountsResult = {
+  items: [ACCOUNT_WITH_BANK],
+  summary: { totalBalance: 100, checkingCount: 1, totalOverdraft: 500 },
+};
+
+const EMPTY_LIST: ListAccountsResult = {
+  items: [],
+  summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 },
+};
+
 describe("accountsHooks.use()", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,23 +73,23 @@ describe("accountsHooks.use()", () => {
     vi.clearAllMocks();
   });
 
-  it("list — fetcha e cacheia na query key correta", async () => {
-    mockedService.list.mockResolvedValueOnce([ACCOUNT]);
+  it("list — suspende até resolver e cacheia na query key correta", async () => {
+    mockedService.list.mockResolvedValueOnce(LIST_RESULT);
     const { Wrapper, queryClient } = createWrapper();
 
     const { result } = renderHook(() => accountsHooks.use(), {
       wrapper: Wrapper,
     });
 
-    await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
-    expect(result.current.list.data).toEqual([ACCOUNT]);
-    expect(queryClient.getQueryData(ACCOUNTS_QUERY_KEYS.list)).toEqual([
-      ACCOUNT,
-    ]);
+    await waitFor(() => expect(result.current).not.toBeNull());
+    expect(result.current.list.data).toEqual(LIST_RESULT);
+    expect(queryClient.getQueryData(ACCOUNTS_QUERY_KEYS.list)).toEqual(
+      LIST_RESULT,
+    );
   });
 
   it("create — invalida a query key da list no sucesso", async () => {
-    mockedService.list.mockResolvedValue([]);
+    mockedService.list.mockResolvedValue(EMPTY_LIST);
     mockedService.create.mockResolvedValueOnce(ACCOUNT);
     const { Wrapper, queryClient } = createWrapper();
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
@@ -76,6 +97,8 @@ describe("accountsHooks.use()", () => {
     const { result } = renderHook(() => accountsHooks.use(), {
       wrapper: Wrapper,
     });
+
+    await waitFor(() => expect(result.current).not.toBeNull());
 
     await act(async () => {
       await result.current.create.mutateAsync({
@@ -94,7 +117,7 @@ describe("accountsHooks.use()", () => {
   });
 
   it("update — chama service.update(id, patch) e invalida a list", async () => {
-    mockedService.list.mockResolvedValue([]);
+    mockedService.list.mockResolvedValue(EMPTY_LIST);
     mockedService.update.mockResolvedValueOnce(ACCOUNT);
     const { Wrapper, queryClient } = createWrapper();
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
@@ -102,6 +125,8 @@ describe("accountsHooks.use()", () => {
     const { result } = renderHook(() => accountsHooks.use(), {
       wrapper: Wrapper,
     });
+
+    await waitFor(() => expect(result.current).not.toBeNull());
 
     await act(async () => {
       await result.current.update.mutateAsync({
@@ -119,7 +144,7 @@ describe("accountsHooks.use()", () => {
   });
 
   it("remove — chama service.remove(id) e invalida a list", async () => {
-    mockedService.list.mockResolvedValue([]);
+    mockedService.list.mockResolvedValue(EMPTY_LIST);
     mockedService.remove.mockResolvedValueOnce(undefined);
     const { Wrapper, queryClient } = createWrapper();
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
@@ -127,6 +152,8 @@ describe("accountsHooks.use()", () => {
     const { result } = renderHook(() => accountsHooks.use(), {
       wrapper: Wrapper,
     });
+
+    await waitFor(() => expect(result.current).not.toBeNull());
 
     await act(async () => {
       await result.current.remove.mutateAsync("acc-1");
@@ -139,7 +166,7 @@ describe("accountsHooks.use()", () => {
   });
 
   it("setBalance — chama service.setBalance(id, patch) e invalida a list", async () => {
-    mockedService.list.mockResolvedValue([]);
+    mockedService.list.mockResolvedValue(EMPTY_LIST);
     mockedService.setBalance.mockResolvedValueOnce(ACCOUNT);
     const { Wrapper, queryClient } = createWrapper();
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
@@ -147,6 +174,8 @@ describe("accountsHooks.use()", () => {
     const { result } = renderHook(() => accountsHooks.use(), {
       wrapper: Wrapper,
     });
+
+    await waitFor(() => expect(result.current).not.toBeNull());
 
     await act(async () => {
       await result.current.setBalance.mutateAsync({
