@@ -71,11 +71,10 @@ Mesmas do `specs/002-auth/tasks.md`.
 
 ## Fase 0 — App shell e routing
 
-- [ ] **MNT-98** [T][S] Estrutura do Next.js App Router:
-  - `/web/src/app/(auth)/` — layout mínimo (só `<html>`, tokens de tema, sem nav). Contém `login`, `signup`, `forgot-password`, `reset-password`
-  - `/web/src/app/(app)/` — layout com shell: header (avatar+nickname+dropdown), main, e `<AppNav>` (bottom tabs mobile / sidebar `lg+`)
-  - `<AppNav>` implementa 5 destinos usando shadcn `Tabs` orientation-responsive; destaque visual pro item central (Chat)
-  - Ícones via `lucide-react` (já vem com shadcn)
+- [x] **MNT-98** [T][S] ✅ commits `2464cc7` (AppShell + dock + shell layout base) → `a73547f` (agent session movida pro shell, dock reposition, labels EN) → `7350476` (GlobalAssistant organism flutuante) → `5d0d284` (sub-rotas `/dashboard`, `/transactions`, `/accounts`, `/cards`, `/categories`, `/settings` com scaffold + templates). Estrutura App Router: `(auth)/` (MNT-193) + `(app)/(shell)/layout.tsx` montando `AppShell` (dock + `GlobalAssistant` + Providers), pages delegam em templates. Ícones lucide-react. **Divergências vs spec original**:
+  - `<AppNav>` implementado como `DockTabs` vendored (magnify motion + SVG glass filter, commits `2464cc7`/`e593960`) em vez de shadcn `Tabs`
+  - Dock tem 7 destinos (Home / Transactions / Cards / Accounts / Categories / Settings / Assistant) + Sign out, sem destaque específico pro Chat central — Chat/mic vive como `GlobalAssistant` organism flutuante (avatar + expand pra mic/messages/info), MNT-101 continua pendente
+  - Rotas `/cards` e `/categories` criadas fora da spec (ver "Pendências abertas do scaffold" ao fim da Fase 1)
 - [ ] **MNT-99** [T][S] `middleware.ts` do Next — lê refresh cookie (MNT-14), decide:
   - Se rota `(auth)` e usuário logado → redirect pra `/` (ou `/onboarding` se `onboarded_at IS NULL`)
   - Se rota `(app)` e não logado → redirect pra `/login?next=<path>`
@@ -124,15 +123,38 @@ Mesmas do `specs/002-auth/tasks.md`.
   - `/settings/data` — botões "Exportar meus dados" (LGPD) e "Deletar conta" (com confirmação dupla)
   - `/settings/about` — versão do app, terms, privacy, licenças
 
+### Pendências abertas do scaffold
+
+`5d0d284` entregou scaffold visual + templates consumindo `src/mocks/finance.ts` (shape backend-ready) pras rotas do shell. **Nenhuma task de Fase 1 fecha só com o scaffold** — cada uma exige service/hook + integração real. Estado por task:
+
+- **MNT-100** `/dashboard` — template com KPI cards (Total balance / Income / Expenses / Left this month), MonthlyFlowChart, BalanceLineChart, TopCategoriesChart (mocks). **Falta**: saudação com `nickname||name`, toggle 👁️ mostrar/ocultar saldo, KPIs corretos (Gastos do mês / Próxima despesa fixa / Salário previsto), grid de saved_charts pinados, FAB 🎤 → `/chat`, empty state, hooks reais (`useAccounts` + `useTransactions` agregados).
+- **MNT-102** `/transactions` — template lista agrupada por dia (mock). **Falta**: virtualização, filtros (período/banco/categoria/tipo), search, FAB "+" com `<AddTransactionSheet>`, sub-rota `/transactions/:id`, empty state, hook `useTransactions()`.
+- **MNT-103** `/banks` — **rota diverge**: scaffold foi criado em `/accounts` (checking accounts) e `/cards` (credit accounts). Decisão pendente: (a) renomear `/accounts` → `/banks` e fundir cards no mesmo grid conforme spec, ou (b) atualizar a spec pra dividir em `/accounts` + `/cards`. `<AddBankAccountSheet>`, sub-rota `/banks/:id` (extrato), hook `useAccounts()` — tudo pendente.
+- **MNT-106** `/settings` — apenas `PlaceholderScreen` (título + subtítulo). **Falta**: nav lateral/lista, sub-rotas `/settings/profile`, `/settings/security`, `/settings/data`, `/settings/about`. `/settings/assistant` já existe (MNT-66).
+- **`/categories`** — rota criada em `5d0d284` sem task base na spec. Decisão: criar task nova (categorias custom por user já existem no backend, MNT-127) ou dropar a rota e mover CRUD pra dentro de um sheet dispatched pelo chat/`/transactions`.
+
+Bundle sugerido pra integração (padrão MNT-193/MNT-66c): `banksService` + `accountsService` + `useAccounts()` primeiro (destrava MNT-103); depois `transactionsService` + `useTransactions()` (MNT-102 versão simples); depois `invoicesService` + agregação do dashboard (MNT-100). Fase 6 (MNT-141..145) especializa em cima disso.
+
 ---
 
 ## Fase 2 — Padrões cross-cutting
 
 - [ ] **MNT-107** [T][S] `<EmptyState icon title description action?>` — componente shadcn-style reutilizável. Fixtures de copy pra cada lugar: transactions, banks, recurring, charts, sessions. Sempre com CTA (geralmente redirect pro chat)
 - [ ] **MNT-108** [T][S] Loading states — `<Skeleton>` do shadcn em listas/cards; Suspense boundaries em cada page do App Router; `loading.tsx` por rota
-- [ ] **MNT-109** [S] Toast global — `<Toaster />` do sonner (shadcn) no root layout de `(app)`. Feedback padrão: (a) tool call success (verde curto), (b) tool call error (vermelho com detalhe), (c) mutação de settings salva. Handler central conectado ao WebSocket do assistente
+- [x] **MNT-109** [S] ✅ commit `4c4ca21` — `<Toaster richColors position="top-right" />` do sonner montado em `web/src/app/Providers.tsx` (root Provider), cobre `(auth)` e `(app)`. Callsites usam `toast.success` / `toast.error` inline (auth forms, `updateProfile` mutation em `/settings/assistant`, mic denied em `AppShell`). **Pendente**: handler central conectado ao WebSocket do assistente pra tool-call success/error automáticos — fica pra MNT-101 (chat) trazer junto.
 - [ ] **MNT-110** [T][S] Error boundary — `error.tsx` por segmento do App Router. Fallback com botão "recarregar" e link "reportar bug" (mailto ou form). Envia stack pro Sentry (quando MNT-XX de observabilidade entrar)
 - [ ] **MNT-111** [S] Dark mode — shadcn suporta via CSS variables. Toggle no `/settings/profile` (light/dark/system). Persiste em localStorage + cookie (pra SSR não flashar). Detecta `prefers-color-scheme` como default
+- [ ] **MNT-216** [T][S] i18n framework pra strings da UI — hoje o shell está todo em EN literal (commit `bf3c71c` traduziu de PT-BR pra EN inline). Objetivo: strings viram chaves resolvidas por locale, user pode alternar via `/settings/profile`, e o par com MNT-217 fecha idioma consistente entre UI e fala do assistente:
+  - Adotar **`next-intl`** (App Router first-class, SSR-friendly, TypeScript autocompletar chaves, cobre server + client components sem gambiarra) em vez de `react-i18next` (client-only, ruim com RSC) ou solução caseira
+  - Estrutura: `web/src/messages/{en,pt-BR}.json` (namespaces por área: `shell`, `auth`, `settings`, `dashboard`, `banks`, `transactions`, `categories`, `assistant`, `common`)
+  - `middleware.ts` (MNT-99) detecta locale: (1) `preferredLocale` do user logado > (2) cookie `NEXT_LOCALE` > (3) `Accept-Language` > (4) fallback `en`
+  - `useTranslations("<namespace>")` em client components; `getTranslations()` em server components
+  - Migrar callsites atuais em ordem: `AppShell`/`DockTabs` (labels), `AssistantSettings*` (tabs/labels/copies), `LoginForm`/`SignupForm`, `PlaceholderScreen`, `EmptyState` fixtures (MNT-107)
+  - **Persistência da preferência**: nova coluna `users.preferred_locale VARCHAR(10) NULL` (ISO tag `en` | `pt-BR`; NULL = detectado). Migration + expõe via `PATCH /users/me` (endpoint novo pequeno) OU embutido no `PATCH /agent/profile` como campo top-level de user (a decidir na task)
+  - Toggle no `/settings/profile` (piggyback quando MNT-106 for atacada) e/ou tab novo em `/settings/assistant` (fica próximo de MNT-217, mas semanticamente é preferência do user, não do agent — decidir no ciclo)
+  - **Testes**: refatora as 7 falhas atuais em `test/components/**/AssistantSettings*.spec.tsx` — hoje procuram "carregando"/"Tom"/"Voz"/"Avatar" (PT-BR pré-`bf3c71c`); passam a montar com `NextIntlClientProvider` mockando `en` e queries acessíveis por `role`+chave. Baseline pré-i18n vermelho conhecido — MNT-216 desbloqueia
+  - Golden: renderiza template `AssistantSettingsScreen` em `en` e `pt-BR`, snapshot difere só em strings, não em estrutura DOM
+  - **Cross-ref**: bloqueia MNT-217 (preferência de idioma do agent lê `preferredLocale` como default do `auto` mode)
 
 ---
 
@@ -158,7 +180,7 @@ Tasks originalmente no `specs/003-assistant/tasks.md` que são UI/frontend puro.
 
 Pré-requisito de toda UI. Precisa acontecer **antes** de qualquer outra task deste spec (exceto documentação).
 
-- [ ] **MNT-71** [S] Init shadcn/ui em `/web`: `pnpm dlx shadcn@latest init` (base color neutral, react-server-components on, path `@/components`); adicionar componentes base já esperados — `button`, `input`, `label`, `form`, `dialog`, `radio-group`, `select`, `card`, `avatar`, `tabs`, `scroll-area`, `sonner`. Ajustar `tailwind.config` e `globals.css` conforme output do CLI. Verificar que build passa
+- [x] **MNT-71** [S] ✅ commit `5aba1ba` — Init shadcn/ui em `/web` (base color neutral, path `@/components`, primitives vivem em `atoms/`); componentes esperados presentes: `Button`, `Input`, `Label`, `Form`, `Dialog`, `RadioGroup`, `Select`, `Card`, `Avatar`, `Tabs` (base-ui), `ScrollArea`, `Sonner`. Uma variante custom animada de Tabs adicionada em `02417fb` (`ui/Tabs.tsx`, consumida pelo `AssistantSettingsScreen`); o primitive shadcn em `atoms/Tabs.tsx` fica pra composição com `Form`. `tailwind.config` + `globals.css` ajustados, build passando.
 - [ ] **MNT-72** [S] Adicionar componente `chart` do shadcn: `pnpm dlx shadcn@latest add chart`. Instala Recharts como peer dep, cria `/web/src/components/ui/chart.tsx` com `<ChartContainer>`, `<ChartTooltip>`, `<ChartTooltipContent>`, `<ChartLegend>`, `<ChartLegendContent>` + type `ChartConfig`
 
 ---

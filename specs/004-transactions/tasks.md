@@ -46,6 +46,8 @@ Mesmas do resto dos specs. Bundle onde faz sentido (várias tools do mesmo domí
   - `update_bank_account({ id, ...fields })`
   - `delete_bank_account({ id })` — playbook: só permitir se conta sem transactions; caso contrário orientar o user a arquivar
   - `set_balance({ accountId, amount })` — playbook: confirma valor; explica que sobrescreve balance sem criar transação
+- [x] **MNT-158** [T][S] ✅ commit `32f8841` — Enriquecer `GET /accounts` com `bank` embed. Port `UserBankAccount` mantido enxuto; novo tipo `UserBankAccountWithBank extends UserBankAccount { bank: Bank }` só na assinatura de `listByUserId` (outros métodos — `findById`, `add`, `update`, `setBalance` — continuam sem bank, sem quebra cross-módulo). Adapter Prisma: `ACCOUNT_WITH_BANK_SELECT` estende `ACCOUNT_SELECT` com `bank: { select: { id, name, compeCode, logoUrl } }`; `toDomainWithBank` faz só conversão Decimal→number + passa bank nested. `ListMyAccountsUseCase` retorna `UserBankAccountWithBank[]`. Zero migration. Testes novos: `prisma-user-bank-accounts.repository.spec.ts` (2 casos — checking + credit com logoUrl). Fixture do `list-my-accounts.use-case.spec` atualizado com `bank`. Tool `list_my_accounts` recebe o shape enriquecido automaticamente via use-case. Suite completa: baseline 6 suites/16 tests falhando (pré-existentes em `agent/`) → após MNT-158 5 suites/15 falhas. Zero regressão.
+- [ ] **MNT-159** [T][S] Enriquecer `GET /accounts` com `currentInvoice: { totalAmount, status, dueDate, cycleStart, cycleEnd } | null` + `usagePct: number` pra rows com `creditLimit !== null`. Usa `CreditCardCycleService.resolveInvoiceForDate(id, now)` (MNT-136) + `InvoicesRepository.findOpenForAccount` (MNT-135). `usagePct = round(min(currentInvoice.totalAmount / creditLimit, 1) * 100)`. Se checking, ambos campos `null`. Shape default sempre pesado. Repository faz o join dentro do `listForUser` — sem chamadas em loop. Testes: cartão com invoice open → embed correto; cartão sem invoice ainda no ciclo → cria e retorna; checking → currentInvoice/usagePct null. `list_my_accounts` do assistente ganha os mesmos campos automaticamente.
 
 ---
 
@@ -53,6 +55,21 @@ Mesmas do resto dos specs. Bundle onde faz sentido (várias tools do mesmo domí
 
 - [x] **MNT-127** [T][S] `CategoryRepository` + use-cases `ListCategories(userId)` (retorna defaults globais + custom do user), `AddCategory({ name, icon?, color? })`, `RenameCategory`, `DeleteCategory` (só custom; defaults globais não deletáveis). Endpoints REST ✅ commit `b18ba3e` (defaults globais protegidos pelo WHERE userId=X — não match, retorna null; RenameCategory limitado a name — icon/color por tool separada depois se necessário)
 - [x] **MNT-128** [T][S] Tools (bundle): `list_categories`, `add_category`, `rename_category`, `delete_category`. Playbooks curtas — categoria é conceito simples ✅ commit `b18ba3e` (playbooks orientam a checar existentes antes de criar; global vs custom explicado sem cross-reference)
+- [ ] **MNT-160** [T][S] `monthlyBudget` opcional por categoria — feature nova pro dashboard/tela de categorias:
+  - Migration: adiciona `categories.monthly_budget NUMERIC(15,2) NULL` (nullable — defaults globais sem budget; custom user opt-in). CHECK `monthly_budget IS NULL OR monthly_budget > 0`.
+  - `Category` entity/port ganha `monthlyBudget: number | null`.
+  - Refactor `RenameCategory` → `UpdateCategory({ id, name?, icon?, color?, monthlyBudget? })`. Zod DTO aceita todos opcionais; ao menos 1 obrigatório senão 400. Só permite update em custom (userId=X), defaults globais rejeitam.
+  - Endpoint: `PATCH /categories/:id` passa a aceitar `monthlyBudget: number | null` (null explícito remove o budget).
+  - Tool `rename_category` renomeada pra `update_category({ id, name?, icon?, color?, monthlyBudget? })`. Playbook orienta: budget é opcional; user pode setar/limpar; explicar em BRL; um budget por categoria (não cumulativo).
+  - `AddCategory` também aceita `monthlyBudget?` no create.
+  - Testes: migration up/down; UpdateCategory com só monthlyBudget; null explícito limpa; default global rejeitado; tool com playbook.
+- [ ] **MNT-161** [T][S] Enriquecer `GET /categories` com `spent: number`, `usagePct: number`, `overBudget: boolean` do mês corrente:
+  - `spent` = SUM de `transactions.amount` onde `categoryId=<>`, `type='expense'`, `occurred_at` no mês (`now` do server-side; futuro pode aceitar `?month=YYYY-MM` como enhancement separada).
+  - `usagePct = monthlyBudget !== null && monthlyBudget > 0 ? round(min(spent / monthlyBudget, 1) * 100) : 0`.
+  - `overBudget = monthlyBudget !== null && spent > monthlyBudget`.
+  - Prisma `groupBy` no `transactions` filtrando por user+mês, join com categories no repo (evita N+1). Shape default sempre pesado.
+  - Tool `list_categories` do assistente ganha os mesmos campos automaticamente — playbook menciona que agora traz gasto do mês por categoria (útil pra "quanto gastei em X esse mês").
+  - Testes: sem transactions → spent=0; com budget e overBudget=true; usagePct capped em 100; multi-categoria com joins corretos.
 
 ---
 
@@ -130,6 +147,12 @@ Tarefas de UI (MNT-141, 142, 143, 144, 145) migraram pra `specs/009-ui-shell/tas
 - [ ] **MNT-146** [SEC] Ownership checks universais — todos os use-cases usam `AssistantContext.userId` da sessão; testes validam que payload com `accountId` de outro user falha; injection defense em `ListTransactions` (todos os filtros via Prisma Client API tipada; `$queryRaw` só com params validados por Zod — nunca string concatenation)
 - [ ] **MNT-147** [T][S] Golden test integrado end-to-end — fluxo real: adicionar cartão → 5 compras → esperar close_day → confirmar invoice fechada + total certo → criar transfer da conta corrente → invoice marcada paid. Reproduz o journey completo pra garantir que todas as camadas conversam certo
 - [ ] **MNT-148** [SEC] PII scrubbing na resposta do assistente — antes de mandar texto pro ElevenLabs TTS, regex remove valores estranhos: CPF/CNPJ (raro mas possível se user disser), números de cartão (nunca deve aparecer, defesa em profundidade). Log das ocorrências pra auditoria
+- [ ] **MNT-162** [DEFERRED][T][S] Prisma Client Extension global `Decimal → number` — mata os `toDomain` mappers dos repos:
+  - Registra `$extends({ result: { userBankAccount: { balance: { needs: { balance: true }, compute: (a) => a.balance.toNumber() }, creditLimit: {...}, overdraftLimit: {...} }, transaction: { amount: {...} }, transfer: { amount: {...} }, creditCardInvoice: { totalAmount: {...} }, installmentGroup: { totalAmount: {...}, installmentAmount: {...} }, category: { monthlyBudget: {...} } } })` no `PrismaService`. Todos os fields `Decimal` do schema viram `number` no query time.
+  - Depois disso, cada repo elimina o `toDomain` mapper + o `rows.map(toDomain)` — o Prisma já entrega `number`. Só sobra `toDomain` onde há reshape real (ex: adaptação nested de `bank`).
+  - Repos afetados hoje: `prisma-user-bank-accounts.repository.ts`, `prisma-transactions.repository.ts`, `prisma-transfers.repository.ts`, `prisma-invoices.repository.ts`, `prisma-installment-groups.repository.ts` (+ categories quando MNT-160 landar).
+  - Testes de repo (mock do `PrismaService`) precisam parar de simular `Prisma.Decimal` no return — passam a devolver `number` direto. Padrão cascateia pros repos que ainda vierem.
+  - **Deferido:** MNT-158 introduziu o pattern (`toDomainWithBank`) sabendo que essa extensão vem depois pra limpar. Não bloqueia MNT-159/160/161 — cada um segue com o `.map` de conversão até o refactor cross-cutting acontecer.
 
 ---
 
