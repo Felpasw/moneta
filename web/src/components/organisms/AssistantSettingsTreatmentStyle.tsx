@@ -24,7 +24,6 @@ const RADIO_OPTIONS: AnimatedRadioOption<TreatmentStyle>[] =
     value: option.value,
     label: option.label,
     description: `“${option.example}”`,
-    accentClass: option.accentClass,
   }));
 
 export function AssistantSettingsTreatmentStyle({

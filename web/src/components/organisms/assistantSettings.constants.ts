@@ -5,7 +5,6 @@ export interface TreatmentStyleOption {
   value: TreatmentStyle;
   label: string;
   example: string;
-  accentClass: string;
 }
 
 export const TREATMENT_STYLE_OPTIONS: readonly TreatmentStyleOption[] = [
@@ -13,19 +12,16 @@ export const TREATMENT_STYLE_OPTIONS: readonly TreatmentStyleOption[] = [
     value: "formal",
     label: "Formal",
     example: "Good morning, Felipe. How may I assist you with your finances today?",
-    accentClass: "text-blue-400 border-blue-400",
   },
   {
     value: "informal",
     label: "Informal",
     example: "Hey Felipe! How can I help you today?",
-    accentClass: "text-fuchsia-400 border-fuchsia-400",
   },
   {
     value: "very_informal",
     label: "Very informal",
     example: "Yo dude, all good? Let's take a look at your cash?",
-    accentClass: "text-emerald-400 border-emerald-400",
   },
 ];
 

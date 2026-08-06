@@ -3,10 +3,13 @@
 import { Play } from "lucide-react";
 import { motion } from "motion/react";
 
+import { ScrollArea } from "@/components/atoms/ScrollArea";
 import { useVoicePreview } from "@/hooks/useVoicePreview";
 import { cn } from "@/lib/utils";
 import type { TtsVoice } from "@/services/interfaces/assistantProfile.interface";
 import { SETTINGS_STAGGER_ITEM } from "@/utils/settingsStagger";
+
+const MAX_VISIBLE_VOICES = 12;
 
 interface AssistantSettingsVoiceProps {
   voices: TtsVoice[];
@@ -29,6 +32,8 @@ export function AssistantSettingsVoice({
     fetchPreview: onPreview,
     disabled,
   });
+
+  const visibleVoices = voices.slice(0, MAX_VISIBLE_VOICES);
 
   const handleSelect = (voiceId: string) => {
     if (disabled) return;
@@ -74,55 +79,56 @@ export function AssistantSettingsVoice({
         </p>
       </motion.header>
 
-      <motion.ul
-        variants={SETTINGS_STAGGER_ITEM}
-        className="grid gap-3 sm:grid-cols-2"
-      >
-        {voices.map((voice) => {
-          const isSelected = voice.voiceId === selectedVoiceId;
-          const isPreviewing = previewingVoiceId === voice.voiceId;
-          return (
-            <li key={voice.voiceId}>
-              <div
-                className={cn(
-                  "flex items-center justify-between gap-3 rounded-lg border border-border p-3 transition-colors",
-                  isSelected && "border-primary bg-primary/5",
-                  disabled && "opacity-60",
-                )}
-              >
-                <button
-                  type="button"
-                  onClick={() => handleSelect(voice.voiceId)}
-                  aria-pressed={isSelected}
-                  aria-label={`Select ${voice.name}`}
-                  disabled={disabled}
-                  className="flex flex-1 flex-col items-start text-left"
-                >
-                  <span className="text-sm font-medium">{voice.name}</span>
-                  {voice.language !== undefined && (
-                    <span className="text-xs text-muted-foreground">
-                      {voice.language}
-                    </span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => play(voice.voiceId)}
-                  disabled={disabled}
-                  aria-label={`Preview ${voice.name}`}
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground",
-                    "hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50",
-                    isPreviewing && "border-primary text-primary",
-                  )}
-                >
-                  <Play className="h-4 w-4" />
-                </button>
-              </div>
-            </li>
-          );
-        })}
-      </motion.ul>
+      <motion.div variants={SETTINGS_STAGGER_ITEM}>
+        <ScrollArea className="max-h-72 pr-3">
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {visibleVoices.map((voice) => {
+              const isSelected = voice.voiceId === selectedVoiceId;
+              const isPreviewing = previewingVoiceId === voice.voiceId;
+              return (
+                <li key={voice.voiceId}>
+                  <div
+                    className={cn(
+                      "flex items-center justify-between gap-3 rounded-lg border border-border p-3 transition-colors",
+                      isSelected && "border-primary bg-primary/5",
+                      disabled && "opacity-60",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(voice.voiceId)}
+                      aria-pressed={isSelected}
+                      aria-label={`Select ${voice.name}`}
+                      disabled={disabled}
+                      className="flex flex-1 flex-col items-start text-left"
+                    >
+                      <span className="text-sm font-medium">{voice.name}</span>
+                      {voice.language !== undefined && (
+                        <span className="text-xs text-muted-foreground">
+                          {voice.language}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => play(voice.voiceId)}
+                      disabled={disabled}
+                      aria-label={`Preview ${voice.name}`}
+                      className={cn(
+                        "flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground",
+                        "hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50",
+                        isPreviewing && "border-primary text-primary",
+                      )}
+                    >
+                      <Play className="h-4 w-4" />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </ScrollArea>
+      </motion.div>
     </section>
   );
 }

@@ -42,7 +42,7 @@ export function AssistantSettingsScreen() {
   const { profile, voices, previewVoice, updateProfile } =
     assistantProfileHooks.use();
   const user = useUserStore((s) => s.user);
-  const [activeTab, setActiveTab] = useState<TabId>(TAB_ID.TOM);
+  const [activeTab, setActiveTab] = useState<TabId>(TAB_ID.TONE);
 
   const isLoading = profile.isLoading || voices.isLoading;
   const hasError =
@@ -76,7 +76,7 @@ export function AssistantSettingsScreen() {
   const mutationPending = updateProfile.isPending;
 
   return (
-    <main className="mx-auto flex max-w-[1600px] flex-col gap-8 px-4 py-8">
+    <main className="mx-auto flex min-h-full max-w-[1600px] flex-1 flex-col justify-center gap-8 px-4 py-8">
       <section
         aria-label="Assistant preview"
         className="flex flex-col items-center gap-4 text-center"
@@ -116,6 +116,7 @@ export function AssistantSettingsScreen() {
           initial="hidden"
           animate="visible"
           exit="hidden"
+          className="min-h-[500px]"
         >
           {activeTab === TAB_ID.TONE && (
             <AssistantSettingsTreatmentStyle
