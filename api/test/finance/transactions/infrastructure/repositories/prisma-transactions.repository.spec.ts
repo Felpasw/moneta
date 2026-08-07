@@ -813,9 +813,11 @@ describe('PrismaTransactionsRepository', () => {
           color: '#22c55e',
         },
         signedAmount: -120.5,
+        dayGroupKey: '2026-08-06',
       });
       expect(result[1].category).toBeNull();
       expect(result[1].signedAmount).toBe(2000);
+      expect(result[1].dayGroupKey).toBe('2026-08-01');
     });
 
     it('requests the account and category joins on the Prisma select', async () => {

@@ -74,6 +74,7 @@ const toDomainWithEmbeds = (
     },
     category,
     signedAmount: signedAmount(base.type, base.amount),
+    dayGroupKey: base.occurredAt.toISOString().slice(0, 10),
   };
 };
 

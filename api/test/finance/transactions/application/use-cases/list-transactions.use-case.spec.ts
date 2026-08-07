@@ -27,6 +27,7 @@ const expense = (id: string, amount: number): TransactionWithEmbeds => ({
   account,
   category: null,
   signedAmount: -amount,
+  dayGroupKey: '2026-07-15',
 });
 
 const income = (id: string, amount: number): TransactionWithEmbeds => ({
@@ -42,6 +43,7 @@ const income = (id: string, amount: number): TransactionWithEmbeds => ({
   account,
   category: null,
   signedAmount: amount,
+  dayGroupKey: '2026-07-15',
 });
 
 describe('ListTransactionsUseCase', () => {

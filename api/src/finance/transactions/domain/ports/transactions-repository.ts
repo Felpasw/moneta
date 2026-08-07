@@ -31,6 +31,7 @@ export interface TransactionWithEmbeds extends Transaction {
   account: TransactionAccountEmbed;
   category: TransactionCategoryEmbed | null;
   signedAmount: number;
+  dayGroupKey: string;
 }
 
 export interface TransactionsSummary {
