@@ -29,6 +29,8 @@ const checking = (
   closeDay: null,
   dueDay: null,
   bank,
+  currentInvoice: null,
+  usagePct: 0,
 });
 
 const credit = (id: string): UserBankAccountWithBank => ({
@@ -42,6 +44,8 @@ const credit = (id: string): UserBankAccountWithBank => ({
   closeDay: 5,
   dueDay: 12,
   bank: { ...bank, id: 'bank-2', name: 'Nubank Cartão' },
+  currentInvoice: null,
+  usagePct: 0,
 });
 
 describe('ListMyAccountsUseCase', () => {

@@ -1,4 +1,5 @@
 import type { Bank } from '~/finance/banks/domain/ports/banks-repository';
+import type { InvoiceStatus } from '~/finance/card-billing/domain/constants/invoice-status';
 
 export const USER_BANK_ACCOUNTS_REPOSITORY = Symbol(
   'USER_BANK_ACCOUNTS_REPOSITORY',
@@ -16,8 +17,18 @@ export interface UserBankAccount {
   dueDay: number | null;
 }
 
+export interface CurrentInvoice {
+  totalAmount: number;
+  status: InvoiceStatus;
+  dueDate: Date;
+  cycleStart: Date;
+  cycleEnd: Date;
+}
+
 export interface UserBankAccountWithBank extends UserBankAccount {
   bank: Bank;
+  currentInvoice: CurrentInvoice | null;
+  usagePct: number;
 }
 
 export interface AccountsSummary {

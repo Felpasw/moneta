@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
+import { InvoiceStatus } from '~/finance/card-billing/domain/constants/invoice-status';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service';
 import type {
   AddUserBankAccountInput,
+  CurrentInvoice,
   UpdateUserBankAccountInput,
   UserBankAccount,
   UserBankAccountWithBank,
@@ -22,6 +24,14 @@ const ACCOUNT_SELECT = {
   dueDay: true,
 } satisfies Prisma.UserBankAccountSelect;
 
+const CURRENT_INVOICE_SELECT = {
+  totalAmount: true,
+  status: true,
+  dueDate: true,
+  cycleStart: true,
+  cycleEnd: true,
+} satisfies Prisma.CreditCardInvoiceSelect;
+
 const ACCOUNT_WITH_BANK_SELECT = {
   ...ACCOUNT_SELECT,
   bank: {
@@ -31,6 +41,12 @@ const ACCOUNT_WITH_BANK_SELECT = {
       compeCode: true,
       logoUrl: true,
     },
+  },
+  invoices: {
+    where: { status: 'open' as const },
+    take: 1,
+    orderBy: { cycleStart: 'desc' as const },
+    select: CURRENT_INVOICE_SELECT,
   },
 } satisfies Prisma.UserBankAccountSelect;
 
@@ -42,6 +58,8 @@ type PrismaAccountWithBankRow = Prisma.UserBankAccountGetPayload<{
   select: typeof ACCOUNT_WITH_BANK_SELECT;
 }>;
 
+type PrismaInvoiceRow = PrismaAccountWithBankRow['invoices'][number];
+
 const toDomain = (row: PrismaAccountRow): UserBankAccount => ({
   ...row,
   balance: row.balance.toNumber(),
@@ -49,13 +67,35 @@ const toDomain = (row: PrismaAccountRow): UserBankAccount => ({
   overdraftLimit: row.overdraftLimit?.toNumber() ?? null,
 });
 
+const toCurrentInvoice = (row: PrismaInvoiceRow): CurrentInvoice => ({
+  totalAmount: row.totalAmount.toNumber(),
+  status: row.status as InvoiceStatus,
+  dueDate: row.dueDate,
+  cycleStart: row.cycleStart,
+  cycleEnd: row.cycleEnd,
+});
+
+const computeUsagePct = (
+  creditLimit: number | null,
+  invoice: CurrentInvoice | null,
+): number => {
+  if (creditLimit === null || creditLimit <= 0 || invoice === null) return 0;
+  const raw = invoice.totalAmount / creditLimit;
+  const capped = raw > 1 ? 1 : raw;
+  return Math.round(capped * 100);
+};
+
 const toDomainWithBank = (
   row: PrismaAccountWithBankRow,
 ): UserBankAccountWithBank => {
-  const { bank, ...account } = row;
+  const { bank, invoices, ...account } = row;
+  const base = toDomain(account);
+  const currentInvoice = invoices[0] ? toCurrentInvoice(invoices[0]) : null;
   return {
-    ...toDomain(account),
+    ...base,
     bank,
+    currentInvoice,
+    usagePct: computeUsagePct(base.creditLimit, currentInvoice),
   };
 };
 
