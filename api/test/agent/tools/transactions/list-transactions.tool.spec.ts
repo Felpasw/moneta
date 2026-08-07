@@ -10,10 +10,13 @@ const buildTool = () => {
 };
 
 describe('ListTransactionsTool', () => {
-  it('lists transactions with the given filters + userId from ctx', async () => {
+  it('wraps use-case result (items + summary) as tool data', async () => {
     const { tool, listTransactions } = buildTool();
-    const rows = [{ id: 't-1' }];
-    listTransactions.execute.mockResolvedValue(rows);
+    const payload = {
+      items: [{ id: 't-1' }],
+      summary: { totalIncome: 0, totalExpense: 25, net: -25 },
+    };
+    listTransactions.execute.mockResolvedValue(payload);
 
     const result = await tool.execute(
       {
@@ -25,7 +28,7 @@ describe('ListTransactionsTool', () => {
       CTX,
     );
 
-    expect(result).toEqual({ ok: true, data: rows });
+    expect(result).toEqual({ ok: true, data: payload });
     expect(listTransactions.execute).toHaveBeenCalledWith({
       userId: 'user-1',
       dateFrom: new Date('2026-07-01T00:00:00.000Z'),

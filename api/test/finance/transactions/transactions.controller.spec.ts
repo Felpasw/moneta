@@ -95,7 +95,11 @@ describe('TransactionsController', () => {
     });
 
     it('parses filters and forwards them (with defaults) to the use-case', async () => {
-      mocks.list.execute.mockResolvedValue([]);
+      const payload = {
+        items: [],
+        summary: { totalIncome: 0, totalExpense: 0, net: 0 },
+      };
+      mocks.list.execute.mockResolvedValue(payload);
 
       const res = await request(http)
         .get(
@@ -104,6 +108,7 @@ describe('TransactionsController', () => {
         .set(...bearer(accessToken));
 
       expect(res.status).toBe(200);
+      expect(res.body).toEqual(payload);
       expect(mocks.list.execute).toHaveBeenCalledWith({
         userId: USER_ID,
         dateFrom: new Date('2026-07-01T00:00:00.000Z'),
