@@ -3,19 +3,26 @@
 import { motion } from "motion/react";
 
 import { HeroShutterText } from "@/components/atoms/HeroShutterText";
-import { SectionHeader } from "@/components/atoms/SectionHeader";
-import { ChartCard } from "@/components/molecules/ChartCard";
+import { EmptyState } from "@/components/molecules/EmptyState";
 import { KpiCard } from "@/components/molecules/KpiCard";
-import { BalanceLineChart } from "@/components/organisms/BalanceLineChart";
-import { MonthlyFlowChart } from "@/components/organisms/MonthlyFlowChart";
-import { TopCategoriesChart } from "@/components/organisms/TopCategoriesChart";
-import { MOCK_DASHBOARD_VIEW } from "@/mocks/finance";
+import accountsHooks from "@/hooks/useAccounts";
+import transactionsHooks from "@/hooks/useTransactions";
+import { useUserStore } from "@/stores/userStore";
 import { formatBRL } from "@/utils/currency";
 import { SETTINGS_STAGGER_CONTAINER } from "@/utils/settingsStagger";
 
+const GREETING_FALLBACK = "there";
+
 export function DashboardScreen() {
-  const dashboard = MOCK_DASHBOARD_VIEW;
-  const monthLabelLower = dashboard.monthLabel.toLowerCase();
+  const { list: accountsList } = accountsHooks.use();
+  const { list: transactionsList } = transactionsHooks.use();
+  const user = useUserStore((s) => s.user);
+
+  const { summary: accountsSummary, items: accountItems } = accountsList.data;
+  const { summary: transactionsSummary } = transactionsList.data;
+
+  const greetingName = user?.name ?? GREETING_FALLBACK;
+  const isEmpty = accountItems.length === 0;
 
   return (
     <main className="mx-auto w-full max-w-[1600px] px-6 py-6 xl:px-10">
@@ -26,63 +33,50 @@ export function DashboardScreen() {
           textSizeClass="text-5xl sm:text-6xl md:text-7xl"
         />
         <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground/70">
-          Finance panel · {monthLabelLower}
+          Hi, {greetingName}
         </p>
       </div>
 
-      <SectionHeader className="mb-3 mt-10">Overview</SectionHeader>
-      <motion.section
-        variants={SETTINGS_STAGGER_CONTAINER}
-        initial="hidden"
-        animate="visible"
-        aria-label="Key indicators"
-        className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
-      >
-        <KpiCard
-          label="Total balance"
-          value={formatBRL(dashboard.totalBalance)}
-          hint="Checking accounts combined"
+      {isEmpty && (
+        <EmptyState
+          className="mt-10"
+          title="No accounts yet"
+          description="Ask Moneta to add your first bank account to unlock the dashboard."
         />
-        <KpiCard
-          label="Income this month"
-          value={formatBRL(dashboard.income)}
-          hint={monthLabelLower}
-        />
-        <KpiCard
-          label="Expenses this month"
-          value={formatBRL(dashboard.expense)}
-          hint={monthLabelLower}
-          emphasis="secondary"
-        />
-        <KpiCard
-          label="Left this month"
-          value={formatBRL(dashboard.net)}
-          hint="Income minus expenses"
-          negative={dashboard.net < 0}
-        />
-      </motion.section>
+      )}
 
-      <SectionHeader className="mb-3">Trends</SectionHeader>
-      <motion.section
-        variants={SETTINGS_STAGGER_CONTAINER}
-        initial="hidden"
-        animate="visible"
-        aria-label="Charts"
-        className="grid grid-cols-1 gap-3 md:grid-cols-3"
-      >
-        <ChartCard label="Last 6 months" title="Monthly flow">
-          <MonthlyFlowChart data={dashboard.monthlyFlow} />
-        </ChartCard>
-        <ChartCard label="Last 30 days" title="Balance over time">
-          <BalanceLineChart {...dashboard.balanceChart} />
-        </ChartCard>
-        <ChartCard
-          label={`Top ${dashboard.topCategories.length}`}
-          title="Where it's going"
+      {!isEmpty && (
+        <motion.section
+          variants={SETTINGS_STAGGER_CONTAINER}
+          initial="hidden"
+          animate="visible"
+          aria-label="Key indicators"
+          className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
         >
-          <TopCategoriesChart data={dashboard.topCategories} />
-        </ChartCard>
-      </motion.section>
+          <KpiCard
+            label="Total balance"
+            value={formatBRL(accountsSummary.totalBalance)}
+            hint="Checking accounts combined"
+          />
+          <KpiCard
+            label="Recent income"
+            value={formatBRL(transactionsSummary.totalIncome)}
+            hint="Latest transactions"
+          />
+          <KpiCard
+            label="Recent expenses"
+            value={formatBRL(transactionsSummary.totalExpense)}
+            hint="Latest transactions"
+            emphasis="secondary"
+          />
+          <KpiCard
+            label="Net"
+            value={formatBRL(transactionsSummary.net)}
+            hint="Income minus expenses"
+            negative={transactionsSummary.net < 0}
+          />
+        </motion.section>
+      )}
     </main>
   );
 }

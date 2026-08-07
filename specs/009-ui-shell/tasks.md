@@ -86,12 +86,12 @@ Mesmas do `specs/002-auth/tasks.md`.
 ## Fase 1 — Páginas do shell
 
 - [ ] **MNT-100** [T][S] Dashboard `/` (aba **Início**):
-  - Saudação com `nickname || name` do user
-  - Saldo consolidado (soma de `user_bank_accounts.balance`), com toggle mostrar/ocultar (ícone 👁️) persistido em localStorage
-  - Row de KPI cards: "Gastos do mês", "Próxima despesa fixa", "Salário previsto"
-  - Grid dos `saved_charts` pinados (top 3, via `list_saved_charts` filtrando `pinned=true` — usa MNT-89)
-  - FAB fixo bottom-right: 🎤 "falar com o assistente" → navega pra `/chat` já iniciando gravação
-  - Empty state se sem contas: card grande "vamos começar? me fala pelo chat"
+  - [x] **KPIs + saudação + empty state**: `DashboardScreen` consome `accountsHooks.use()` + `transactionsHooks.use()` (default fetch — sem filters, MNT-141 traz o mês-scoping depois). "Total balance" ← `accountsSummary.totalBalance`; "Recent income/expenses/net" ← `transactionsSummary` (labels honestos até filters landarem — não é "this month" ainda, é "latest transactions"). Saudação `Hi, {user.name ?? "there"}` do `useUserStore`. Empty state via `<EmptyState>` quando `accounts.items.length === 0`. Loading/error herdados dos Next boundaries do `(shell)`. Scalar fields removidos de `DashboardView` (interface) e `MOCK_DASHBOARD_VIEW` (`totalBalance`/`income`/`expense`/`net`) — mock agora só carrega chart data (topCategories/monthlyFlow/balanceChart) até MNT-72/89 landarem. **DashboardScreen.spec** reescrito (spec antigo era pra dashboard de mic/avatar/agent — feature removida) com 4 casos: empty via EmptyState, saudação, KPI Total balance direto do accounts.summary, KPIs income/expense/net direto do transactions.summary.
+  - [ ] **Charts + full DashboardView com dados reais** (pendente, bloqueado por **MNT-218** — `GET /dashboard/view` no backend, spec em `004-transactions`). Quando MNT-218 landar: novo `dashboardService.get()` + `useDashboard` hook (Suspense), `DashboardScreen` recompõe as seções (top categories, monthly flow, balance chart) consumindo o payload real, tipos migram de `mocks/finance.ts` pra `services/interfaces/dashboard.interface.ts`, chart components (`MonthlyFlowChart`/`BalanceLineChart`/`TopCategoriesChart`/`ChartCard`) voltam do estado orfão. Backend devolve dados brutos (números/datas); client faz o SVG path das linhas (formatação pura)
+  - [ ] Toggle 👁️ mostrar/ocultar saldo persistido em localStorage
+  - [ ] KPI "Próxima despesa fixa" (depende de MNT-104 recurring rules) e "Salário previsto" (depende de recurring income rules)
+  - [ ] Grid `saved_charts` pinados (top 3, `list_saved_charts?pinned=true` — MNT-89)
+  - [ ] FAB fixo bottom-right 🎤 → `/chat` já iniciando gravação
 - [ ] **MNT-101** [T][S] Chat `/chat` (aba **Chat**):
   - Header: `<AssistantAvatar>` (MNT-64) + estado (idle/listening/thinking/speaking) + nome do personagem
   - Thread virtualizada de `<MessageBubble>` — cada bubble suporta texto e `<DynamicChart>` inline quando `message.toolResults[i].name === 'create_visualization'` ou `'run_saved_chart'` (MNT-77)
