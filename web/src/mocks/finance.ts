@@ -1,5 +1,3 @@
-export type TransactionDirection = "income" | "expense";
-
 export interface CategoryRow {
   id: string;
   name: string;
@@ -8,28 +6,6 @@ export interface CategoryRow {
   budget: number | null;
   usagePct: number;
   overBudget: boolean;
-}
-
-export interface TransactionRow {
-  id: string;
-  description: string;
-  accountNickname: string;
-  categoryName: string;
-  direction: TransactionDirection;
-  amount: number;
-  signedAmount: number;
-}
-
-export interface TransactionGroup {
-  id: string;
-  date: Date;
-  items: TransactionRow[];
-}
-
-export interface TransactionsSummary {
-  income: number;
-  expense: number;
-  net: number;
 }
 
 export interface MonthlyFlowPoint {
@@ -68,20 +44,11 @@ export interface DashboardView {
 
 const NOW = new Date();
 
-const daysAgo = (n: number): Date => {
-  const d = new Date(NOW);
-  d.setDate(d.getDate() - n);
-  return d;
-};
-
 const monthAt = (offset: number): Date =>
   new Date(NOW.getFullYear(), NOW.getMonth() + offset, 1);
 
 const SHORT_MONTH = new Intl.DateTimeFormat("en-US", { month: "short" });
 const FULL_MONTH = new Intl.DateTimeFormat("en-US", { month: "long" });
-
-const dayKey = (d: Date): string =>
-  `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 
 export const MOCK_CATEGORY_ROWS: CategoryRow[] = [
   {
@@ -177,147 +144,6 @@ export const MOCK_CATEGORY_ROWS: CategoryRow[] = [
 ];
 
 export const MOCK_CATEGORIES_MONTH_LABEL = FULL_MONTH.format(NOW);
-
-export const MOCK_TRANSACTION_GROUPS: TransactionGroup[] = [
-  {
-    id: dayKey(daysAgo(0)),
-    date: daysAgo(0),
-    items: [
-      {
-        id: "tx-01",
-        description: "Weekly grocery run at Whole Foods",
-        accountNickname: "Main checking",
-        categoryName: "Groceries",
-        direction: "expense",
-        amount: 187.42,
-        signedAmount: -187.42,
-      },
-      {
-        id: "tx-02",
-        description: "DoorDash — dinner",
-        accountNickname: "Nubank Ultravioleta",
-        categoryName: "Food",
-        direction: "expense",
-        amount: 52.9,
-        signedAmount: -52.9,
-      },
-      {
-        id: "tx-03",
-        description: "Uber to work",
-        accountNickname: "Main checking",
-        categoryName: "Transport",
-        direction: "expense",
-        amount: 24.5,
-        signedAmount: -24.5,
-      },
-    ],
-  },
-  {
-    id: dayKey(daysAgo(1)),
-    date: daysAgo(1),
-    items: [
-      {
-        id: "tx-04",
-        description: "Payroll",
-        accountNickname: "Salary account",
-        categoryName: "Salary",
-        direction: "income",
-        amount: 8500,
-        signedAmount: 8500,
-      },
-      {
-        id: "tx-05",
-        description: "Netflix",
-        accountNickname: "C6 Carbon",
-        categoryName: "Subscriptions",
-        direction: "expense",
-        amount: 55.9,
-        signedAmount: -55.9,
-      },
-    ],
-  },
-  {
-    id: dayKey(daysAgo(2)),
-    date: daysAgo(2),
-    items: [
-      {
-        id: "tx-06",
-        description: "Concert — ticket",
-        accountNickname: "Nubank Ultravioleta",
-        categoryName: "Leisure",
-        direction: "expense",
-        amount: 240,
-        signedAmount: -240,
-      },
-    ],
-  },
-  {
-    id: dayKey(daysAgo(3)),
-    date: daysAgo(3),
-    items: [
-      {
-        id: "tx-07",
-        description: "Rent",
-        accountNickname: "Savings",
-        categoryName: "Housing",
-        direction: "expense",
-        amount: 1850,
-        signedAmount: -1850,
-      },
-    ],
-  },
-  {
-    id: dayKey(daysAgo(4)),
-    date: daysAgo(4),
-    items: [
-      {
-        id: "tx-08",
-        description: "Walgreens pharmacy",
-        accountNickname: "Bradesco Elo Nanquim",
-        categoryName: "Health",
-        direction: "expense",
-        amount: 189.5,
-        signedAmount: -189.5,
-      },
-    ],
-  },
-  {
-    id: dayKey(daysAgo(5)),
-    date: daysAgo(5),
-    items: [
-      {
-        id: "tx-09",
-        description: "Freelance project",
-        accountNickname: "Main checking",
-        categoryName: "Freelance",
-        direction: "income",
-        amount: 1200,
-        signedAmount: 1200,
-      },
-    ],
-  },
-  {
-    id: dayKey(daysAgo(6)),
-    date: daysAgo(6),
-    items: [
-      {
-        id: "tx-10",
-        description: "Lunch with the team",
-        accountNickname: "Nubank Ultravioleta",
-        categoryName: "Food",
-        direction: "expense",
-        amount: 78.4,
-        signedAmount: -78.4,
-      },
-    ],
-  },
-];
-
-export const MOCK_TRANSACTIONS_SUMMARY: TransactionsSummary = {
-  income: 9700,
-  expense: 3178.62,
-  net: 6521.38,
-};
 
 const monthlyFlowRaw: { income: number; expense: number }[] = [
   { income: 8200, expense: 5980 },
