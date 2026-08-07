@@ -17,10 +17,10 @@ export class GetOnboardingStateUseCase {
   ) {}
 
   async execute(input: GetOnboardingStateInput): Promise<OnboardingState> {
-    const [user, accounts] = await Promise.all([
+    const [user, accountsResult] = await Promise.all([
       this.users.findById(input.userId),
       this.listAccounts.execute({ userId: input.userId }),
     ]);
-    return deriveOnboardingState({ user, accounts });
+    return deriveOnboardingState({ user, accounts: accountsResult.items });
   }
 }

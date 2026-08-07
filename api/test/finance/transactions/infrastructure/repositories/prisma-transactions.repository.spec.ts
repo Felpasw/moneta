@@ -41,7 +41,7 @@ const buildPrisma = (): { prisma: PrismaService; tx: MockTx } => {
   return { prisma, tx };
 };
 
-const decimal = (n: number): Prisma.Decimal => new Prisma.Decimal(n);
+const decimal = (n: number): number => n;
 
 const CURRENT_USER = 'user-1';
 const ACCOUNT_A = 'acc-a';

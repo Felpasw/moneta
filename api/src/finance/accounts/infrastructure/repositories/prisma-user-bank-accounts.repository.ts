@@ -50,31 +50,6 @@ const ACCOUNT_WITH_BANK_SELECT = {
   },
 } satisfies Prisma.UserBankAccountSelect;
 
-type PrismaAccountRow = Prisma.UserBankAccountGetPayload<{
-  select: typeof ACCOUNT_SELECT;
-}>;
-
-type PrismaAccountWithBankRow = Prisma.UserBankAccountGetPayload<{
-  select: typeof ACCOUNT_WITH_BANK_SELECT;
-}>;
-
-type PrismaInvoiceRow = PrismaAccountWithBankRow['invoices'][number];
-
-const toDomain = (row: PrismaAccountRow): UserBankAccount => ({
-  ...row,
-  balance: row.balance.toNumber(),
-  creditLimit: row.creditLimit?.toNumber() ?? null,
-  overdraftLimit: row.overdraftLimit?.toNumber() ?? null,
-});
-
-const toCurrentInvoice = (row: PrismaInvoiceRow): CurrentInvoice => ({
-  totalAmount: row.totalAmount.toNumber(),
-  status: row.status as InvoiceStatus,
-  dueDate: row.dueDate,
-  cycleStart: row.cycleStart,
-  cycleEnd: row.cycleEnd,
-});
-
 const computeUsagePct = (
   creditLimit: number | null,
   invoice: CurrentInvoice | null,
@@ -83,20 +58,6 @@ const computeUsagePct = (
   const raw = invoice.totalAmount / creditLimit;
   const capped = raw > 1 ? 1 : raw;
   return Math.round(capped * 100);
-};
-
-const toDomainWithBank = (
-  row: PrismaAccountWithBankRow,
-): UserBankAccountWithBank => {
-  const { bank, invoices, ...account } = row;
-  const base = toDomain(account);
-  const currentInvoice = invoices[0] ? toCurrentInvoice(invoices[0]) : null;
-  return {
-    ...base,
-    bank,
-    currentInvoice,
-    usagePct: computeUsagePct(base.creditLimit, currentInvoice),
-  };
 };
 
 @Injectable()
@@ -109,7 +70,24 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
       orderBy: { nickname: 'asc' },
       select: ACCOUNT_WITH_BANK_SELECT,
     });
-    return rows.map(toDomainWithBank);
+    return rows.map((row): UserBankAccountWithBank => {
+      const { invoices, ...account } = row;
+      const firstInvoice = invoices[0];
+      const currentInvoice: CurrentInvoice | null = firstInvoice
+        ? {
+            totalAmount: firstInvoice.totalAmount,
+            status: firstInvoice.status as InvoiceStatus,
+            dueDate: firstInvoice.dueDate,
+            cycleStart: firstInvoice.cycleStart,
+            cycleEnd: firstInvoice.cycleEnd,
+          }
+        : null;
+      return {
+        ...account,
+        currentInvoice,
+        usagePct: computeUsagePct(account.creditLimit, currentInvoice),
+      };
+    });
   }
 
   async findById(id: string, userId: string): Promise<UserBankAccount | null> {
@@ -117,7 +95,7 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
       where: { id, userId },
       select: ACCOUNT_SELECT,
     });
-    return row ? toDomain(row) : null;
+    return row;
   }
 
   async add(input: AddUserBankAccountInput): Promise<UserBankAccount> {
@@ -134,7 +112,7 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
       },
       select: ACCOUNT_SELECT,
     });
-    return toDomain(row);
+    return row;
   }
 
   async update(
@@ -155,7 +133,7 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
       where: { id: input.id },
       select: ACCOUNT_SELECT,
     });
-    return row ? toDomain(row) : null;
+    return row;
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
@@ -179,6 +157,6 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
       where: { id },
       select: ACCOUNT_SELECT,
     });
-    return row ? toDomain(row) : null;
+    return row;
   }
 }

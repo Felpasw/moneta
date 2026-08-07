@@ -42,7 +42,7 @@ const buildPrisma = (): {
   return { prisma, tx, root };
 };
 
-const decimal = (n: number): Prisma.Decimal => new Prisma.Decimal(n);
+const decimal = (n: number): number => n;
 
 const USER = 'user-1';
 const FROM = 'acc-a';

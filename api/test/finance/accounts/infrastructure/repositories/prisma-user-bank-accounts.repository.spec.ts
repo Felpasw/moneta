@@ -1,5 +1,3 @@
-import { Prisma } from '@prisma/client';
-
 import { InvoiceStatus } from '~/finance/card-billing/domain/constants/invoice-status';
 import type { PrismaService } from '~/infrastructure/prisma/prisma.service';
 import { PrismaUserBankAccountsRepository } from '~/finance/accounts/infrastructure/repositories/prisma-user-bank-accounts.repository';
@@ -21,7 +19,9 @@ const buildPrisma = (): { prisma: PrismaService; mock: MockPrisma } => {
   return { prisma: mock as unknown as PrismaService, mock };
 };
 
-const decimal = (n: number): Prisma.Decimal => new Prisma.Decimal(n);
+// Runtime returns number due to Prisma extension (decimal-to-number).
+// Kept as identity helper to keep test call-sites readable.
+const decimal = (n: number): number => n;
 
 describe('PrismaUserBankAccountsRepository', () => {
   describe('listByUserId', () => {

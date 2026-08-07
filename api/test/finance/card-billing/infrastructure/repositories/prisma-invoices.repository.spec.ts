@@ -44,7 +44,7 @@ const buildPrisma = (): {
   return { prisma, tx, root };
 };
 
-const decimal = (n: number): Prisma.Decimal => new Prisma.Decimal(n);
+const decimal = (n: number): number => n;
 
 const ACCOUNT_ID = 'acc-1';
 const INVOICE_ID = 'inv-1';

@@ -46,17 +46,30 @@ const TRANSACTION_WITH_EMBEDS_SELECT = {
   },
 } satisfies Prisma.TransactionSelect;
 
-type PrismaTransactionRow = Prisma.TransactionGetPayload<{
-  select: typeof TRANSACTION_SELECT;
-}>;
+interface PrismaTransactionRow {
+  id: string;
+  userId: string;
+  accountId: string;
+  categoryId: string | null;
+  invoiceId: string | null;
+  type: string;
+  amount: number;
+  description: string | null;
+  occurredAt: Date;
+}
 
-type PrismaTransactionWithEmbedsRow = Prisma.TransactionGetPayload<{
-  select: typeof TRANSACTION_WITH_EMBEDS_SELECT;
-}>;
+interface PrismaTransactionWithEmbedsRow extends PrismaTransactionRow {
+  account: { id: string; nickname: string; bank: { name: string } };
+  category: {
+    id: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
+  } | null;
+}
 
 const toDomain = (row: PrismaTransactionRow): Transaction => ({
   ...row,
-  amount: row.amount.toNumber(),
   type: row.type as TransactionType,
 });
 
@@ -127,7 +140,7 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       }
       const oldEffect = signedAmount(
         current.type as TransactionType,
-        current.amount.toNumber(),
+        current.amount,
       );
       await tx.userBankAccount.updateMany({
         where: { id: current.accountId, userId },
@@ -228,7 +241,7 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       throw new TransactionNotFoundError(input.id);
     }
 
-    const currentAmount = current.amount.toNumber();
+    const currentAmount = current.amount;
     const currentType = current.type as TransactionType;
     const newType = input.type ?? currentType;
     const newAmount = input.amount ?? currentAmount;

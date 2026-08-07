@@ -18,30 +18,20 @@ const CATEGORY_SELECT = {
   monthlyBudget: true,
 } satisfies Prisma.CategorySelect;
 
-type PrismaCategoryRow = Prisma.CategoryGetPayload<{
-  select: typeof CATEGORY_SELECT;
-}>;
-
-const toDomain = (row: PrismaCategoryRow): Category => ({
-  ...row,
-  monthlyBudget: row.monthlyBudget?.toNumber() ?? null,
-});
-
 @Injectable()
 export class PrismaCategoriesRepository implements CategoriesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async listForUser(userId: string): Promise<Category[]> {
-    const rows = await this.prisma.category.findMany({
+    return this.prisma.category.findMany({
       where: { OR: [{ userId: null }, { userId }] },
       orderBy: { name: 'asc' },
       select: CATEGORY_SELECT,
     });
-    return rows.map(toDomain);
   }
 
   async addCustom(input: AddCategoryInput): Promise<Category> {
-    const row = await this.prisma.category.create({
+    return this.prisma.category.create({
       data: {
         userId: input.userId,
         name: input.name,
@@ -51,7 +41,6 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
       },
       select: CATEGORY_SELECT,
     });
-    return toDomain(row);
   }
 
   async update(input: UpdateCategoryInput): Promise<Category | null> {
@@ -65,11 +54,10 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
       },
     });
     if (count === 0) return null;
-    const row = await this.prisma.category.findUnique({
+    return this.prisma.category.findUnique({
       where: { id: input.id },
       select: CATEGORY_SELECT,
     });
-    return row ? toDomain(row) : null;
   }
 
   async delete(id: string, userId: string): Promise<boolean> {

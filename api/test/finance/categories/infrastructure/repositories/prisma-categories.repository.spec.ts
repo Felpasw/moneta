@@ -26,7 +26,7 @@ const buildPrisma = (): { prisma: PrismaService; mock: MockPrisma } => {
   return { prisma: mock as unknown as PrismaService, mock };
 };
 
-const decimal = (n: number): Prisma.Decimal => new Prisma.Decimal(n);
+const decimal = (n: number): number => n;
 
 describe('PrismaCategoriesRepository', () => {
   describe('listForUser', () => {
