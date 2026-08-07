@@ -33,7 +33,9 @@ export class CompleteOnboardingUseCase {
 
     const missing: CompleteOnboardingMissing[] = [];
     if (!user?.nickname) missing.push('nickname');
-    const accounts = await this.listAccounts.execute({ userId: input.userId });
+    const { items: accounts } = await this.listAccounts.execute({
+      userId: input.userId,
+    });
     if (accounts.length === 0) missing.push('banks');
 
     if (missing.length > 0) return { ok: false, missing };

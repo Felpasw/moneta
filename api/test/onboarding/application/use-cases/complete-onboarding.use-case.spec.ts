@@ -55,7 +55,7 @@ describe('CompleteOnboardingUseCase', () => {
   it('marca o user como onboarded no now do clock, emite evento e retorna ok', async () => {
     const { useCase, users, listAccounts, events } = buildUseCase();
     users.findById.mockResolvedValue(snapshot());
-    listAccounts.execute.mockResolvedValue([account('acc-1')]);
+    listAccounts.execute.mockResolvedValue({ items: [account('acc-1')], summary: { totalBalance: 0, checkingCount: 1, totalOverdraft: 0 } });
     users.markOnboarded.mockResolvedValue({ onboardedAt: NOW });
 
     const result = await useCase.execute({ userId: 'user-1' });
@@ -71,7 +71,7 @@ describe('CompleteOnboardingUseCase', () => {
   it('retorna ok:false + missing quando nickname está null', async () => {
     const { useCase, users, listAccounts, events } = buildUseCase();
     users.findById.mockResolvedValue(snapshot({ nickname: null }));
-    listAccounts.execute.mockResolvedValue([account('acc-1')]);
+    listAccounts.execute.mockResolvedValue({ items: [account('acc-1')], summary: { totalBalance: 0, checkingCount: 1, totalOverdraft: 0 } });
 
     const result = await useCase.execute({ userId: 'user-1' });
 
@@ -83,7 +83,7 @@ describe('CompleteOnboardingUseCase', () => {
   it('retorna ok:false + missing quando não tem nenhuma conta', async () => {
     const { useCase, users, listAccounts, events } = buildUseCase();
     users.findById.mockResolvedValue(snapshot());
-    listAccounts.execute.mockResolvedValue([]);
+    listAccounts.execute.mockResolvedValue({ items: [], summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 } });
 
     const result = await useCase.execute({ userId: 'user-1' });
 
@@ -95,7 +95,7 @@ describe('CompleteOnboardingUseCase', () => {
   it('acumula todos os missing quando nickname E banks estão faltando', async () => {
     const { useCase, users, listAccounts } = buildUseCase();
     users.findById.mockResolvedValue(snapshot({ nickname: null }));
-    listAccounts.execute.mockResolvedValue([]);
+    listAccounts.execute.mockResolvedValue({ items: [], summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 } });
 
     const result = await useCase.execute({ userId: 'user-1' });
 
@@ -117,7 +117,7 @@ describe('CompleteOnboardingUseCase', () => {
   it('trata user inexistente como missing nickname + banks (defensivo)', async () => {
     const { useCase, users, listAccounts } = buildUseCase();
     users.findById.mockResolvedValue(null);
-    listAccounts.execute.mockResolvedValue([]);
+    listAccounts.execute.mockResolvedValue({ items: [], summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 } });
 
     const result = await useCase.execute({ userId: 'ghost' });
 

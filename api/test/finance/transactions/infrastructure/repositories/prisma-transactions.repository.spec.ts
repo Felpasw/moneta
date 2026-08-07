@@ -41,7 +41,7 @@ const buildPrisma = (): { prisma: PrismaService; tx: MockTx } => {
   return { prisma, tx };
 };
 
-const decimal = (n: number): Prisma.Decimal => new Prisma.Decimal(n);
+const decimal = (n: number): number => n;
 
 const CURRENT_USER = 'user-1';
 const ACCOUNT_A = 'acc-a';
@@ -731,6 +731,118 @@ describe('PrismaTransactionsRepository', () => {
       expect(result.map((r) => r.id)).toEqual(['t-1', 't-2']);
       expect(tx.transaction.findFirst).toHaveBeenCalledTimes(2);
       expect(tx.transaction.update).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('list', () => {
+    const buildListPrisma = () => {
+      const findMany = jest.fn();
+      const prisma = {
+        transaction: { findMany },
+      } as unknown as PrismaService;
+      return { prisma, findMany };
+    };
+
+    it('returns rows enriched with account (nickname + bankName), category, and signedAmount', async () => {
+      const { prisma, findMany } = buildListPrisma();
+      findMany.mockResolvedValue([
+        {
+          id: 't-1',
+          userId: CURRENT_USER,
+          accountId: 'acc-1',
+          categoryId: 'cat-1',
+          invoiceId: null,
+          type: TransactionType.Expense,
+          amount: decimal(120.5),
+          description: 'Groceries',
+          occurredAt: new Date('2026-08-06'),
+          account: {
+            id: 'acc-1',
+            nickname: 'Main',
+            bank: { name: 'Nubank' },
+          },
+          category: {
+            id: 'cat-1',
+            name: 'Groceries',
+            icon: '🛒',
+            color: '#22c55e',
+          },
+        },
+        {
+          id: 't-2',
+          userId: CURRENT_USER,
+          accountId: 'acc-1',
+          categoryId: null,
+          invoiceId: null,
+          type: TransactionType.Income,
+          amount: decimal(2000),
+          description: 'Payroll',
+          occurredAt: new Date('2026-08-01'),
+          account: {
+            id: 'acc-1',
+            nickname: 'Main',
+            bank: { name: 'Nubank' },
+          },
+          category: null,
+        },
+      ]);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const result = await repo.list({
+        userId: CURRENT_USER,
+        limit: 50,
+        offset: 0,
+      });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        id: 't-1',
+        userId: CURRENT_USER,
+        accountId: 'acc-1',
+        categoryId: 'cat-1',
+        invoiceId: null,
+        type: TransactionType.Expense,
+        amount: 120.5,
+        description: 'Groceries',
+        occurredAt: new Date('2026-08-06'),
+        account: { id: 'acc-1', nickname: 'Main', bankName: 'Nubank' },
+        category: {
+          id: 'cat-1',
+          name: 'Groceries',
+          icon: '🛒',
+          color: '#22c55e',
+        },
+        signedAmount: -120.5,
+        dayGroupKey: '2026-08-06',
+      });
+      expect(result[1].category).toBeNull();
+      expect(result[1].signedAmount).toBe(2000);
+      expect(result[1].dayGroupKey).toBe('2026-08-01');
+    });
+
+    it('requests the account and category joins on the Prisma select', async () => {
+      const { prisma, findMany } = buildListPrisma();
+      findMany.mockResolvedValue([]);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.list({ userId: CURRENT_USER, limit: 50, offset: 0 });
+
+      const [firstCall] = findMany.mock.calls as [
+        [
+          {
+            select: {
+              account: { select: { nickname: boolean; bank: unknown } };
+              category: { select: { name: boolean } };
+            };
+          },
+        ],
+      ];
+      const args = firstCall[0];
+      expect(args.select.account.select.nickname).toBe(true);
+      expect(args.select.account.select.bank).toEqual({
+        select: { name: true },
+      });
+      expect(args.select.category.select.name).toBe(true);
     });
   });
 });

@@ -1,7 +1,7 @@
 import { DashboardScreen } from "@/components/templates/DashboardScreen";
 
 export const metadata = {
-  title: "Painel · Moneta",
+  title: "Dashboard · Moneta",
 };
 
 export default function DashboardPage() {

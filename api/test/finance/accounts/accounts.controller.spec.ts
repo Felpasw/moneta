@@ -97,28 +97,31 @@ describe('AccountsController', () => {
       expect(res.status).toBe(401);
     });
 
-    it('returns 200 with the accounts of the current user', async () => {
-      const accounts = [
-        {
-          id: ACCOUNT_ID,
-          userId: USER_ID,
-          bankId: BANK_ID,
-          nickname: 'Nubank',
-          balance: 0,
-          creditLimit: null,
-          overdraftLimit: null,
-          closeDay: null,
-          dueDay: null,
-        },
-      ];
-      mocks.list.execute.mockResolvedValue(accounts);
+    it('returns 200 with items + summary of the current user', async () => {
+      const payload = {
+        items: [
+          {
+            id: ACCOUNT_ID,
+            userId: USER_ID,
+            bankId: BANK_ID,
+            nickname: 'Nubank',
+            balance: 0,
+            creditLimit: null,
+            overdraftLimit: null,
+            closeDay: null,
+            dueDay: null,
+          },
+        ],
+        summary: { totalBalance: 0, checkingCount: 1, totalOverdraft: 0 },
+      };
+      mocks.list.execute.mockResolvedValue(payload);
 
       const res = await request(http)
         .get('/accounts')
         .set(...bearer(accessToken));
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(accounts);
+      expect(res.body).toEqual(payload);
       expect(mocks.list.execute).toHaveBeenCalledWith({ userId: USER_ID });
     });
   });

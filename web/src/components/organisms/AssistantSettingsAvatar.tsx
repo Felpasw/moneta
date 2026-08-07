@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { motion } from "motion/react";
 
-import { AnimatedInput } from "@/components/atoms/AnimatedInput";
 import {
   AssistantAvatar,
   type AssistantAvatarStyle,
 } from "@/components/atoms/AssistantAvatar";
 import { cn } from "@/lib/utils";
 import { composeAvatarUrl, parseAvatarUrl } from "@/utils/dicebearAvatarUrl";
+import { SETTINGS_STAGGER_ITEM } from "@/utils/settingsStagger";
 
 import { CURATED_AVATAR_STYLE_OPTIONS } from "./assistantSettings.constants";
+
+const AVATAR_SEED = "cuzi";
 
 interface AssistantSettingsAvatarProps {
   avatarUrl: string | null;
@@ -22,18 +24,15 @@ interface AssistantSettingsAvatarProps {
 
 export function AssistantSettingsAvatar({
   avatarUrl,
-  defaultSeed,
   onChange,
   disabled,
   className,
 }: AssistantSettingsAvatarProps) {
   const parsed = parseAvatarUrl(avatarUrl);
-  const [seed, setSeed] = useState<string>(parsed.seed ?? defaultSeed);
 
   const handleStyleClick = (style: AssistantAvatarStyle) => {
     if (disabled) return;
-    if (seed.length === 0) return;
-    onChange(composeAvatarUrl(style, seed));
+    onChange(composeAvatarUrl(style, AVATAR_SEED));
   };
 
   return (
@@ -41,7 +40,7 @@ export function AssistantSettingsAvatar({
       aria-labelledby="assistant-avatar-heading"
       className={cn("space-y-4", className)}
     >
-      <header className="space-y-1">
+      <motion.header variants={SETTINGS_STAGGER_ITEM} className="space-y-1">
         <h2
           id="assistant-avatar-heading"
           className="text-lg font-heading font-medium"
@@ -49,21 +48,12 @@ export function AssistantSettingsAvatar({
           Avatar
         </h2>
         <p className="text-sm text-muted-foreground">
-          Personalize um apelido e escolha o estilo do avatar.
+          Pick the style you want for your assistant.
         </p>
-      </header>
+      </motion.header>
 
-      <AnimatedInput
-        id="assistant-avatar-seed"
-        label="Apelido"
-        value={seed}
-        onChange={(event) => setSeed(event.target.value)}
-        disabled={disabled}
-        maxLength={128}
-      />
-
-
-      <div
+      <motion.div
+        variants={SETTINGS_STAGGER_ITEM}
         role="radiogroup"
         aria-labelledby="assistant-avatar-heading"
         className="grid grid-cols-3 gap-3 sm:grid-cols-5"
@@ -77,7 +67,7 @@ export function AssistantSettingsAvatar({
               onClick={() => handleStyleClick(option.value)}
               disabled={disabled}
               aria-pressed={isSelected}
-              aria-label={`Escolher estilo ${option.label}`}
+              aria-label={`Choose ${option.label} style`}
               className={cn(
                 "flex flex-col items-center gap-2 rounded-lg border border-border p-3 transition-colors",
                 "hover:border-primary/60 disabled:cursor-not-allowed disabled:opacity-50",
@@ -85,10 +75,7 @@ export function AssistantSettingsAvatar({
               )}
             >
               <AssistantAvatar
-                avatarUrl={composeAvatarUrl(
-                  option.value,
-                  seed.length > 0 ? seed : defaultSeed,
-                )}
+                avatarUrl={composeAvatarUrl(option.value, AVATAR_SEED)}
                 size="md"
               />
               <span className="text-xs text-muted-foreground">
@@ -97,7 +84,7 @@ export function AssistantSettingsAvatar({
             </button>
           );
         })}
-      </div>
+      </motion.div>
     </section>
   );
 }

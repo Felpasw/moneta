@@ -107,7 +107,7 @@ export function OnboardingProgress({
               exit="exit"
               className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-5 py-2 text-sm shadow-sm backdrop-blur"
             >
-              <span className="text-muted-foreground">Apelido</span>
+              <span className="text-muted-foreground">Nickname</span>
               <span className="text-base font-semibold text-foreground">
                 {summary.nickname}
               </span>
@@ -122,7 +122,7 @@ export function OnboardingProgress({
               animate="animate"
               exit="exit"
               className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2"
-              aria-label="Bancos adicionados"
+              aria-label="Banks added"
             >
               <AnimatePresence initial={false}>
                 {summary.banks.map((bank) => (

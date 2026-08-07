@@ -1,4 +1,7 @@
-import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
+import type {
+  UseMutationResult,
+  UseSuspenseQueryResult,
+} from "@tanstack/react-query";
 
 import type {
   AssistantProfile,
@@ -7,8 +10,8 @@ import type {
 } from "@/services/interfaces/assistantProfile.interface";
 
 export interface AssistantProfileHooksResult {
-  profile: UseQueryResult<AssistantProfile>;
-  voices: UseQueryResult<TtsVoice[]>;
+  profile: UseSuspenseQueryResult<AssistantProfile>;
+  voices: UseSuspenseQueryResult<TtsVoice[]>;
   previewVoice: UseMutationResult<Blob, unknown, string>;
   updateProfile: UseMutationResult<AssistantProfile, unknown, UpdateProfilePatch>;
 }

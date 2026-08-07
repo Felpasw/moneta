@@ -6,6 +6,7 @@ export interface Category {
   name: string;
   icon: string | null;
   color: string | null;
+  monthlyBudget: number | null;
 }
 
 export interface AddCategoryInput {
@@ -13,17 +14,21 @@ export interface AddCategoryInput {
   name: string;
   icon?: string;
   color?: string;
+  monthlyBudget?: number;
 }
 
-export interface RenameCategoryInput {
+export interface UpdateCategoryInput {
   id: string;
   userId: string;
-  name: string;
+  name?: string;
+  icon?: string | null;
+  color?: string | null;
+  monthlyBudget?: number | null;
 }
 
 export interface CategoriesRepository {
   listForUser(userId: string): Promise<Category[]>;
   addCustom(input: AddCategoryInput): Promise<Category>;
-  rename(input: RenameCategoryInput): Promise<Category | null>;
+  update(input: UpdateCategoryInput): Promise<Category | null>;
   delete(id: string, userId: string): Promise<boolean>;
 }

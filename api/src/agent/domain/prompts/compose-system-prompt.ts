@@ -10,8 +10,8 @@ const buildUserLine = (
   userNickname: string | null,
 ): string => {
   const parts: string[] = [];
-  if (userName) parts.push(`O nome do usuário é ${userName}.`);
-  if (userNickname) parts.push(`O apelido escolhido é ${userNickname}.`);
+  if (userName) parts.push(`The user's name is ${userName}.`);
+  if (userNickname) parts.push(`Their chosen nickname is ${userNickname}.`);
   if (parts.length === 0) return '';
   return `\n\n${parts.join(' ')}`;
 };

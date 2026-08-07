@@ -43,7 +43,7 @@ describe('GetOnboardingStateUseCase', () => {
   it('deriva state pra user sem nickname e sem contas', async () => {
     const { useCase, users, listAccounts } = build();
     users.findById.mockResolvedValue(snapshot());
-    listAccounts.execute.mockResolvedValue([]);
+    listAccounts.execute.mockResolvedValue({ items: [], summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 } });
 
     const state = await useCase.execute({ userId: 'user-1' });
 
@@ -61,7 +61,7 @@ describe('GetOnboardingStateUseCase', () => {
     users.findById.mockResolvedValue(
       snapshot({ onboardedAt: new Date('2026-01-01') }),
     );
-    listAccounts.execute.mockResolvedValue([]);
+    listAccounts.execute.mockResolvedValue({ items: [], summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 } });
 
     const state = await useCase.execute({ userId: 'user-1' });
 
@@ -71,7 +71,10 @@ describe('GetOnboardingStateUseCase', () => {
   it('deriva tudo false (não completed) quando tem nickname + contas', async () => {
     const { useCase, users, listAccounts } = build();
     users.findById.mockResolvedValue(snapshot({ nickname: 'Felps' }));
-    listAccounts.execute.mockResolvedValue([account()]);
+    listAccounts.execute.mockResolvedValue({
+      items: [account()],
+      summary: { totalBalance: 0, checkingCount: 1, totalOverdraft: 0 },
+    });
 
     const state = await useCase.execute({ userId: 'user-1' });
 
@@ -95,7 +98,10 @@ describe('GetOnboardingStateUseCase', () => {
       order.push('accounts-start');
       await new Promise((r) => setTimeout(r, 10));
       order.push('accounts-end');
-      return [];
+      return {
+        items: [],
+        summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 },
+      };
     });
 
     await useCase.execute({ userId: 'user-1' });

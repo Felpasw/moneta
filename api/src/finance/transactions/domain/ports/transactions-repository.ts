@@ -14,6 +14,37 @@ export interface Transaction {
   occurredAt: Date;
 }
 
+export interface TransactionAccountEmbed {
+  id: string;
+  nickname: string;
+  bankName: string;
+}
+
+export interface TransactionCategoryEmbed {
+  id: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+}
+
+export interface TransactionWithEmbeds extends Transaction {
+  account: TransactionAccountEmbed;
+  category: TransactionCategoryEmbed | null;
+  signedAmount: number;
+  dayGroupKey: string;
+}
+
+export interface TransactionsSummary {
+  totalIncome: number;
+  totalExpense: number;
+  net: number;
+}
+
+export interface ListTransactionsResult {
+  items: TransactionWithEmbeds[];
+  summary: TransactionsSummary;
+}
+
 export interface AddTransactionInput {
   userId: string;
   accountId: string;
@@ -60,5 +91,5 @@ export interface TransactionsRepository {
   editMany(inputs: EditTransactionInput[]): Promise<Transaction[]>;
   delete(id: string, userId: string): Promise<void>;
   findById(id: string, userId: string): Promise<Transaction | null>;
-  list(filters: ListTransactionsFilters): Promise<Transaction[]>;
+  list(filters: ListTransactionsFilters): Promise<TransactionWithEmbeds[]>;
 }

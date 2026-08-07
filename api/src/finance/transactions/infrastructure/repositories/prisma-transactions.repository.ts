@@ -10,6 +10,7 @@ import type {
   EditTransactionInput,
   ListTransactionsFilters,
   Transaction,
+  TransactionWithEmbeds,
   TransactionsRepository,
 } from '../../domain/ports/transactions-repository';
 import { signedAmount } from '../../domain/utils/signed-amount';
@@ -26,15 +27,69 @@ const TRANSACTION_SELECT = {
   occurredAt: true,
 } satisfies Prisma.TransactionSelect;
 
-type PrismaTransactionRow = Prisma.TransactionGetPayload<{
-  select: typeof TRANSACTION_SELECT;
-}>;
+const TRANSACTION_WITH_EMBEDS_SELECT = {
+  ...TRANSACTION_SELECT,
+  account: {
+    select: {
+      id: true,
+      nickname: true,
+      bank: { select: { name: true } },
+    },
+  },
+  category: {
+    select: {
+      id: true,
+      name: true,
+      icon: true,
+      color: true,
+    },
+  },
+} satisfies Prisma.TransactionSelect;
+
+interface PrismaTransactionRow {
+  id: string;
+  userId: string;
+  accountId: string;
+  categoryId: string | null;
+  invoiceId: string | null;
+  type: string;
+  amount: number;
+  description: string | null;
+  occurredAt: Date;
+}
+
+interface PrismaTransactionWithEmbedsRow extends PrismaTransactionRow {
+  account: { id: string; nickname: string; bank: { name: string } };
+  category: {
+    id: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
+  } | null;
+}
 
 const toDomain = (row: PrismaTransactionRow): Transaction => ({
   ...row,
-  amount: row.amount.toNumber(),
   type: row.type as TransactionType,
 });
+
+const toDomainWithEmbeds = (
+  row: PrismaTransactionWithEmbedsRow,
+): TransactionWithEmbeds => {
+  const { account, category, ...rest } = row;
+  const base = toDomain(rest);
+  return {
+    ...base,
+    account: {
+      id: account.id,
+      nickname: account.nickname,
+      bankName: account.bank.name,
+    },
+    category,
+    signedAmount: signedAmount(base.type, base.amount),
+    dayGroupKey: base.occurredAt.toISOString().slice(0, 10),
+  };
+};
 
 type TxClient = Parameters<
   Parameters<PrismaService['$transaction']>[0] extends (tx: infer T) => unknown
@@ -85,7 +140,7 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       }
       const oldEffect = signedAmount(
         current.type as TransactionType,
-        current.amount.toNumber(),
+        current.amount,
       );
       await tx.userBankAccount.updateMany({
         where: { id: current.accountId, userId },
@@ -110,7 +165,9 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
     return row ? toDomain(row) : null;
   }
 
-  async list(filters: ListTransactionsFilters): Promise<Transaction[]> {
+  async list(
+    filters: ListTransactionsFilters,
+  ): Promise<TransactionWithEmbeds[]> {
     const rows = await this.prisma.transaction.findMany({
       where: {
         userId: filters.userId,
@@ -126,9 +183,9 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       orderBy: { occurredAt: 'desc' },
       take: filters.limit,
       skip: filters.offset,
-      select: TRANSACTION_SELECT,
+      select: TRANSACTION_WITH_EMBEDS_SELECT,
     });
-    return rows.map(toDomain);
+    return rows.map(toDomainWithEmbeds);
   }
 
   private async addWithinTx(
@@ -184,7 +241,7 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       throw new TransactionNotFoundError(input.id);
     }
 
-    const currentAmount = current.amount.toNumber();
+    const currentAmount = current.amount;
     const currentType = current.type as TransactionType;
     const newType = input.type ?? currentType;
     const newAmount = input.amount ?? currentAmount;

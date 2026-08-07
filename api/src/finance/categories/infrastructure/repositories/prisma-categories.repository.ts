@@ -6,7 +6,7 @@ import type {
   AddCategoryInput,
   CategoriesRepository,
   Category,
-  RenameCategoryInput,
+  UpdateCategoryInput,
 } from '../../domain/ports/categories-repository';
 
 const CATEGORY_SELECT = {
@@ -15,6 +15,7 @@ const CATEGORY_SELECT = {
   name: true,
   icon: true,
   color: true,
+  monthlyBudget: true,
 } satisfies Prisma.CategorySelect;
 
 @Injectable()
@@ -36,15 +37,21 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
         name: input.name,
         icon: input.icon,
         color: input.color,
+        monthlyBudget: input.monthlyBudget,
       },
       select: CATEGORY_SELECT,
     });
   }
 
-  async rename(input: RenameCategoryInput): Promise<Category | null> {
+  async update(input: UpdateCategoryInput): Promise<Category | null> {
     const { count } = await this.prisma.category.updateMany({
       where: { id: input.id, userId: input.userId },
-      data: { name: input.name },
+      data: {
+        name: input.name,
+        icon: input.icon,
+        color: input.color,
+        monthlyBudget: input.monthlyBudget,
+      },
     });
     if (count === 0) return null;
     return this.prisma.category.findUnique({

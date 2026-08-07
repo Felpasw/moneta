@@ -73,7 +73,14 @@ const makeStubAccounts = (
   accounts: UserBankAccount[] = [],
 ): ListMyAccountsUseCase =>
   ({
-    execute: jest.fn().mockResolvedValue(accounts),
+    execute: jest.fn().mockResolvedValue({
+      items: accounts,
+      summary: {
+        totalBalance: 0,
+        checkingCount: accounts.length,
+        totalOverdraft: 0,
+      },
+    }),
   }) as unknown as ListMyAccountsUseCase;
 
 type Listener<T extends unknown[]> = (...args: T) => void;

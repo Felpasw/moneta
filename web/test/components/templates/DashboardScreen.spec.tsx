@@ -1,48 +1,21 @@
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import { Suspense, type ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
 
-import { DashboardScreen } from "@/components/templates/DashboardScreen";
-import type { ToolEvent } from "@/hooks/interfaces/useAgentSession.interface";
-import { AgentSessionStatus, MicState } from "@/hooks/useAgentSession";
-import {
-  agentSessionActions,
-  useAgentSessionStore,
-} from "@/stores/agentSessionStore";
-
-vi.mock("@/components/atoms/TalkingAssistantAvatar", () => ({
-  TalkingAssistantAvatar: (props: {
-    avatarUrl: string | null;
-    audioElement: HTMLAudioElement | null;
-    fallbackSeed?: string;
-  }) => (
-    <div
-      data-testid="talking-assistant-avatar"
-      data-avatar-url={props.avatarUrl ?? ""}
-      data-audio-attached={props.audioElement ? "1" : "0"}
-      data-fallback-seed={props.fallbackSeed ?? ""}
-    />
-  ),
+vi.mock("@/services/accounts.service", () => ({
+  default: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+    setBalance: vi.fn(),
+  },
 }));
 
-const profileDataMock = {
-  data: {
-    treatmentStyle: "informal" as const,
-    voiceId: "v-1",
-    avatarUrl: "dicebear:notionists:felps" as string | null,
-  },
-  isLoading: false,
-  isError: false,
-};
-
-vi.mock("@/hooks/useAssistantProfile", () => ({
+vi.mock("@/services/transactions.service", () => ({
   default: {
-    use: () => ({
-      profile: profileDataMock,
-      voices: { data: [], isLoading: false, isError: false },
-      previewVoice: { mutateAsync: vi.fn() },
-      updateProfile: { mutate: vi.fn(), isPending: false },
-    }),
+    list: vi.fn(),
   },
 }));
 
@@ -61,144 +34,116 @@ vi.mock("@/stores/userStore", () => ({
   ),
 }));
 
-const toastError = vi.fn();
-vi.mock("sonner", () => ({
-  toast: {
-    error: (...args: unknown[]) => toastError(...args),
-    success: vi.fn(),
-  },
-}));
+import { DashboardScreen } from "@/components/templates/DashboardScreen";
+import accountsService from "@/services/accounts.service";
+import transactionsService from "@/services/transactions.service";
+import type { ListAccountsResult } from "@/services/interfaces/accounts.interface";
+import type { ListTransactionsResult } from "@/services/interfaces/transactions.interface";
 
-interface AgentSessionShape {
-  status: AgentSessionStatus;
-  error: string | null;
-  audioElement: HTMLAudioElement | null;
-  isWarming: boolean;
-  micStream: MediaStream | null;
-  micState: MicState;
-  toolEvents: ToolEvent[];
-}
+const mockedAccounts = vi.mocked(accountsService);
+const mockedTransactions = vi.mocked(transactionsService);
 
-const useAgentSessionMock = vi.fn<
-  (opts: { enabled: boolean; micEnabled?: boolean }) => AgentSessionShape
->(() => ({
-  status: AgentSessionStatus.Listening,
-  error: null,
-  audioElement: null,
-  isWarming: false,
-  micStream: null,
-  micState: MicState.Off,
-  toolEvents: [],
-}));
+const bank = { id: "b-1", name: "Nubank", compeCode: "260", logoUrl: null };
 
-vi.mock("@/hooks/useAgentSession", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/hooks/useAgentSession")>(
-      "@/hooks/useAgentSession",
-    );
-  return {
-    ...actual,
-    useAgentSession: (opts: { enabled: boolean }) => useAgentSessionMock(opts),
-  };
-});
+const ACCOUNTS_POPULATED: ListAccountsResult = {
+  items: [
+    {
+      id: "acc-1",
+      userId: "u-1",
+      bankId: "b-1",
+      nickname: "Main",
+      balance: 1234.56,
+      creditLimit: null,
+      overdraftLimit: 500,
+      closeDay: null,
+      dueDay: null,
+      bank,
+      currentInvoice: null,
+      usagePct: 0,
+    },
+  ],
+  summary: { totalBalance: 1234.56, checkingCount: 1, totalOverdraft: 500 },
+};
 
-afterEach(() => {
-  useAgentSessionMock.mockClear();
-  toastError.mockClear();
-  agentSessionActions.resetAll();
-});
+const ACCOUNTS_EMPTY: ListAccountsResult = {
+  items: [],
+  summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 },
+};
+
+const TRANSACTIONS_POPULATED: ListTransactionsResult = {
+  items: [],
+  summary: { totalIncome: 3200, totalExpense: 950, net: 2250 },
+};
+
+const TRANSACTIONS_EMPTY: ListTransactionsResult = {
+  items: [],
+  summary: { totalIncome: 0, totalExpense: 0, net: 0 },
+};
+
+const renderScreen = (
+  accountsData: ListAccountsResult,
+  transactionsData: ListTransactionsResult,
+) => {
+  mockedAccounts.list.mockResolvedValueOnce(accountsData);
+  mockedTransactions.list.mockResolvedValueOnce(transactionsData);
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const Wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={<div data-testid="suspense-fallback" />}>
+        {children}
+      </Suspense>
+    </QueryClientProvider>
+  );
+  return render(
+    <Wrapper>
+      <DashboardScreen />
+    </Wrapper>,
+  );
+};
 
 describe("<DashboardScreen />", () => {
-  it("abre a sessão do agente com mic desligado por default no store", () => {
-    render(<DashboardScreen />);
-    expect(useAgentSessionMock).toHaveBeenCalledWith({ enabled: true });
-    expect(useAgentSessionStore.getState().micEnabled).toBe(false);
-  });
+  it("mostra EmptyState quando o user não tem contas", async () => {
+    renderScreen(ACCOUNTS_EMPTY, TRANSACTIONS_EMPTY);
 
-  it("renderiza o TalkingAssistantAvatar (personagem do settings) + mic button", () => {
-    render(<DashboardScreen />);
-    const avatar = screen.getByTestId("talking-assistant-avatar");
-    expect(avatar).toBeInTheDocument();
-    expect(avatar.getAttribute("data-avatar-url")).toBe(
-      "dicebear:notionists:felps",
+    await waitFor(() =>
+      expect(screen.getByText(/no accounts yet/i)).toBeInTheDocument(),
     );
-    expect(avatar.getAttribute("data-fallback-seed")).toBe("Felipe");
     expect(
-      screen.getByRole("button", { name: /ligar mic/i }),
-    ).toBeInTheDocument();
+      screen.queryByRole("region", { name: /key indicators/i }),
+    ).toBeNull();
   });
 
-  it("passa audioElement pro avatar quando a sessão tem áudio ativo", () => {
-    const audio = document.createElement("audio");
-    useAgentSessionMock.mockReturnValueOnce({
-      status: AgentSessionStatus.Speaking,
-      error: null,
-      audioElement: audio,
-      isWarming: false,
-      micStream: null,
-      micState: MicState.Off,
-      toolEvents: [],
-    });
+  it("renderiza saudação com nome do user", async () => {
+    renderScreen(ACCOUNTS_POPULATED, TRANSACTIONS_POPULATED);
 
-    render(<DashboardScreen />);
-
-    expect(
-      screen.getByTestId("talking-assistant-avatar").getAttribute("data-audio-attached"),
-    ).toBe("1");
-  });
-
-  it("clicar no MicButton alterna micEnabled no store", async () => {
-    const user = userEvent.setup();
-    render(<DashboardScreen />);
-
-    expect(useAgentSessionStore.getState().micEnabled).toBe(false);
-
-    await user.click(screen.getByRole("button", { name: /ligar mic/i }));
-
-    expect(useAgentSessionStore.getState().micEnabled).toBe(true);
-  });
-
-  it("dispara toast e reseta mic quando micState=denied", async () => {
-    useAgentSessionMock.mockReturnValue({
-      status: AgentSessionStatus.Listening,
-      error: null,
-      audioElement: null,
-      isWarming: false,
-      micStream: null,
-      micState: MicState.Denied,
-      toolEvents: [],
-    });
-    render(<DashboardScreen />);
-
-    await new Promise((r) => setTimeout(r, 0));
-    expect(toastError).toHaveBeenCalledWith(
-      expect.stringMatching(/permita o microfone/i),
+    await waitFor(() =>
+      expect(screen.getByText(/hi, felipe/i)).toBeInTheDocument(),
     );
   });
 
-  it("mostra BarLoader enquanto isWarming=true (sem MicButton)", () => {
-    useAgentSessionMock.mockReturnValue({
-      status: AgentSessionStatus.Listening,
-      error: null,
-      audioElement: null,
-      isWarming: true,
-      micStream: null,
-      micState: MicState.Off,
-      toolEvents: [],
+  it("renderiza KPI Total balance vindo direto do accounts.summary", async () => {
+    renderScreen(ACCOUNTS_POPULATED, TRANSACTIONS_POPULATED);
+
+    const region = await screen.findByRole("region", {
+      name: /key indicators/i,
     });
-    render(<DashboardScreen />);
-
-    expect(
-      screen.getByRole("status", { name: /conectando/i }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /ligar mic/i })).toBeNull();
+    expect(region).toHaveTextContent(/total balance/i);
+    expect(region).toHaveTextContent(/1,234\.56|1\.234,56/);
   });
 
-  it("NÃO renderiza StepIndicator do onboarding (modo livre)", () => {
-    render(<DashboardScreen />);
-    for (const label of ["Apelido", "Bancos", "Saldos", "Ajustes", "Pronto"]) {
-      expect(screen.queryByText(label)).toBeNull();
-    }
-  });
+  it("renderiza KPIs de income/expense/net vindo direto do transactions.summary", async () => {
+    renderScreen(ACCOUNTS_POPULATED, TRANSACTIONS_POPULATED);
 
+    const region = await screen.findByRole("region", {
+      name: /key indicators/i,
+    });
+    expect(region).toHaveTextContent(/recent income/i);
+    expect(region).toHaveTextContent(/3,200\.00|3\.200,00/);
+    expect(region).toHaveTextContent(/recent expenses/i);
+    expect(region).toHaveTextContent(/950\.00|950,00/);
+    expect(region).toHaveTextContent(/net/i);
+    expect(region).toHaveTextContent(/2,250\.00|2\.250,00/);
+  });
 });

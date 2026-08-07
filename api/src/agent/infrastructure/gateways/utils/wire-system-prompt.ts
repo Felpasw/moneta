@@ -10,11 +10,12 @@ import type { SystemPromptContext } from '../types/system-prompt-context';
 import { buildOpenResponsePayload } from './build-open-response-payload';
 
 const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
-  const [profile, user, userAccounts] = await Promise.all([
+  const [profile, user, accountsResult] = await Promise.all([
     ctx.profiles.findByUserId(ctx.userId),
     ctx.users.findById(ctx.userId),
     ctx.accounts.execute({ userId: ctx.userId }),
   ]);
+  const userAccounts = accountsResult.items;
   const treatmentStyle = profile?.treatmentStyle ?? DEFAULT_TREATMENT_STYLE;
   const mode = resolveAgentMode({
     hasNickname: Boolean(user?.nickname),

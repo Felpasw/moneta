@@ -12,7 +12,7 @@ export function PoweredByFooter() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 2, duration: 0.8, ease: "easeOut" }}
-      className="pointer-events-none absolute bottom-6 left-0 right-0 z-20 px-4 text-center text-[10px] uppercase tracking-[0.3em] text-white"
+      className="pointer-events-none fixed bottom-4 left-0 right-0 z-50 px-4 text-center text-[10px] uppercase tracking-[0.3em] text-white"
     >
       <span className="pointer-events-auto">
         {POWERED_BY_LABEL}{" "}

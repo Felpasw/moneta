@@ -17,7 +17,7 @@ import { AssistantSettingsAvatar } from "@/components/organisms/AssistantSetting
 import { CURATED_AVATAR_STYLE_OPTIONS } from "@/components/organisms/assistantSettings.constants";
 
 describe("AssistantSettingsAvatar", () => {
-  it("renderiza os 6 styles curados como opções clicáveis", () => {
+  it("renderiza um botão pra cada style curado", () => {
     render(
       <AssistantSettingsAvatar
         avatarUrl={null}
@@ -28,52 +28,16 @@ describe("AssistantSettingsAvatar", () => {
 
     for (const option of CURATED_AVATAR_STYLE_OPTIONS) {
       expect(
-        screen.getByRole("button", { name: new RegExp(`escolher.*${option.label}`, "i") }),
+        screen.getByRole("button", {
+          name: new RegExp(`choose ${option.label} style`, "i"),
+        }),
       ).toBeInTheDocument();
     }
   });
 
-  it("input de seed começa com o seed extraído do avatarUrl quando válido", () => {
-    render(
-      <AssistantSettingsAvatar
-        avatarUrl="dicebear:personas:carlos"
-        defaultSeed="felipe"
-        onChange={vi.fn()}
-      />,
-    );
-
-    const seedInput = screen.getByLabelText(/apelido/i) as HTMLInputElement;
-    expect(seedInput.value).toBe("carlos");
-  });
-
-  it("input de seed cai pro defaultSeed quando avatarUrl é null", () => {
-    render(
-      <AssistantSettingsAvatar
-        avatarUrl={null}
-        defaultSeed="felipe"
-        onChange={vi.fn()}
-      />,
-    );
-
-    const seedInput = screen.getByLabelText(/apelido/i) as HTMLInputElement;
-    expect(seedInput.value).toBe("felipe");
-  });
-
-  it("input de seed cai pro defaultSeed quando avatarUrl é inválido", () => {
-    render(
-      <AssistantSettingsAvatar
-        avatarUrl="not-a-valid-avatar"
-        defaultSeed="felipe"
-        onChange={vi.fn()}
-      />,
-    );
-
-    const seedInput = screen.getByLabelText(/apelido/i) as HTMLInputElement;
-    expect(seedInput.value).toBe("felipe");
-  });
-
-  it("selecionar um style dispara onChange com dicebear:{style}:{seed}", async () => {
+  it("clicar num style dispara onChange com dicebear:{style}:cuzi", async () => {
     const onChange = vi.fn();
+    const firstOption = CURATED_AVATAR_STYLE_OPTIONS[0];
     render(
       <AssistantSettingsAvatar
         avatarUrl={null}
@@ -83,76 +47,41 @@ describe("AssistantSettingsAvatar", () => {
     );
 
     await userEvent.click(
-      screen.getByRole("button", { name: /escolher.*avataaars/i }),
+      screen.getByRole("button", {
+        name: new RegExp(`choose ${firstOption.label} style`, "i"),
+      }),
     );
 
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith("dicebear:avataaars:felipe");
+    expect(onChange).toHaveBeenCalledWith(
+      `dicebear:${firstOption.value}:cuzi`,
+    );
   });
 
-  it("alterar o seed atualiza a composição do avatarUrl na próxima seleção", async () => {
-    const onChange = vi.fn();
+  it("marca com aria-pressed=true o style atual do avatarUrl", () => {
+    const secondOption = CURATED_AVATAR_STYLE_OPTIONS[1];
     render(
       <AssistantSettingsAvatar
-        avatarUrl={null}
-        defaultSeed="felipe"
-        onChange={onChange}
-      />,
-    );
-
-    const seedInput = screen.getByLabelText(/apelido/i);
-    await userEvent.clear(seedInput);
-    await userEvent.type(seedInput, "carlos");
-
-    await userEvent.click(
-      screen.getByRole("button", { name: /escolher.*micah/i }),
-    );
-
-    expect(onChange).toHaveBeenCalledWith("dicebear:micah:carlos");
-  });
-
-  it("não dispara onChange se o seed estiver vazio", async () => {
-    const onChange = vi.fn();
-    render(
-      <AssistantSettingsAvatar
-        avatarUrl={null}
-        defaultSeed="felipe"
-        onChange={onChange}
-      />,
-    );
-
-    const seedInput = screen.getByLabelText(/apelido/i);
-    await userEvent.clear(seedInput);
-
-    await userEvent.click(
-      screen.getByRole("button", { name: /escolher.*micah/i }),
-    );
-
-    expect(onChange).not.toHaveBeenCalled();
-  });
-
-  it("marca com aria-pressed=true o style atualmente selecionado", () => {
-    render(
-      <AssistantSettingsAvatar
-        avatarUrl="dicebear:lorelei:felipe"
+        avatarUrl={`dicebear:${secondOption.value}:cuzi`}
         defaultSeed="felipe"
         onChange={vi.fn()}
       />,
     );
 
-    const loreleiButton = screen.getByRole("button", {
-      name: /escolher.*lorelei/i,
+    const secondButton = screen.getByRole("button", {
+      name: new RegExp(`choose ${secondOption.label} style`, "i"),
     });
-    expect(loreleiButton.getAttribute("aria-pressed")).toBe("true");
+    expect(secondButton.getAttribute("aria-pressed")).toBe("true");
 
-    const micahButton = screen.getByRole("button", {
-      name: /escolher.*micah/i,
+    const firstOption = CURATED_AVATAR_STYLE_OPTIONS[0];
+    const firstButton = screen.getByRole("button", {
+      name: new RegExp(`choose ${firstOption.label} style`, "i"),
     });
-    expect(micahButton.getAttribute("aria-pressed")).toBe("false");
+    expect(firstButton.getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("respeita a prop disabled — bloqueia seleção e input", async () => {
+  it("respeita a prop disabled — bloqueia seleção", async () => {
     const onChange = vi.fn();
+    const firstOption = CURATED_AVATAR_STYLE_OPTIONS[0];
     render(
       <AssistantSettingsAvatar
         avatarUrl={null}
@@ -163,11 +92,11 @@ describe("AssistantSettingsAvatar", () => {
     );
 
     await userEvent.click(
-      screen.getByRole("button", { name: /escolher.*micah/i }),
+      screen.getByRole("button", {
+        name: new RegExp(`choose ${firstOption.label} style`, "i"),
+      }),
     );
-    expect(onChange).not.toHaveBeenCalled();
 
-    const seedInput = screen.getByLabelText(/apelido/i);
-    expect(seedInput).toBeDisabled();
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
