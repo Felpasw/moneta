@@ -35,6 +35,8 @@ const CHECKING: UserBankAccountWithBank = {
   closeDay: null,
   dueDay: null,
   bank,
+  currentInvoice: null,
+  usagePct: 0,
 };
 
 const CREDIT: UserBankAccountWithBank = {
@@ -48,6 +50,8 @@ const CREDIT: UserBankAccountWithBank = {
   closeDay: 5,
   dueDay: 12,
   bank: { ...bank, id: "b-2", name: "Nubank Cartão" },
+  currentInvoice: null,
+  usagePct: 0,
 };
 
 const POPULATED: ListAccountsResult = {
@@ -114,5 +118,31 @@ describe("<BanksScreen />", () => {
     });
     expect(summary).toHaveTextContent(/1 checking accounts/i);
     expect(summary).toHaveTextContent(/1,234\.56|1\.234,56|R\$/);
+  });
+
+  it("renderiza a invoice section do CreditAccountCard quando currentInvoice existe", async () => {
+    const CREDIT_WITH_INVOICE: UserBankAccountWithBank = {
+      ...CREDIT,
+      currentInvoice: {
+        totalAmount: 2500,
+        status: "open",
+        dueDate: "2026-09-12",
+        cycleStart: "2026-08-05",
+        cycleEnd: "2026-09-04",
+      },
+      usagePct: 50,
+    };
+
+    renderScreen({
+      items: [CREDIT_WITH_INVOICE],
+      summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText(/current statement/i)).toBeInTheDocument(),
+    );
+    expect(screen.getByText(/limit usage/i)).toBeInTheDocument();
+    expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(screen.getByText(/^open$/i)).toBeInTheDocument();
   });
 });

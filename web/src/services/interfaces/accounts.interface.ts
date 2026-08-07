@@ -1,5 +1,7 @@
 import type { Bank } from "./banks.interface";
 
+export type InvoiceStatus = "open" | "closed" | "paid" | "overdue";
+
 export interface UserBankAccount {
   id: string;
   userId: string;
@@ -12,8 +14,18 @@ export interface UserBankAccount {
   dueDay: number | null;
 }
 
+export interface CurrentInvoice {
+  totalAmount: number;
+  status: InvoiceStatus;
+  dueDate: string;
+  cycleStart: string;
+  cycleEnd: string;
+}
+
 export interface UserBankAccountWithBank extends UserBankAccount {
   bank: Bank;
+  currentInvoice: CurrentInvoice | null;
+  usagePct: number;
 }
 
 export interface AccountsSummary {
