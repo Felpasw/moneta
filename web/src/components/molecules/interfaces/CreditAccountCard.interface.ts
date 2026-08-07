@@ -1,5 +1,5 @@
-import type { CreditBankRow } from "@/mocks/finance";
+import type { UserBankAccountWithBank } from "@/services/interfaces/accounts.interface";
 
 export interface CreditAccountCardProps {
-  row: CreditBankRow;
+  account: UserBankAccountWithBank;
 }

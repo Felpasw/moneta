@@ -107,9 +107,10 @@ Mesmas do `specs/002-auth/tasks.md`.
   - Sub-rota `/transactions/:id` — detail + edit (mesmo Sheet, modo edit)
   - Empty state: "sem transações — comece registrando uma pelo chat"
 - [ ] **MNT-103** [T][S] Bancos `/banks` (sub-navegação dentro de **Grana**):
-  - Grid de cards das `user_bank_accounts` — cada card: `nickname`, logo do banco (`banks.logo_url`), saldo, limite (se aplicável), % de uso do limite (barra)
-  - Botão "+ conta" abre `<AddBankAccountSheet>`
-  - Sub-rota `/banks/:id` — extrato daquela conta (mesma UX de `/transactions` já filtrado)
+  - [x] Grid + summary consumindo `useAccounts()` (Suspense). Backend estendeu `GET /accounts` pra `{ items, summary }` (commit `20b9a2a` / MNT-103) — use-case computa `totalBalance`/`checkingCount`/`totalOverdraft` in-memory dos rows checking-only, tool `list_my_accounts` do agent recebe o novo shape. Cards recebem `UserBankAccountWithBank` direto (sem view-type intermediário), leem `account.bank.name`/`account.balance`/`account.creditLimit`. `BanksScreen` faz early-branch inline via subcomponente local `AccountCard`, sem ternário em JSX. Estados loading/error delegados pros Next boundaries do `(shell)` (commit `84a89ed` / MNT-215); empty via `<EmptyState>` molecule. Órfãos removidos de `mocks/finance.ts`: `BankRow`/`CheckingBankRow`/`CreditBankRow`/`BankKind`/`InvoiceStatus`/`BanksSummary`/`MOCK_BANK_ROWS`/`MOCK_BANKS_SUMMARY`/helper `dayOfMonth`. TDD verde: `BanksScreen.spec` (3 casos — empty, populated, summary lido direto do backend). **Regra estabelecida no processo**: "backend define shape e agregação, frontend consome property-direct" — CLAUDE.md global atualizado com seção nova + memória `feedback_no_frontend_derivation.md`
+  - [ ] **Pendente — invoice section no `CreditAccountCard`**: card hoje só mostra `Credit limit` + `Due day`. Quando **MNT-159** landar (`currentInvoice: { totalAmount, status, dueDate } | null` + `usagePct` no `GET /accounts`), estender `UserBankAccountWithBank` no port do backend, atualizar `CreditAccountCard` pra ler `account.currentInvoice`/`account.usagePct` e renderizar bottom section (current statement / usage bar / due date) condicionalmente
+  - [ ] Botão "+ conta" abre `<AddBankAccountSheet>`
+  - [ ] Sub-rota `/banks/:id` — extrato daquela conta (mesma UX de `/transactions` já filtrado)
 - [ ] **MNT-104** [T][S] Recurring `/recurring` (sub-navegação dentro de **Grana**):
   - Duas abas: **Rendas** e **Despesas fixas**
   - Lista das `recurring_rules` — cada card: nome, valor (default_amount ou "variável"), banco, ativo/inativo
@@ -129,7 +130,7 @@ Mesmas do `specs/002-auth/tasks.md`.
 
 - **MNT-100** `/dashboard` — template com KPI cards (Total balance / Income / Expenses / Left this month), MonthlyFlowChart, BalanceLineChart, TopCategoriesChart (mocks). **Falta**: saudação com `nickname||name`, toggle 👁️ mostrar/ocultar saldo, KPIs corretos (Gastos do mês / Próxima despesa fixa / Salário previsto), grid de saved_charts pinados, FAB 🎤 → `/chat`, empty state, hooks reais (`useAccounts` + `useTransactions` agregados).
 - **MNT-102** `/transactions` — template lista agrupada por dia (mock). **Falta**: virtualização, filtros (período/banco/categoria/tipo), search, FAB "+" com `<AddTransactionSheet>`, sub-rota `/transactions/:id`, empty state, hook `useTransactions()`.
-- **MNT-103** `/banks` — **rota diverge**: scaffold foi criado em `/accounts` (checking accounts) e `/cards` (credit accounts). Decisão pendente: (a) renomear `/accounts` → `/banks` e fundir cards no mesmo grid conforme spec, ou (b) atualizar a spec pra dividir em `/accounts` + `/cards`. `<AddBankAccountSheet>`, sub-rota `/banks/:id` (extrato), hook `useAccounts()` — tudo pendente.
+- **MNT-103** `/banks` — decisão (a) tomada em `1658901` (unificado). Grid + summary já consomem `useAccounts()` real via Suspense (ver bullet checked no MNT-103 acima). Restam `<AddBankAccountSheet>`, sub-rota `/banks/:id`, e a seção de invoice/usage no `CreditAccountCard` amarrada à MNT-159.
 - **MNT-106** `/settings` — apenas `PlaceholderScreen` (título + subtítulo). **Falta**: nav lateral/lista, sub-rotas `/settings/profile`, `/settings/security`, `/settings/data`, `/settings/about`. `/settings/assistant` já existe (MNT-66).
 - **`/categories`** — rota criada em `5d0d284` sem task base na spec. Decisão: criar task nova (categorias custom por user já existem no backend, MNT-127) ou dropar a rota e mover CRUD pra dentro de um sheet dispatched pelo chat/`/transactions`.
 

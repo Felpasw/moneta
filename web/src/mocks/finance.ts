@@ -1,36 +1,4 @@
 export type TransactionDirection = "income" | "expense";
-export type InvoiceStatus = "open" | "closed" | "paid";
-export type BankKind = "checking" | "credit";
-
-export interface CheckingBankRow {
-  id: string;
-  kind: "checking";
-  nickname: string;
-  bankName: string;
-  balance: number;
-  overdraftLimit: number | null;
-}
-
-export interface CreditBankRow {
-  id: string;
-  kind: "credit";
-  nickname: string;
-  bankName: string;
-  limit: number;
-  spent: number;
-  available: number;
-  usagePct: number;
-  invoiceStatus: InvoiceStatus | null;
-  dueDate: Date | null;
-}
-
-export type BankRow = CheckingBankRow | CreditBankRow;
-
-export interface BanksSummary {
-  totalBalance: number;
-  checkingCount: number;
-  totalOverdraft: number;
-}
 
 export interface CategoryRow {
   id: string;
@@ -106,9 +74,6 @@ const daysAgo = (n: number): Date => {
   return d;
 };
 
-const dayOfMonth = (day: number, monthOffset = 0): Date =>
-  new Date(NOW.getFullYear(), NOW.getMonth() + monthOffset, day);
-
 const monthAt = (offset: number): Date =>
   new Date(NOW.getFullYear(), NOW.getMonth() + offset, 1);
 
@@ -117,75 +82,6 @@ const FULL_MONTH = new Intl.DateTimeFormat("en-US", { month: "long" });
 
 const dayKey = (d: Date): string =>
   `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-
-export const MOCK_BANK_ROWS: BankRow[] = [
-  {
-    id: "acc-nubank-checking",
-    kind: "checking",
-    nickname: "Main checking",
-    bankName: "Nubank",
-    balance: 4820.53,
-    overdraftLimit: 500,
-  },
-  {
-    id: "acc-itau-checking",
-    kind: "checking",
-    nickname: "Salary account",
-    bankName: "Itaú Unibanco",
-    balance: 1235.9,
-    overdraftLimit: 1000,
-  },
-  {
-    id: "acc-inter-checking",
-    kind: "checking",
-    nickname: "Savings",
-    bankName: "Banco Inter",
-    balance: 12480,
-    overdraftLimit: null,
-  },
-  {
-    id: "acc-nubank-card",
-    kind: "credit",
-    nickname: "Nubank Ultravioleta",
-    bankName: "Nubank",
-    limit: 12000,
-    spent: 2340.7,
-    available: 9659.3,
-    usagePct: 20,
-    invoiceStatus: "open",
-    dueDate: dayOfMonth(27),
-  },
-  {
-    id: "acc-c6-card",
-    kind: "credit",
-    nickname: "C6 Carbon",
-    bankName: "Banco C6",
-    limit: 8000,
-    spent: 1108.6,
-    available: 6891.4,
-    usagePct: 14,
-    invoiceStatus: "closed",
-    dueDate: dayOfMonth(12),
-  },
-  {
-    id: "acc-bradesco-card",
-    kind: "credit",
-    nickname: "Bradesco Elo Nanquim",
-    bankName: "Bradesco",
-    limit: 5000,
-    spent: 892.35,
-    available: 4107.65,
-    usagePct: 18,
-    invoiceStatus: "paid",
-    dueDate: dayOfMonth(22, -1),
-  },
-];
-
-export const MOCK_BANKS_SUMMARY: BanksSummary = {
-  totalBalance: 18536.43,
-  checkingCount: 3,
-  totalOverdraft: 1500,
-};
 
 export const MOCK_CATEGORY_ROWS: CategoryRow[] = [
   {
