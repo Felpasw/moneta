@@ -11,6 +11,9 @@ interface MockPrisma {
     updateMany: jest.Mock;
     deleteMany: jest.Mock;
   };
+  transaction: {
+    groupBy: jest.Mock;
+  };
 }
 
 const buildPrisma = (): { prisma: PrismaService; mock: MockPrisma } => {
@@ -22,40 +25,161 @@ const buildPrisma = (): { prisma: PrismaService; mock: MockPrisma } => {
       updateMany: jest.fn(),
       deleteMany: jest.fn(),
     },
+    transaction: {
+      groupBy: jest.fn().mockResolvedValue([]),
+    },
   };
   return { prisma: mock as unknown as PrismaService, mock };
 };
 
+// Runtime returns number due to Prisma extension (decimal-to-number).
+// Kept as identity helper to keep test call-sites readable.
 const decimal = (n: number): number => n;
+
+// Prisma's aggregate results are NOT extended — Decimal is still returned.
+const aggregateDecimal = (n: number): Prisma.Decimal => new Prisma.Decimal(n);
 
 describe('PrismaCategoriesRepository', () => {
   describe('listForUser', () => {
-    it('maps rows with monthlyBudget Decimal to number and preserves null', async () => {
+    it('enriches categories with spent/usagePct/overBudget from current month expenses', async () => {
       const { prisma, mock } = buildPrisma();
       mock.category.findMany.mockResolvedValue([
         {
+          id: 'cat-groceries',
+          userId: 'user-1',
+          name: 'Groceries',
+          icon: '🛒',
+          color: null,
+          monthlyBudget: decimal(500),
+        },
+        {
+          id: 'cat-leisure',
+          userId: 'user-1',
+          name: 'Leisure',
+          icon: '🎮',
+          color: null,
+          monthlyBudget: decimal(200),
+        },
+        {
           id: 'g-1',
           userId: null,
-          name: 'Alimentação',
-          icon: null,
+          name: 'Salary',
+          icon: '💼',
           color: null,
           monthlyBudget: null,
         },
+      ]);
+      mock.transaction.groupBy.mockResolvedValue([
         {
-          id: 'c-1',
-          userId: 'user-1',
-          name: 'Books',
-          icon: '📚',
-          color: '#22c55e',
-          monthlyBudget: decimal(150.5),
+          categoryId: 'cat-groceries',
+          _sum: { amount: aggregateDecimal(250) },
         },
+        { categoryId: 'cat-leisure', _sum: { amount: aggregateDecimal(300) } },
       ]);
       const repo = new PrismaCategoriesRepository(prisma);
 
       const result = await repo.listForUser('user-1');
 
-      expect(result[0].monthlyBudget).toBeNull();
-      expect(result[1].monthlyBudget).toBe(150.5);
+      const groceries = result.find((c) => c.id === 'cat-groceries');
+      expect(groceries).toMatchObject({
+        spent: 250,
+        usagePct: 50, // 250/500 = 50%
+        overBudget: false,
+      });
+
+      const leisure = result.find((c) => c.id === 'cat-leisure');
+      expect(leisure).toMatchObject({
+        spent: 300,
+        usagePct: 100, // capped: 300/200 > 1
+        overBudget: true,
+      });
+
+      const salary = result.find((c) => c.id === 'g-1');
+      expect(salary).toMatchObject({
+        spent: 0,
+        usagePct: 0, // no budget
+        overBudget: false,
+      });
+    });
+
+    it('returns spent=0/usagePct=0/overBudget=false when the category has no expenses this month', async () => {
+      const { prisma, mock } = buildPrisma();
+      mock.category.findMany.mockResolvedValue([
+        {
+          id: 'cat-1',
+          userId: 'user-1',
+          name: 'Books',
+          icon: null,
+          color: null,
+          monthlyBudget: decimal(100),
+        },
+      ]);
+      mock.transaction.groupBy.mockResolvedValue([]);
+      const repo = new PrismaCategoriesRepository(prisma);
+
+      const [category] = await repo.listForUser('user-1');
+
+      expect(category.spent).toBe(0);
+      expect(category.usagePct).toBe(0);
+      expect(category.overBudget).toBe(false);
+    });
+
+    it('filters transactions.groupBy by user + expense type + current month bounds', async () => {
+      const { prisma, mock } = buildPrisma();
+      mock.category.findMany.mockResolvedValue([]);
+      const repo = new PrismaCategoriesRepository(prisma);
+
+      await repo.listForUser('user-1');
+
+      expect(mock.transaction.groupBy).toHaveBeenCalledTimes(1);
+      const [callArgs] = mock.transaction.groupBy.mock.calls as [
+        [
+          {
+            by: string[];
+            where: {
+              userId: string;
+              type: string;
+              occurredAt: { gte: Date; lt: Date };
+              categoryId: { not: null };
+            };
+            _sum: { amount: boolean };
+          },
+        ],
+      ];
+      const args = callArgs[0];
+      expect(args.by).toEqual(['categoryId']);
+      expect(args.where.userId).toBe('user-1');
+      expect(args.where.type).toBe('expense');
+      expect(args._sum.amount).toBe(true);
+      // Month bounds: gte = first of current month, lt = first of next month
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      expect(args.where.occurredAt.gte).toEqual(monthStart);
+      expect(args.where.occurredAt.lt).toEqual(monthEnd);
+    });
+
+    it('rounds usagePct to the nearest integer', async () => {
+      const { prisma, mock } = buildPrisma();
+      mock.category.findMany.mockResolvedValue([
+        {
+          id: 'cat-1',
+          userId: 'user-1',
+          name: 'x',
+          icon: null,
+          color: null,
+          monthlyBudget: decimal(300),
+        },
+      ]);
+      mock.transaction.groupBy.mockResolvedValue([
+        { categoryId: 'cat-1', _sum: { amount: aggregateDecimal(100) } },
+      ]);
+      const repo = new PrismaCategoriesRepository(prisma);
+
+      const [category] = await repo.listForUser('user-1');
+
+      // 100 / 300 = 0.333... -> 33
+      expect(category.usagePct).toBe(33);
     });
   });
 
@@ -80,7 +204,7 @@ describe('PrismaCategoriesRepository', () => {
 
       expect(mock.category.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ monthlyBudget: 200 }),
+          data: expect.objectContaining({ monthlyBudget: 200 }) as unknown,
         }),
       );
       expect(result.monthlyBudget).toBe(200);
@@ -141,7 +265,7 @@ describe('PrismaCategoriesRepository', () => {
 
       expect(mock.category.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ monthlyBudget: null }),
+          data: expect.objectContaining({ monthlyBudget: null }) as unknown,
         }),
       );
       expect(result?.monthlyBudget).toBeNull();

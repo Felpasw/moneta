@@ -92,4 +92,5 @@ export interface TransactionsRepository {
   delete(id: string, userId: string): Promise<void>;
   findById(id: string, userId: string): Promise<Transaction | null>;
   list(filters: ListTransactionsFilters): Promise<TransactionWithEmbeds[]>;
+  summarize(filters: ListTransactionsFilters): Promise<TransactionsSummary>;
 }

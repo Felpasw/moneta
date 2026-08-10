@@ -65,6 +65,7 @@ export interface UpdateUserBankAccountInput {
 
 export interface UserBankAccountsRepository {
   listByUserId(userId: string): Promise<UserBankAccountWithBank[]>;
+  summarizeCheckings(userId: string): Promise<AccountsSummary>;
   findById(id: string, userId: string): Promise<UserBankAccount | null>;
   add(input: AddUserBankAccountInput): Promise<UserBankAccount>;
   update(input: UpdateUserBankAccountInput): Promise<UserBankAccount | null>;

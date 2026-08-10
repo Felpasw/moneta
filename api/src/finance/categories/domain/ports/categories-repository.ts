@@ -9,6 +9,12 @@ export interface Category {
   monthlyBudget: number | null;
 }
 
+export interface CategoryWithUsage extends Category {
+  spent: number;
+  usagePct: number;
+  overBudget: boolean;
+}
+
 export interface AddCategoryInput {
   userId: string;
   name: string;
@@ -27,7 +33,7 @@ export interface UpdateCategoryInput {
 }
 
 export interface CategoriesRepository {
-  listForUser(userId: string): Promise<Category[]>;
+  listForUser(userId: string): Promise<CategoryWithUsage[]>;
   addCustom(input: AddCategoryInput): Promise<Category>;
   update(input: UpdateCategoryInput): Promise<Category | null>;
   delete(id: string, userId: string): Promise<boolean>;

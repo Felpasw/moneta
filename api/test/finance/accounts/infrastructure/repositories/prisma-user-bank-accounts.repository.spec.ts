@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 import { InvoiceStatus } from '~/finance/card-billing/domain/constants/invoice-status';
 import type { PrismaService } from '~/infrastructure/prisma/prisma.service';
 import { PrismaUserBankAccountsRepository } from '~/finance/accounts/infrastructure/repositories/prisma-user-bank-accounts.repository';
@@ -6,6 +8,7 @@ interface MockPrisma {
   userBankAccount: {
     findMany: jest.Mock;
     findFirst: jest.Mock;
+    aggregate: jest.Mock;
   };
 }
 
@@ -14,6 +17,7 @@ const buildPrisma = (): { prisma: PrismaService; mock: MockPrisma } => {
     userBankAccount: {
       findMany: jest.fn(),
       findFirst: jest.fn(),
+      aggregate: jest.fn(),
     },
   };
   return { prisma: mock as unknown as PrismaService, mock };
@@ -22,6 +26,9 @@ const buildPrisma = (): { prisma: PrismaService; mock: MockPrisma } => {
 // Runtime returns number due to Prisma extension (decimal-to-number).
 // Kept as identity helper to keep test call-sites readable.
 const decimal = (n: number): number => n;
+
+// Prisma's aggregate results are NOT extended — Decimal is still returned.
+const aggregateDecimal = (n: number): Prisma.Decimal => new Prisma.Decimal(n);
 
 describe('PrismaUserBankAccountsRepository', () => {
   describe('listByUserId', () => {
@@ -256,6 +263,50 @@ describe('PrismaUserBankAccountsRepository', () => {
 
       // 100 / 300 = 0.333... -> 33
       expect(card.usagePct).toBe(33);
+    });
+  });
+
+  describe('summarizeCheckings', () => {
+    it('returns Postgres-aggregated totals across checking accounts only', async () => {
+      const { prisma, mock } = buildPrisma();
+      mock.userBankAccount.aggregate.mockResolvedValue({
+        _sum: {
+          balance: aggregateDecimal(1234.56),
+          overdraftLimit: aggregateDecimal(1500),
+        },
+        _count: { _all: 3 },
+      });
+      const repo = new PrismaUserBankAccountsRepository(prisma);
+
+      const summary = await repo.summarizeCheckings('user-1');
+
+      expect(summary).toEqual({
+        totalBalance: 1234.56,
+        checkingCount: 3,
+        totalOverdraft: 1500,
+      });
+      expect(mock.userBankAccount.aggregate).toHaveBeenCalledWith({
+        where: { userId: 'user-1', creditLimit: null },
+        _sum: { balance: true, overdraftLimit: true },
+        _count: { _all: true },
+      });
+    });
+
+    it('returns zeros when the user has no checking accounts', async () => {
+      const { prisma, mock } = buildPrisma();
+      mock.userBankAccount.aggregate.mockResolvedValue({
+        _sum: { balance: null, overdraftLimit: null },
+        _count: { _all: 0 },
+      });
+      const repo = new PrismaUserBankAccountsRepository(prisma);
+
+      const summary = await repo.summarizeCheckings('user-1');
+
+      expect(summary).toEqual({
+        totalBalance: 0,
+        checkingCount: 0,
+        totalOverdraft: 0,
+      });
     });
   });
 });

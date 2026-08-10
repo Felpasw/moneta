@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 
 import { AccountNotFoundError } from '../../../accounts/domain/errors/account-not-found.error';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service';
+import { decimalToNumber } from '../../../@shared/utils/decimal-to-number';
 import { TransactionType } from '../../domain/constants/transaction-type';
 import { TransactionNotFoundError } from '../../domain/errors/transaction-not-found.error';
 import type {
@@ -12,6 +13,7 @@ import type {
   Transaction,
   TransactionWithEmbeds,
   TransactionsRepository,
+  TransactionsSummary,
 } from '../../domain/ports/transactions-repository';
 import { signedAmount } from '../../domain/utils/signed-amount';
 
@@ -91,6 +93,19 @@ const toDomainWithEmbeds = (
   };
 };
 
+const buildWhere = (filters: ListTransactionsFilters) =>
+  ({
+    userId: filters.userId,
+    occurredAt: { gte: filters.dateFrom, lte: filters.dateTo },
+    accountId: filters.accountIds && { in: filters.accountIds },
+    categoryId: filters.categoryIds && { in: filters.categoryIds },
+    type: filters.types && { in: filters.types },
+    description: filters.textSearch && {
+      contains: filters.textSearch,
+      mode: 'insensitive',
+    },
+  }) satisfies Prisma.TransactionWhereInput;
+
 type TxClient = Parameters<
   Parameters<PrismaService['$transaction']>[0] extends (tx: infer T) => unknown
     ? (tx: T) => void
@@ -169,23 +184,39 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
     filters: ListTransactionsFilters,
   ): Promise<TransactionWithEmbeds[]> {
     const rows = await this.prisma.transaction.findMany({
-      where: {
-        userId: filters.userId,
-        occurredAt: { gte: filters.dateFrom, lte: filters.dateTo },
-        accountId: filters.accountIds && { in: filters.accountIds },
-        categoryId: filters.categoryIds && { in: filters.categoryIds },
-        type: filters.types && { in: filters.types },
-        description: filters.textSearch && {
-          contains: filters.textSearch,
-          mode: 'insensitive',
-        },
-      },
+      where: buildWhere(filters),
       orderBy: { occurredAt: 'desc' },
       take: filters.limit,
       skip: filters.offset,
       select: TRANSACTION_WITH_EMBEDS_SELECT,
     });
     return rows.map(toDomainWithEmbeds);
+  }
+
+  async summarize(
+    filters: ListTransactionsFilters,
+  ): Promise<TransactionsSummary> {
+    const groups = await this.prisma.transaction.groupBy({
+      by: ['type'],
+      where: buildWhere(filters),
+      _sum: { amount: true },
+    });
+    let totalIncome = 0;
+    let totalExpense = 0;
+    for (const group of groups) {
+      const value = decimalToNumber(group._sum.amount);
+      const type = group.type as TransactionType;
+      if (type === TransactionType.Income) {
+        totalIncome = value;
+      } else if (type === TransactionType.Expense) {
+        totalExpense = value;
+      }
+    }
+    return {
+      totalIncome,
+      totalExpense,
+      net: totalIncome - totalExpense,
+    };
   }
 
   private async addWithinTx(

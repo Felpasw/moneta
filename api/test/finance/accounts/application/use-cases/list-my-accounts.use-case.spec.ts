@@ -1,8 +1,14 @@
 import { ListMyAccountsUseCase } from '~/finance/accounts/application/use-cases/list-my-accounts.use-case';
-import type { UserBankAccountWithBank } from '~/finance/accounts/domain/ports/user-bank-accounts-repository';
+import type {
+  AccountsSummary,
+  UserBankAccountWithBank,
+} from '~/finance/accounts/domain/ports/user-bank-accounts-repository';
 
 const buildUseCase = () => {
-  const accounts = { listByUserId: jest.fn() };
+  const accounts = {
+    listByUserId: jest.fn(),
+    summarizeCheckings: jest.fn(),
+  };
   const useCase = new ListMyAccountsUseCase(accounts);
   return { useCase, accounts };
 };
@@ -14,18 +20,14 @@ const bank = {
   logoUrl: null,
 };
 
-const checking = (
-  id: string,
-  balance: number,
-  overdraftLimit: number | null,
-): UserBankAccountWithBank => ({
+const checking = (id: string): UserBankAccountWithBank => ({
   id,
   userId: 'user-1',
   bankId: 'bank-1',
   nickname: id,
-  balance,
+  balance: 100,
   creditLimit: null,
-  overdraftLimit,
+  overdraftLimit: 500,
   closeDay: null,
   dueDay: null,
   bank,
@@ -33,64 +35,43 @@ const checking = (
   usagePct: 0,
 });
 
-const credit = (id: string): UserBankAccountWithBank => ({
-  id,
-  userId: 'user-1',
-  bankId: 'bank-2',
-  nickname: id,
-  balance: 0,
-  creditLimit: 5000,
-  overdraftLimit: null,
-  closeDay: 5,
-  dueDay: 12,
-  bank: { ...bank, id: 'bank-2', name: 'Nubank Cartão' },
-  currentInvoice: null,
-  usagePct: 0,
-});
-
 describe('ListMyAccountsUseCase', () => {
-  it('returns items + summary aggregated only across checking accounts', async () => {
+  it('returns items from listByUserId + summary from summarizeCheckings', async () => {
     const { useCase, accounts } = buildUseCase();
-    const owned: UserBankAccountWithBank[] = [
-      checking('chk-1', 1000, 500),
-      checking('chk-2', 250, null),
-      credit('cr-1'),
-    ];
-    accounts.listByUserId.mockResolvedValue(owned);
-
-    const result = await useCase.execute({ userId: 'user-1' });
-
-    expect(result.items).toEqual(owned);
-    expect(result.summary).toEqual({
-      totalBalance: 1250,
+    const owned = [checking('chk-1'), checking('chk-2')];
+    const summary: AccountsSummary = {
+      totalBalance: 1250.55,
       checkingCount: 2,
       totalOverdraft: 500,
-    });
+    };
+    accounts.listByUserId.mockResolvedValue(owned);
+    accounts.summarizeCheckings.mockResolvedValue(summary);
+
+    const result = await useCase.execute({ userId: 'user-1' });
+
+    expect(result).toEqual({ items: owned, summary });
     expect(accounts.listByUserId).toHaveBeenCalledWith('user-1');
+    expect(accounts.summarizeCheckings).toHaveBeenCalledWith('user-1');
   });
 
-  it('returns a zero summary when there are no accounts', async () => {
+  it('runs items and summary queries in parallel', async () => {
     const { useCase, accounts } = buildUseCase();
-    accounts.listByUserId.mockResolvedValue([]);
-
-    const result = await useCase.execute({ userId: 'user-1' });
-
-    expect(result).toEqual({
-      items: [],
-      summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 },
+    const order: string[] = [];
+    accounts.listByUserId.mockImplementation(async () => {
+      order.push('items-start');
+      await new Promise((r) => setTimeout(r, 10));
+      order.push('items-end');
+      return [];
     });
-  });
-
-  it('excludes credit accounts entirely from the summary aggregation', async () => {
-    const { useCase, accounts } = buildUseCase();
-    accounts.listByUserId.mockResolvedValue([credit('cr-1'), credit('cr-2')]);
-
-    const result = await useCase.execute({ userId: 'user-1' });
-
-    expect(result.summary).toEqual({
-      totalBalance: 0,
-      checkingCount: 0,
-      totalOverdraft: 0,
+    accounts.summarizeCheckings.mockImplementation(async () => {
+      order.push('summary-start');
+      await new Promise((r) => setTimeout(r, 10));
+      order.push('summary-end');
+      return { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 };
     });
+
+    await useCase.execute({ userId: 'user-1' });
+
+    expect(order.slice(0, 2).sort()).toEqual(['items-start', 'summary-start']);
   });
 });

@@ -43,6 +43,8 @@ const buildPrisma = (): { prisma: PrismaService; tx: MockTx } => {
 
 const decimal = (n: number): number => n;
 
+const aggregateDecimal = (n: number): Prisma.Decimal => new Prisma.Decimal(n);
+
 const CURRENT_USER = 'user-1';
 const ACCOUNT_A = 'acc-a';
 const ACCOUNT_B = 'acc-b';
@@ -843,6 +845,116 @@ describe('PrismaTransactionsRepository', () => {
         select: { name: true },
       });
       expect(args.select.category.select.name).toBe(true);
+    });
+  });
+
+  describe('summarize', () => {
+    const buildSummarizePrisma = () => {
+      const groupBy = jest.fn();
+      const prisma = {
+        transaction: { groupBy },
+      } as unknown as PrismaService;
+      return { prisma, groupBy };
+    };
+
+    it('returns Postgres-aggregated totals grouped by transaction type', async () => {
+      const { prisma, groupBy } = buildSummarizePrisma();
+      groupBy.mockResolvedValue([
+        {
+          type: TransactionType.Income,
+          _sum: { amount: aggregateDecimal(2000) },
+        },
+        {
+          type: TransactionType.Expense,
+          _sum: { amount: aggregateDecimal(420.5) },
+        },
+      ]);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const summary = await repo.summarize({
+        userId: CURRENT_USER,
+        limit: 50,
+        offset: 0,
+      });
+
+      expect(summary).toEqual({
+        totalIncome: 2000,
+        totalExpense: 420.5,
+        net: 1579.5,
+      });
+    });
+
+    it('forwards the same filters used by list to the groupBy where clause', async () => {
+      const { prisma, groupBy } = buildSummarizePrisma();
+      groupBy.mockResolvedValue([]);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await repo.summarize({
+        userId: CURRENT_USER,
+        dateFrom: new Date('2026-08-01T00:00:00Z'),
+        dateTo: new Date('2026-08-31T23:59:59Z'),
+        accountIds: ['acc-1'],
+        categoryIds: ['cat-1'],
+        types: [TransactionType.Expense],
+        textSearch: 'coffee',
+        limit: 50,
+        offset: 0,
+      });
+
+      const [firstCall] = groupBy.mock.calls as [
+        [{ by: string[]; where: Record<string, unknown>; _sum: unknown }],
+      ];
+      const args = firstCall[0];
+      expect(args.by).toEqual(['type']);
+      expect(args._sum).toEqual({ amount: true });
+      expect(args.where).toEqual({
+        userId: CURRENT_USER,
+        occurredAt: {
+          gte: new Date('2026-08-01T00:00:00Z'),
+          lte: new Date('2026-08-31T23:59:59Z'),
+        },
+        accountId: { in: ['acc-1'] },
+        categoryId: { in: ['cat-1'] },
+        type: { in: [TransactionType.Expense] },
+        description: { contains: 'coffee', mode: 'insensitive' },
+      });
+    });
+
+    it('returns a zero summary when there are no rows', async () => {
+      const { prisma, groupBy } = buildSummarizePrisma();
+      groupBy.mockResolvedValue([]);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const summary = await repo.summarize({
+        userId: CURRENT_USER,
+        limit: 50,
+        offset: 0,
+      });
+
+      expect(summary).toEqual({ totalIncome: 0, totalExpense: 0, net: 0 });
+    });
+
+    it('handles a missing group (only income, no expenses) as zero on the other side', async () => {
+      const { prisma, groupBy } = buildSummarizePrisma();
+      groupBy.mockResolvedValue([
+        {
+          type: TransactionType.Income,
+          _sum: { amount: aggregateDecimal(500) },
+        },
+      ]);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const summary = await repo.summarize({
+        userId: CURRENT_USER,
+        limit: 50,
+        offset: 0,
+      });
+
+      expect(summary).toEqual({
+        totalIncome: 500,
+        totalExpense: 0,
+        net: 500,
+      });
     });
   });
 });

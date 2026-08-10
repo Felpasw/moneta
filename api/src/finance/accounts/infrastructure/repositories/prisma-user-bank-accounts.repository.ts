@@ -3,7 +3,10 @@ import { Prisma } from '@prisma/client';
 
 import { InvoiceStatus } from '~/finance/card-billing/domain/constants/invoice-status';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service';
+import { computeUsagePct } from '../../../@shared/utils/compute-usage-pct';
+import { decimalToNumber } from '../../../@shared/utils/decimal-to-number';
 import type {
+  AccountsSummary,
   AddUserBankAccountInput,
   CurrentInvoice,
   UpdateUserBankAccountInput,
@@ -50,16 +53,6 @@ const ACCOUNT_WITH_BANK_SELECT = {
   },
 } satisfies Prisma.UserBankAccountSelect;
 
-const computeUsagePct = (
-  creditLimit: number | null,
-  invoice: CurrentInvoice | null,
-): number => {
-  if (creditLimit === null || creditLimit <= 0 || invoice === null) return 0;
-  const raw = invoice.totalAmount / creditLimit;
-  const capped = raw > 1 ? 1 : raw;
-  return Math.round(capped * 100);
-};
-
 @Injectable()
 export class PrismaUserBankAccountsRepository implements UserBankAccountsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -85,9 +78,25 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
       return {
         ...account,
         currentInvoice,
-        usagePct: computeUsagePct(account.creditLimit, currentInvoice),
+        usagePct: computeUsagePct(
+          currentInvoice?.totalAmount ?? 0,
+          account.creditLimit,
+        ),
       };
     });
+  }
+
+  async summarizeCheckings(userId: string): Promise<AccountsSummary> {
+    const result = await this.prisma.userBankAccount.aggregate({
+      where: { userId, creditLimit: null },
+      _sum: { balance: true, overdraftLimit: true },
+      _count: { _all: true },
+    });
+    return {
+      totalBalance: decimalToNumber(result._sum.balance),
+      checkingCount: result._count._all,
+      totalOverdraft: decimalToNumber(result._sum.overdraftLimit),
+    };
   }
 
   async findById(id: string, userId: string): Promise<UserBankAccount | null> {
