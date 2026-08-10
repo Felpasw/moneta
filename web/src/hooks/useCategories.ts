@@ -16,12 +16,13 @@ import categoriesService from "@/services/categories.service";
 import type {
   AddCategoryInput,
   Category,
+  CategoryWithUsage,
 } from "@/services/interfaces/categories.interface";
 
 import type {
   CategoriesHooksResult,
   ICategoriesHooks,
-  RenameCategoryVariables,
+  UpdateCategoryVariables,
 } from "./interfaces/useCategories.interface";
 
 export const CATEGORIES_QUERY_KEYS = {
@@ -36,7 +37,7 @@ class CategoriesHooks implements ICategoriesHooks {
     const invalidateList = () =>
       queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEYS.list });
 
-    const list = useSuspenseQuery<Category[]>({
+    const list = useSuspenseQuery<CategoryWithUsage[]>({
       queryKey: CATEGORIES_QUERY_KEYS.list,
       queryFn: () => categoriesService.list(),
     });
@@ -48,8 +49,8 @@ class CategoriesHooks implements ICategoriesHooks {
       },
     });
 
-    const rename = useMutation<Category, unknown, RenameCategoryVariables>({
-      mutationFn: ({ id, patch }) => categoriesService.rename(id, patch),
+    const update = useMutation<Category, unknown, UpdateCategoryVariables>({
+      mutationFn: ({ id, patch }) => categoriesService.update(id, patch),
       onSuccess: () => {
         void invalidateList();
       },
@@ -62,7 +63,7 @@ class CategoriesHooks implements ICategoriesHooks {
       },
     });
 
-    return { list, create, rename, remove };
+    return { list, create, update, remove };
   }
 }
 

@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import api from "@/api";
 import categoriesService from "@/services/categories.service";
-import type { Category } from "@/services/interfaces/categories.interface";
+import type {
+  Category,
+  CategoryWithUsage,
+} from "@/services/interfaces/categories.interface";
 
 vi.mock("@/api", () => ({
   default: {
@@ -24,6 +27,14 @@ const CATEGORY: Category = {
   name: "Groceries",
   icon: "🛒",
   color: "#22c55e",
+  monthlyBudget: 1200,
+};
+
+const CATEGORY_WITH_USAGE: CategoryWithUsage = {
+  ...CATEGORY,
+  spent: 422.12,
+  usagePct: 35,
+  overBudget: false,
 };
 
 describe("categoriesService", () => {
@@ -38,13 +49,13 @@ describe("categoriesService", () => {
     vi.clearAllMocks();
   });
 
-  it("list — GET /categories", async () => {
-    mockedGet.mockResolvedValueOnce({ data: [CATEGORY] });
+  it("list — GET /categories devolve CategoryWithUsage[]", async () => {
+    mockedGet.mockResolvedValueOnce({ data: [CATEGORY_WITH_USAGE] });
 
     const result = await categoriesService.list();
 
     expect(mockedGet).toHaveBeenCalledWith("/categories");
-    expect(result).toEqual([CATEGORY]);
+    expect(result).toEqual([CATEGORY_WITH_USAGE]);
   });
 
   it("create — POST /categories com o input", async () => {
@@ -62,17 +73,29 @@ describe("categoriesService", () => {
     expect(result).toEqual(CATEGORY);
   });
 
-  it("rename — PATCH /categories/:id com o novo nome", async () => {
+  it("update — PATCH /categories/:id com patch parcial", async () => {
     mockedPatch.mockResolvedValueOnce({ data: CATEGORY });
 
-    const result = await categoriesService.rename("cat-1", {
+    const result = await categoriesService.update("cat-1", {
       name: "Mercado",
+      monthlyBudget: 1500,
     });
 
     expect(mockedPatch).toHaveBeenCalledWith("/categories/cat-1", {
       name: "Mercado",
+      monthlyBudget: 1500,
     });
     expect(result).toEqual(CATEGORY);
+  });
+
+  it("update — PATCH aceita monthlyBudget null pra limpar", async () => {
+    mockedPatch.mockResolvedValueOnce({ data: CATEGORY });
+
+    await categoriesService.update("cat-1", { monthlyBudget: null });
+
+    expect(mockedPatch).toHaveBeenCalledWith("/categories/cat-1", {
+      monthlyBudget: null,
+    });
   });
 
   it("remove — DELETE /categories/:id (204, sem body)", async () => {

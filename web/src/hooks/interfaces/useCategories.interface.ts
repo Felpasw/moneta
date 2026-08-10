@@ -6,18 +6,19 @@ import type {
 import type {
   AddCategoryInput,
   Category,
-  RenameCategoryInput,
+  CategoryWithUsage,
+  UpdateCategoryInput,
 } from "@/services/interfaces/categories.interface";
 
-export interface RenameCategoryVariables {
+export interface UpdateCategoryVariables {
   id: string;
-  patch: RenameCategoryInput;
+  patch: UpdateCategoryInput;
 }
 
 export interface CategoriesHooksResult {
-  list: UseSuspenseQueryResult<Category[]>;
+  list: UseSuspenseQueryResult<CategoryWithUsage[]>;
   create: UseMutationResult<Category, unknown, AddCategoryInput>;
-  rename: UseMutationResult<Category, unknown, RenameCategoryVariables>;
+  update: UseMutationResult<Category, unknown, UpdateCategoryVariables>;
   remove: UseMutationResult<void, unknown, string>;
 }
 

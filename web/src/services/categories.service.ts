@@ -3,13 +3,14 @@ import api from "@/api";
 import type {
   AddCategoryInput,
   Category,
+  CategoryWithUsage,
   ICategoriesService,
-  RenameCategoryInput,
+  UpdateCategoryInput,
 } from "./interfaces/categories.interface";
 
 class CategoriesService implements ICategoriesService {
-  async list(): Promise<Category[]> {
-    const { data } = await api.get<Category[]>("/categories");
+  async list(): Promise<CategoryWithUsage[]> {
+    const { data } = await api.get<CategoryWithUsage[]>("/categories");
 
     return data;
   }
@@ -20,7 +21,7 @@ class CategoriesService implements ICategoriesService {
     return data;
   }
 
-  async rename(id: string, patch: RenameCategoryInput): Promise<Category> {
+  async update(id: string, patch: UpdateCategoryInput): Promise<Category> {
     const { data } = await api.patch<Category>(`/categories/${id}`, patch);
 
     return data;

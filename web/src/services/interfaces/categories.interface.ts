@@ -4,6 +4,13 @@ export interface Category {
   name: string;
   icon: string | null;
   color: string | null;
+  monthlyBudget: number | null;
+}
+
+export interface CategoryWithUsage extends Category {
+  spent: number;
+  usagePct: number;
+  overBudget: boolean;
 }
 
 export interface AddCategoryInput {
@@ -12,13 +19,16 @@ export interface AddCategoryInput {
   color?: string;
 }
 
-export interface RenameCategoryInput {
-  name: string;
+export interface UpdateCategoryInput {
+  name?: string;
+  icon?: string | null;
+  color?: string | null;
+  monthlyBudget?: number | null;
 }
 
 export interface ICategoriesService {
-  list(): Promise<Category[]>;
+  list(): Promise<CategoryWithUsage[]>;
   create(input: AddCategoryInput): Promise<Category>;
-  rename(id: string, patch: RenameCategoryInput): Promise<Category>;
+  update(id: string, patch: UpdateCategoryInput): Promise<Category>;
   remove(id: string): Promise<void>;
 }

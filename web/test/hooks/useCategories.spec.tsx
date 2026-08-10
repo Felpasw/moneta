@@ -7,13 +7,16 @@ import categoriesHooks, {
   CATEGORIES_QUERY_KEYS,
 } from "@/hooks/useCategories";
 import categoriesService from "@/services/categories.service";
-import type { Category } from "@/services/interfaces/categories.interface";
+import type {
+  Category,
+  CategoryWithUsage,
+} from "@/services/interfaces/categories.interface";
 
 vi.mock("@/services/categories.service", () => ({
   default: {
     list: vi.fn(),
     create: vi.fn(),
-    rename: vi.fn(),
+    update: vi.fn(),
     remove: vi.fn(),
   },
 }));
@@ -40,6 +43,14 @@ const CATEGORY: Category = {
   name: "Groceries",
   icon: "🛒",
   color: "#22c55e",
+  monthlyBudget: 1200,
+};
+
+const CATEGORY_WITH_USAGE: CategoryWithUsage = {
+  ...CATEGORY,
+  spent: 422.12,
+  usagePct: 35,
+  overBudget: false,
 };
 
 describe("categoriesHooks.use()", () => {
@@ -51,8 +62,8 @@ describe("categoriesHooks.use()", () => {
     vi.clearAllMocks();
   });
 
-  it("list — suspende até resolver e cacheia na query key correta", async () => {
-    mockedService.list.mockResolvedValueOnce([CATEGORY]);
+  it("list — suspende até resolver e cacheia CategoryWithUsage[] na query key", async () => {
+    mockedService.list.mockResolvedValueOnce([CATEGORY_WITH_USAGE]);
     const { Wrapper, queryClient } = createWrapper();
 
     const { result } = renderHook(() => categoriesHooks.use(), {
@@ -60,9 +71,9 @@ describe("categoriesHooks.use()", () => {
     });
 
     await waitFor(() => expect(result.current).not.toBeNull());
-    expect(result.current.list.data).toEqual([CATEGORY]);
+    expect(result.current.list.data).toEqual([CATEGORY_WITH_USAGE]);
     expect(queryClient.getQueryData(CATEGORIES_QUERY_KEYS.list)).toEqual([
-      CATEGORY,
+      CATEGORY_WITH_USAGE,
     ]);
   });
 
@@ -88,9 +99,9 @@ describe("categoriesHooks.use()", () => {
     });
   });
 
-  it("rename — chama service.rename(id, patch) e invalida a list", async () => {
+  it("update — chama service.update(id, patch) e invalida a list", async () => {
     mockedService.list.mockResolvedValue([]);
-    mockedService.rename.mockResolvedValueOnce(CATEGORY);
+    mockedService.update.mockResolvedValueOnce(CATEGORY);
     const { Wrapper, queryClient } = createWrapper();
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
@@ -101,14 +112,15 @@ describe("categoriesHooks.use()", () => {
     await waitFor(() => expect(result.current).not.toBeNull());
 
     await act(async () => {
-      await result.current.rename.mutateAsync({
+      await result.current.update.mutateAsync({
         id: "cat-1",
-        patch: { name: "Mercado" },
+        patch: { name: "Mercado", monthlyBudget: 1500 },
       });
     });
 
-    expect(mockedService.rename).toHaveBeenCalledWith("cat-1", {
+    expect(mockedService.update).toHaveBeenCalledWith("cat-1", {
       name: "Mercado",
+      monthlyBudget: 1500,
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: CATEGORIES_QUERY_KEYS.list,
