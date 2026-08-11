@@ -5,6 +5,7 @@ const buildUseCase = () => {
   const listTransactions = { execute: jest.fn() };
   const getTopCategories = { execute: jest.fn().mockResolvedValue([]) };
   const getMonthlyFlow = { execute: jest.fn().mockResolvedValue([]) };
+  const getBalanceChart = { execute: jest.fn().mockResolvedValue([]) };
   const clock = { now: jest.fn() };
   const useCase = new GetDashboardViewUseCase(
     clock,
@@ -12,6 +13,7 @@ const buildUseCase = () => {
     listTransactions as never,
     getTopCategories as never,
     getMonthlyFlow as never,
+    getBalanceChart as never,
   );
   return {
     useCase,
@@ -19,6 +21,7 @@ const buildUseCase = () => {
     listTransactions,
     getTopCategories,
     getMonthlyFlow,
+    getBalanceChart,
     clock,
   };
 };
@@ -65,6 +68,41 @@ describe('GetDashboardViewUseCase', () => {
       },
       topCategories: [],
       monthlyFlow: [],
+      balanceChart: [],
+    });
+  });
+
+  it('returns balanceChart straight from the repo', async () => {
+    const { useCase, listAccounts, listTransactions, getBalanceChart, clock } =
+      buildUseCase();
+    clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
+    listAccounts.execute.mockResolvedValue(emptyAccountsResult);
+    listTransactions.execute.mockResolvedValue(emptyTransactionsResult);
+    const chart = [
+      { date: '2026-07-17', balance: 4000 },
+      { date: '2026-07-18', balance: 3900 },
+    ];
+    getBalanceChart.execute.mockResolvedValue(chart);
+
+    const result = await useCase.execute({ userId: 'user-1' });
+
+    expect(result.balanceChart).toBe(chart);
+  });
+
+  it('scopes balance chart to last 30 days from Clock', async () => {
+    const { useCase, listAccounts, listTransactions, getBalanceChart, clock } =
+      buildUseCase();
+    const now = new Date('2026-08-15T12:00:00Z');
+    clock.now.mockReturnValue(now);
+    listAccounts.execute.mockResolvedValue(emptyAccountsResult);
+    listTransactions.execute.mockResolvedValue(emptyTransactionsResult);
+
+    await useCase.execute({ userId: 'user-1' });
+
+    expect(getBalanceChart.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      now,
+      days: 30,
     });
   });
 
@@ -186,13 +224,14 @@ describe('GetDashboardViewUseCase', () => {
     );
   });
 
-  it('runs all four data sources in parallel', async () => {
+  it('runs all five data sources in parallel', async () => {
     const {
       useCase,
       listAccounts,
       listTransactions,
       getTopCategories,
       getMonthlyFlow,
+      getBalanceChart,
       clock,
     } = buildUseCase();
     clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
@@ -221,11 +260,18 @@ describe('GetDashboardViewUseCase', () => {
       order.push('flow-end');
       return [];
     });
+    getBalanceChart.execute.mockImplementation(async () => {
+      order.push('chart-start');
+      await new Promise((r) => setTimeout(r, 10));
+      order.push('chart-end');
+      return [];
+    });
 
     await useCase.execute({ userId: 'user-1' });
 
-    expect(order.slice(0, 4).sort()).toEqual([
+    expect(order.slice(0, 5).sort()).toEqual([
       'accounts-start',
+      'chart-start',
       'flow-start',
       'top-start',
       'transactions-start',

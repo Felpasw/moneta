@@ -8,7 +8,9 @@ import { decimalToNumber } from '../../../@shared/utils/decimal-to-number';
 import type {
   AccountsSummary,
   AddUserBankAccountInput,
+  BalanceChartPoint,
   CurrentInvoice,
+  GetBalanceChartInput,
   UpdateUserBankAccountInput,
   UserBankAccount,
   UserBankAccountWithBank,
@@ -167,5 +169,50 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
       select: ACCOUNT_SELECT,
     });
     return row;
+  }
+
+  async getBalanceChart(
+    input: GetBalanceChartInput,
+  ): Promise<BalanceChartPoint[]> {
+    return this.prisma.$queryRaw<BalanceChartPoint[]>`
+      WITH day_series AS (
+        SELECT ((${input.now}::timestamptz)::date - i * INTERVAL '1 day')::date AS day
+        FROM generate_series(0, ${input.days}::int - 1) i
+      ),
+      day_deltas AS (
+        SELECT date_trunc('day', t.occurred_at)::date AS day,
+               SUM(CASE WHEN t.type = 'income'::transaction_type
+                        THEN t.amount
+                        ELSE -t.amount
+                   END)::float8 AS delta
+        FROM transactions t
+        INNER JOIN user_bank_accounts a ON a.id = t.account_id
+        WHERE t.user_id = ${input.userId}::uuid
+          AND a.credit_limit IS NULL
+          AND t.occurred_at >= (((${input.now}::timestamptz)::date - (${input.days}::int - 1) * INTERVAL '1 day'))
+        GROUP BY day
+      ),
+      current_balance AS (
+        SELECT COALESCE(SUM(balance), 0)::float8 AS total
+        FROM user_bank_accounts
+        WHERE user_id = ${input.userId}::uuid AND credit_limit IS NULL
+      ),
+      combined AS (
+        SELECT s.day, COALESCE(dd.delta, 0)::float8 AS delta
+        FROM day_series s
+        LEFT JOIN day_deltas dd ON dd.day = s.day
+      )
+      SELECT to_char(c.day, 'YYYY-MM-DD') AS "date",
+             (cb.total - COALESCE(
+                SUM(c.delta) OVER (
+                  ORDER BY c.day DESC
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+                ),
+                0
+             ))::float8 AS balance
+      FROM combined c
+      CROSS JOIN current_balance cb
+      ORDER BY c.day ASC
+    `;
   }
 }

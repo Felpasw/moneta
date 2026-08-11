@@ -94,6 +94,7 @@ describe('DashboardController', () => {
           },
         ],
         monthlyFlow: [{ monthKey: '2026-08', income: 3000, expense: 1800 }],
+        balanceChart: [{ date: '2026-08-15', balance: 4200 }],
       };
       mocks.getView.execute.mockResolvedValue(view);
 

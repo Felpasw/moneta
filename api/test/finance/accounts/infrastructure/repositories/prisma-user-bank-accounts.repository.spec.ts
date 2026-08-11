@@ -309,4 +309,66 @@ describe('PrismaUserBankAccountsRepository', () => {
       });
     });
   });
+
+  describe('getBalanceChart', () => {
+    const buildQueryRawPrisma = () => {
+      const $queryRaw = jest.fn();
+      const prisma = { $queryRaw } as unknown as PrismaService;
+      return { prisma, $queryRaw };
+    };
+
+    it('returns the raw rows straight from $queryRaw', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      const raw = [
+        { date: '2026-07-17', balance: 4000 },
+        { date: '2026-07-18', balance: 3900 },
+      ];
+      $queryRaw.mockResolvedValue(raw);
+      const repo = new PrismaUserBankAccountsRepository(prisma);
+
+      const rows = await repo.getBalanceChart({
+        userId: 'user-1',
+        now: new Date('2026-08-15T12:00:00Z'),
+        days: 30,
+      });
+
+      expect(rows).toBe(raw);
+      expect($queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('passes parameterized args and SQL walks backwards over checking accounts only', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      $queryRaw.mockResolvedValue([]);
+      const repo = new PrismaUserBankAccountsRepository(prisma);
+      const now = new Date('2026-08-15T12:00:00Z');
+
+      await repo.getBalanceChart({
+        userId: 'user-1',
+        now,
+        days: 30,
+      });
+
+      const call = $queryRaw.mock.calls[0] as [string[], ...unknown[]];
+      expect(call.slice(1)).toEqual([now, 30, 'user-1', now, 30, 'user-1']);
+      const fullSql = call[0].join('$');
+      expect(fullSql).toContain('generate_series');
+      expect(fullSql).toContain('credit_limit IS NULL');
+      expect(fullSql).toContain('CASE WHEN');
+      expect(fullSql).toMatch(/OVER \(\s*ORDER BY/);
+    });
+
+    it('returns empty list when SQL yields no rows', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      $queryRaw.mockResolvedValue([]);
+      const repo = new PrismaUserBankAccountsRepository(prisma);
+
+      const rows = await repo.getBalanceChart({
+        userId: 'user-1',
+        now: new Date('2026-08-15T12:00:00Z'),
+        days: 30,
+      });
+
+      expect(rows).toEqual([]);
+    });
+  });
 });

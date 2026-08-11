@@ -37,6 +37,17 @@ export interface AccountsSummary {
   totalOverdraft: number;
 }
 
+export interface BalanceChartPoint {
+  date: string;
+  balance: number;
+}
+
+export interface GetBalanceChartInput {
+  userId: string;
+  now: Date;
+  days: number;
+}
+
 export interface ListAccountsResult {
   items: UserBankAccountWithBank[];
   summary: AccountsSummary;
@@ -75,4 +86,5 @@ export interface UserBankAccountsRepository {
     userId: string,
     amount: number,
   ): Promise<UserBankAccount | null>;
+  getBalanceChart(input: GetBalanceChartInput): Promise<BalanceChartPoint[]>;
 }
