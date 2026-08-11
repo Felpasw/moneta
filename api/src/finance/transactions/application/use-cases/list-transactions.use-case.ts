@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   TRANSACTIONS_REPOSITORY,
   type ListTransactionsFilters,
-  type Transaction,
+  type ListTransactionsResult,
   type TransactionsRepository,
 } from '../../domain/ports/transactions-repository';
 
@@ -14,7 +14,13 @@ export class ListTransactionsUseCase {
     private readonly transactions: TransactionsRepository,
   ) {}
 
-  async execute(filters: ListTransactionsFilters): Promise<Transaction[]> {
-    return this.transactions.list(filters);
+  async execute(
+    filters: ListTransactionsFilters,
+  ): Promise<ListTransactionsResult> {
+    const [items, summary] = await Promise.all([
+      this.transactions.list(filters),
+      this.transactions.summarize(filters),
+    ]);
+    return { items, summary };
   }
 }

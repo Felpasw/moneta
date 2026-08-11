@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 
 import { AccountNotFoundError } from '../../../accounts/domain/errors/account-not-found.error';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service';
+import { decimalToNumber } from '../../../@shared/utils/decimal-to-number';
 import { TransactionType } from '../../domain/constants/transaction-type';
 import { TransactionNotFoundError } from '../../domain/errors/transaction-not-found.error';
 import type {
@@ -10,7 +11,9 @@ import type {
   EditTransactionInput,
   ListTransactionsFilters,
   Transaction,
+  TransactionWithEmbeds,
   TransactionsRepository,
+  TransactionsSummary,
 } from '../../domain/ports/transactions-repository';
 import { signedAmount } from '../../domain/utils/signed-amount';
 
@@ -26,15 +29,82 @@ const TRANSACTION_SELECT = {
   occurredAt: true,
 } satisfies Prisma.TransactionSelect;
 
-type PrismaTransactionRow = Prisma.TransactionGetPayload<{
-  select: typeof TRANSACTION_SELECT;
-}>;
+const TRANSACTION_WITH_EMBEDS_SELECT = {
+  ...TRANSACTION_SELECT,
+  account: {
+    select: {
+      id: true,
+      nickname: true,
+      bank: { select: { name: true } },
+    },
+  },
+  category: {
+    select: {
+      id: true,
+      name: true,
+      icon: true,
+      color: true,
+    },
+  },
+} satisfies Prisma.TransactionSelect;
+
+interface PrismaTransactionRow {
+  id: string;
+  userId: string;
+  accountId: string;
+  categoryId: string | null;
+  invoiceId: string | null;
+  type: string;
+  amount: number;
+  description: string | null;
+  occurredAt: Date;
+}
+
+interface PrismaTransactionWithEmbedsRow extends PrismaTransactionRow {
+  account: { id: string; nickname: string; bank: { name: string } };
+  category: {
+    id: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
+  } | null;
+}
 
 const toDomain = (row: PrismaTransactionRow): Transaction => ({
   ...row,
-  amount: row.amount.toNumber(),
   type: row.type as TransactionType,
 });
+
+const toDomainWithEmbeds = (
+  row: PrismaTransactionWithEmbedsRow,
+): TransactionWithEmbeds => {
+  const { account, category, ...rest } = row;
+  const base = toDomain(rest);
+  return {
+    ...base,
+    account: {
+      id: account.id,
+      nickname: account.nickname,
+      bankName: account.bank.name,
+    },
+    category,
+    signedAmount: signedAmount(base.type, base.amount),
+    dayGroupKey: base.occurredAt.toISOString().slice(0, 10),
+  };
+};
+
+const buildWhere = (filters: ListTransactionsFilters) =>
+  ({
+    userId: filters.userId,
+    occurredAt: { gte: filters.dateFrom, lte: filters.dateTo },
+    accountId: filters.accountIds && { in: filters.accountIds },
+    categoryId: filters.categoryIds && { in: filters.categoryIds },
+    type: filters.types && { in: filters.types },
+    description: filters.textSearch && {
+      contains: filters.textSearch,
+      mode: 'insensitive',
+    },
+  }) satisfies Prisma.TransactionWhereInput;
 
 type TxClient = Parameters<
   Parameters<PrismaService['$transaction']>[0] extends (tx: infer T) => unknown
@@ -85,7 +155,7 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       }
       const oldEffect = signedAmount(
         current.type as TransactionType,
-        current.amount.toNumber(),
+        current.amount,
       );
       await tx.userBankAccount.updateMany({
         where: { id: current.accountId, userId },
@@ -110,25 +180,43 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
     return row ? toDomain(row) : null;
   }
 
-  async list(filters: ListTransactionsFilters): Promise<Transaction[]> {
+  async list(
+    filters: ListTransactionsFilters,
+  ): Promise<TransactionWithEmbeds[]> {
     const rows = await this.prisma.transaction.findMany({
-      where: {
-        userId: filters.userId,
-        occurredAt: { gte: filters.dateFrom, lte: filters.dateTo },
-        accountId: filters.accountIds && { in: filters.accountIds },
-        categoryId: filters.categoryIds && { in: filters.categoryIds },
-        type: filters.types && { in: filters.types },
-        description: filters.textSearch && {
-          contains: filters.textSearch,
-          mode: 'insensitive',
-        },
-      },
+      where: buildWhere(filters),
       orderBy: { occurredAt: 'desc' },
       take: filters.limit,
       skip: filters.offset,
-      select: TRANSACTION_SELECT,
+      select: TRANSACTION_WITH_EMBEDS_SELECT,
     });
-    return rows.map(toDomain);
+    return rows.map(toDomainWithEmbeds);
+  }
+
+  async summarize(
+    filters: ListTransactionsFilters,
+  ): Promise<TransactionsSummary> {
+    const groups = await this.prisma.transaction.groupBy({
+      by: ['type'],
+      where: buildWhere(filters),
+      _sum: { amount: true },
+    });
+    let totalIncome = 0;
+    let totalExpense = 0;
+    for (const group of groups) {
+      const value = decimalToNumber(group._sum.amount);
+      const type = group.type as TransactionType;
+      if (type === TransactionType.Income) {
+        totalIncome = value;
+      } else if (type === TransactionType.Expense) {
+        totalExpense = value;
+      }
+    }
+    return {
+      totalIncome,
+      totalExpense,
+      net: totalIncome - totalExpense,
+    };
   }
 
   private async addWithinTx(
@@ -184,7 +272,7 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       throw new TransactionNotFoundError(input.id);
     }
 
-    const currentAmount = current.amount.toNumber();
+    const currentAmount = current.amount;
     const currentType = current.type as TransactionType;
     const newType = input.type ?? currentType;
     const newAmount = input.amount ?? currentAmount;

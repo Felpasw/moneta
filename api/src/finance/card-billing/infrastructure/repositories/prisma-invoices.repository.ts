@@ -23,14 +23,22 @@ const INVOICE_SELECT = {
   paidViaTransferId: true,
 } satisfies Prisma.CreditCardInvoiceSelect;
 
-type PrismaInvoiceRow = Prisma.CreditCardInvoiceGetPayload<{
-  select: typeof INVOICE_SELECT;
-}>;
+type PrismaInvoiceRow = {
+  id: string;
+  accountId: string;
+  status: string;
+  cycleStart: Date;
+  cycleEnd: Date;
+  dueDate: Date;
+  totalAmount: number;
+  closedAt: Date | null;
+  paidAt: Date | null;
+  paidViaTransferId: string | null;
+};
 
 const toDomain = (row: PrismaInvoiceRow): Invoice => ({
   ...row,
   status: row.status as InvoiceStatus,
-  totalAmount: row.totalAmount.toNumber(),
 });
 
 @Injectable()

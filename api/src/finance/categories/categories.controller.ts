@@ -19,13 +19,13 @@ import type { DecodedToken } from '../../auth/domain/services/token-service';
 import { AddCategoryUseCase } from './application/use-cases/add-category.use-case';
 import { DeleteCategoryUseCase } from './application/use-cases/delete-category.use-case';
 import { ListCategoriesUseCase } from './application/use-cases/list-categories.use-case';
-import { RenameCategoryUseCase } from './application/use-cases/rename-category.use-case';
+import { UpdateCategoryUseCase } from './application/use-cases/update-category.use-case';
 import { CategoryNotFoundError } from './domain/errors/category-not-found.error';
 import { addCategorySchema, type AddCategoryDto } from './dto/add-category.dto';
 import {
-  renameCategorySchema,
-  type RenameCategoryDto,
-} from './dto/rename-category.dto';
+  updateCategorySchema,
+  type UpdateCategoryDto,
+} from './dto/update-category.dto';
 
 @Controller('categories')
 @UseGuards(JwtAuthGuard)
@@ -33,7 +33,7 @@ export class CategoriesController {
   constructor(
     private readonly listCategories: ListCategoriesUseCase,
     private readonly addCategory: AddCategoryUseCase,
-    private readonly renameCategory: RenameCategoryUseCase,
+    private readonly updateCategory: UpdateCategoryUseCase,
     private readonly deleteCategory: DeleteCategoryUseCase,
   ) {}
 
@@ -52,16 +52,16 @@ export class CategoriesController {
   }
 
   @Patch(':id')
-  async rename(
+  async update(
     @CurrentUser() user: DecodedToken,
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(renameCategorySchema)) dto: RenameCategoryDto,
+    @Body(new ZodValidationPipe(updateCategorySchema)) dto: UpdateCategoryDto,
   ) {
     try {
-      return await this.renameCategory.execute({
+      return await this.updateCategory.execute({
         id,
         userId: user.sub,
-        name: dto.name,
+        ...dto,
       });
     } catch (e) {
       if (e instanceof CategoryNotFoundError) {

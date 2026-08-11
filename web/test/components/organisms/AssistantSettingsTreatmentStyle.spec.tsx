@@ -36,7 +36,7 @@ describe("AssistantSettingsTreatmentStyle", () => {
     expect(screen.getByRole("radio", { name: "Formal" })).toBeChecked();
     expect(screen.getByRole("radio", { name: "Informal" })).not.toBeChecked();
     expect(
-      screen.getByRole("radio", { name: "Muito informal" }),
+      screen.getByRole("radio", { name: "Very informal" }),
     ).not.toBeChecked();
   });
 
@@ -50,7 +50,7 @@ describe("AssistantSettingsTreatmentStyle", () => {
     );
 
     const veryInformalRadio = screen.getByRole("radio", {
-      name: "Muito informal",
+      name: "Very informal",
     });
     await userEvent.click(veryInformalRadio);
 

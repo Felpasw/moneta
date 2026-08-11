@@ -71,11 +71,10 @@ Mesmas do `specs/002-auth/tasks.md`.
 
 ## Fase 0 — App shell e routing
 
-- [ ] **MNT-98** [T][S] Estrutura do Next.js App Router:
-  - `/web/src/app/(auth)/` — layout mínimo (só `<html>`, tokens de tema, sem nav). Contém `login`, `signup`, `forgot-password`, `reset-password`
-  - `/web/src/app/(app)/` — layout com shell: header (avatar+nickname+dropdown), main, e `<AppNav>` (bottom tabs mobile / sidebar `lg+`)
-  - `<AppNav>` implementa 5 destinos usando shadcn `Tabs` orientation-responsive; destaque visual pro item central (Chat)
-  - Ícones via `lucide-react` (já vem com shadcn)
+- [x] **MNT-98** [T][S] ✅ commits `2464cc7` (AppShell + dock + shell layout base) → `a73547f` (agent session movida pro shell, dock reposition, labels EN) → `7350476` (GlobalAssistant organism flutuante) → `5d0d284` (sub-rotas `/dashboard`, `/transactions`, `/accounts`, `/cards`, `/categories`, `/settings` com scaffold + templates). Estrutura App Router: `(auth)/` (MNT-193) + `(app)/(shell)/layout.tsx` montando `AppShell` (dock + `GlobalAssistant` + Providers), pages delegam em templates. Ícones lucide-react. **Divergências vs spec original**:
+  - `<AppNav>` implementado como `DockTabs` vendored (magnify motion + SVG glass filter, commits `2464cc7`/`e593960`) em vez de shadcn `Tabs`
+  - Dock tem 7 destinos (Home / Transactions / Cards / Accounts / Categories / Settings / Assistant) + Sign out, sem destaque específico pro Chat central — Chat/mic vive como `GlobalAssistant` organism flutuante (avatar + expand pra mic/messages/info), MNT-101 continua pendente
+  - Rotas `/cards` e `/categories` criadas fora da spec (ver "Pendências abertas do scaffold" ao fim da Fase 1)
 - [ ] **MNT-99** [T][S] `middleware.ts` do Next — lê refresh cookie (MNT-14), decide:
   - Se rota `(auth)` e usuário logado → redirect pra `/` (ou `/onboarding` se `onboarded_at IS NULL`)
   - Se rota `(app)` e não logado → redirect pra `/login?next=<path>`
@@ -87,12 +86,12 @@ Mesmas do `specs/002-auth/tasks.md`.
 ## Fase 1 — Páginas do shell
 
 - [ ] **MNT-100** [T][S] Dashboard `/` (aba **Início**):
-  - Saudação com `nickname || name` do user
-  - Saldo consolidado (soma de `user_bank_accounts.balance`), com toggle mostrar/ocultar (ícone 👁️) persistido em localStorage
-  - Row de KPI cards: "Gastos do mês", "Próxima despesa fixa", "Salário previsto"
-  - Grid dos `saved_charts` pinados (top 3, via `list_saved_charts` filtrando `pinned=true` — usa MNT-89)
-  - FAB fixo bottom-right: 🎤 "falar com o assistente" → navega pra `/chat` já iniciando gravação
-  - Empty state se sem contas: card grande "vamos começar? me fala pelo chat"
+  - [x] **KPIs + saudação + empty state**: `DashboardScreen` consome `accountsHooks.use()` + `transactionsHooks.use()` (default fetch — sem filters, MNT-141 traz o mês-scoping depois). "Total balance" ← `accountsSummary.totalBalance`; "Recent income/expenses/net" ← `transactionsSummary` (labels honestos até filters landarem — não é "this month" ainda, é "latest transactions"). Saudação `Hi, {user.name ?? "there"}` do `useUserStore`. Empty state via `<EmptyState>` quando `accounts.items.length === 0`. Loading/error herdados dos Next boundaries do `(shell)`. Scalar fields removidos de `DashboardView` (interface) e `MOCK_DASHBOARD_VIEW` (`totalBalance`/`income`/`expense`/`net`) — mock agora só carrega chart data (topCategories/monthlyFlow/balanceChart) até MNT-72/89 landarem. **DashboardScreen.spec** reescrito (spec antigo era pra dashboard de mic/avatar/agent — feature removida) com 4 casos: empty via EmptyState, saudação, KPI Total balance direto do accounts.summary, KPIs income/expense/net direto do transactions.summary.
+  - [ ] **Charts + full DashboardView com dados reais** (pendente, bloqueado por **MNT-218** — `GET /dashboard/view` no backend, spec em `004-transactions`). Quando MNT-218 landar: novo `dashboardService.get()` + `useDashboard` hook (Suspense), `DashboardScreen` recompõe as seções (top categories, monthly flow, balance chart) consumindo o payload real, tipos migram de `mocks/finance.ts` pra `services/interfaces/dashboard.interface.ts`, chart components (`MonthlyFlowChart`/`BalanceLineChart`/`TopCategoriesChart`/`ChartCard`) voltam do estado orfão. Backend devolve dados brutos (números/datas); client faz o SVG path das linhas (formatação pura)
+  - [ ] Toggle 👁️ mostrar/ocultar saldo persistido em localStorage
+  - [ ] KPI "Próxima despesa fixa" (depende de MNT-104 recurring rules) e "Salário previsto" (depende de recurring income rules)
+  - [ ] Grid `saved_charts` pinados (top 3, `list_saved_charts?pinned=true` — MNT-89)
+  - [ ] FAB fixo bottom-right 🎤 → `/chat` já iniciando gravação
 - [ ] **MNT-101** [T][S] Chat `/chat` (aba **Chat**):
   - Header: `<AssistantAvatar>` (MNT-64) + estado (idle/listening/thinking/speaking) + nome do personagem
   - Thread virtualizada de `<MessageBubble>` — cada bubble suporta texto e `<DynamicChart>` inline quando `message.toolResults[i].name === 'create_visualization'` ou `'run_saved_chart'` (MNT-77)
@@ -101,16 +100,15 @@ Mesmas do `specs/002-auth/tasks.md`.
   - Session Realtime iniciada via `POST /assistant/session` (MNT-50)
   - Empty state: sugestões de comandos ("registra meu salário", "quanto gastei essa semana?", "gráfico de gastos por categoria")
 - [ ] **MNT-102** [T][S] Transações `/transactions` (aba **Grana**):
-  - Lista virtualizada (`@tanstack/react-virtual`) — performance com 10k+ rows
-  - Filtros no topo: período (date range picker), banco (multi-select), categoria (multi), tag (multi), tipo (expense/income/all)
-  - Search por descrição (debounced)
-  - FAB "+" abre `<AddTransactionSheet>` OU redirect pra `/chat?prompt=quero adicionar uma transação`
-  - Sub-rota `/transactions/:id` — detail + edit (mesmo Sheet, modo edit)
-  - Empty state: "sem transações — comece registrando uma pelo chat"
+  - [x] **Backend**: `GET /transactions` estendido de `Transaction[]` → `{ items, summary }`. Port ganhou `TransactionWithEmbeds` (bank+account nickname embedados via `TransactionAccountEmbed = { id, nickname, bankName }`, category via `TransactionCategoryEmbed = { id, name, icon, color } | null`, e `signedAmount` computado a partir de `type + amount`). Repo faz o join num único `findMany` (nested select em `account.bank` + `category`), `toDomainWithEmbeds` computa `signedAmount` inline no mesmo pass da conversão Decimal→number. Use-case `ListTransactionsUseCase` computa summary in-memory dos rows já buscados (`totalIncome`, `totalExpense`, `net = totalIncome - totalExpense`) — mesmo pattern do `computeBanksSummary`. Tool `list_transactions` do agent recebe o shape enriquecido automaticamente; playbook atualizado explicando `items[].signedAmount` (sem recalcular), `items[].account.nickname`, `items[].category?.name`, e `summary.net`/`totalExpense` pra "quanto sobrou"/"quanto gastei" sem soma no agent. Testes novos: repo (embed correto + signedAmount + join no select), use-case (items+summary, empty, net negativo), controller (body shape), tool (wrap `{items, summary}`).
+  - [x] **Web infra**: `transactionsService` (list only por enquanto — mutations vêm com MNT-141) + `useTransactions` (classe + `use()` retornando `{ list: UseSuspenseQueryResult }`, `TRANSACTIONS_QUERY_KEYS`). Mesma shape dos outros services/hooks; datas na wire como string (JSON). TDD: 2 casos no service spec (sem filtros + com filtros repassados como query params via axios `{ params }`) + 1 caso no hook spec (Suspense pattern + query key cache).
+  - [x] **Web consumer**: `TransactionsScreen` real consumindo `transactionsHooks.use()`. Loading/error via Next boundaries do `(shell)` (MNT-215); empty via `<EmptyState>`. Summary card renderiza `totalIncome`/`totalExpense`/`net` direto do backend. Lista faz **day grouping via render** — backend agora expõe `dayGroupKey: string` (YYYY-MM-DD, UTC, computed no `toDomainWithEmbeds` junto do `signedAmount`) em cada `TransactionWithEmbeds`; frontend só compara `items[idx-1]?.dayGroupKey !== tx.dayGroupKey` (Fragment + guard `&&`), primeiro item sempre mostra header via optional chaining. Zero string op / Date parse no cliente pra decidir o grouping. `TransactionRow` subcomponente pequeno lê `tx.description` (fallback "—"), `tx.category?.name` (fallback "Uncategorized"), `tx.account.nickname`, `tx.signedAmount` direto; icon via `Record<TransactionType, Icon>`. `DIRECTION_ICON`/`ROW_TRANSITION` constantes no escopo de módulo (não recria a cada render). Playbook do tool `list_transactions` menciona `dayGroupKey` (LLM não precisa parsear pra agrupar). Órfãos removidos de `mocks/finance.ts`: `TransactionDirection`, `TransactionRow`, `TransactionGroup`, `TransactionsSummary`, `MOCK_TRANSACTION_GROUPS`, `MOCK_TRANSACTIONS_SUMMARY`, helpers `daysAgo`+`dayKey`. TDD: `TransactionsScreen.spec` (3 casos — empty, populated com fields do embed, summary lido direto).
+  - Deferido pra MNT-141 (Fase 6): lista virtualizada (`@tanstack/react-virtual`), filtros (período/banco/categoria/tipo/tag), search debounced, FAB "+" com `<AddTransactionSheet>`, sub-rota `/transactions/:id`
 - [ ] **MNT-103** [T][S] Bancos `/banks` (sub-navegação dentro de **Grana**):
-  - Grid de cards das `user_bank_accounts` — cada card: `nickname`, logo do banco (`banks.logo_url`), saldo, limite (se aplicável), % de uso do limite (barra)
-  - Botão "+ conta" abre `<AddBankAccountSheet>`
-  - Sub-rota `/banks/:id` — extrato daquela conta (mesma UX de `/transactions` já filtrado)
+  - [x] Grid + summary consumindo `useAccounts()` (Suspense). Backend estendeu `GET /accounts` pra `{ items, summary }` (commit `20b9a2a` / MNT-103) — use-case computa `totalBalance`/`checkingCount`/`totalOverdraft` in-memory dos rows checking-only, tool `list_my_accounts` do agent recebe o novo shape. Cards recebem `UserBankAccountWithBank` direto (sem view-type intermediário), leem `account.bank.name`/`account.balance`/`account.creditLimit`. `BanksScreen` faz early-branch inline via subcomponente local `AccountCard`, sem ternário em JSX. Estados loading/error delegados pros Next boundaries do `(shell)` (commit `84a89ed` / MNT-215); empty via `<EmptyState>` molecule. Órfãos removidos de `mocks/finance.ts`: `BankRow`/`CheckingBankRow`/`CreditBankRow`/`BankKind`/`InvoiceStatus`/`BanksSummary`/`MOCK_BANK_ROWS`/`MOCK_BANKS_SUMMARY`/helper `dayOfMonth`. TDD verde: `BanksScreen.spec` (3 casos — empty, populated, summary lido direto do backend). **Regra estabelecida no processo**: "backend define shape e agregação, frontend consome property-direct" — CLAUDE.md global atualizado com seção nova + memória `feedback_no_frontend_derivation.md`
+  - [x] **Invoice section no `CreditAccountCard`** — `UserBankAccountWithBank` do web ganhou `currentInvoice: { totalAmount, status, dueDate, cycleStart, cycleEnd } | null` + `usagePct: number` (mirror do backend MNT-159), `InvoiceStatus = 'open' | 'closed' | 'paid' | 'overdue'` como string union. `CreditAccountCard` renderiza condicionalmente: com `currentInvoice` mostra badge de status, "Current statement" com totalAmount, progress bar de `usagePct`, grid Available/Limit/Due date; sem invoice cai no fallback "Credit limit" + "Due day: DD". Guards via `&&` (sem ternário em JSX visível). Fixture `BanksScreen.spec` cobre credit com invoice → renderiza a seção completa (`current statement`, `limit usage`, `50%`, `open` badge)
+  - [ ] Botão "+ conta" abre `<AddBankAccountSheet>`
+  - [ ] Sub-rota `/banks/:id` — extrato daquela conta (mesma UX de `/transactions` já filtrado)
 - [ ] **MNT-104** [T][S] Recurring `/recurring` (sub-navegação dentro de **Grana**):
   - Duas abas: **Rendas** e **Despesas fixas**
   - Lista das `recurring_rules` — cada card: nome, valor (default_amount ou "variável"), banco, ativo/inativo
@@ -124,15 +122,44 @@ Mesmas do `specs/002-auth/tasks.md`.
   - `/settings/data` — botões "Exportar meus dados" (LGPD) e "Deletar conta" (com confirmação dupla)
   - `/settings/about` — versão do app, terms, privacy, licenças
 
+### Pendências abertas do scaffold
+
+`5d0d284` entregou scaffold visual + templates consumindo `src/mocks/finance.ts` (shape backend-ready) pras rotas do shell. **Nenhuma task de Fase 1 fecha só com o scaffold** — cada uma exige service/hook + integração real. Estado por task:
+
+- **MNT-100** `/dashboard` — template com KPI cards (Total balance / Income / Expenses / Left this month), MonthlyFlowChart, BalanceLineChart, TopCategoriesChart (mocks). **Falta**: saudação com `nickname||name`, toggle 👁️ mostrar/ocultar saldo, KPIs corretos (Gastos do mês / Próxima despesa fixa / Salário previsto), grid de saved_charts pinados, FAB 🎤 → `/chat`, empty state, hooks reais (`useAccounts` + `useTransactions` agregados).
+- **MNT-102** `/transactions` — template lista agrupada por dia (mock). **Falta**: virtualização, filtros (período/banco/categoria/tipo), search, FAB "+" com `<AddTransactionSheet>`, sub-rota `/transactions/:id`, empty state, hook `useTransactions()`.
+- **MNT-103** `/banks` — decisão (a) tomada em `1658901` (unificado). Grid + summary já consomem `useAccounts()` real via Suspense (ver bullet checked no MNT-103 acima). Restam `<AddBankAccountSheet>`, sub-rota `/banks/:id`, e a seção de invoice/usage no `CreditAccountCard` amarrada à MNT-159.
+- **MNT-106** `/settings` — apenas `PlaceholderScreen` (título + subtítulo). **Falta**: nav lateral/lista, sub-rotas `/settings/profile`, `/settings/security`, `/settings/data`, `/settings/about`. `/settings/assistant` já existe (MNT-66). MNT-221 destrava só o hub navigation + sub-rotas placeholder; conteúdo real de cada sub-rota fica pra tasks separadas conforme backend for expondo endpoints.
+
+- [x] **MNT-221** [T][S] ✅ commit `2dcda23` — `/settings` hub navigation + sub-rotas placeholder
+
+- [x] **MNT-222** [T][S] ✅ commit `72374a1` — `/settings/about` real — sai do `PlaceholderScreen` e vira `AboutScreen` template centralizado no viewport (`flex-1 items-center justify-center`) com título **MONETA** animado via novo atom `ShutterText` (extraído do `HeroShutterText` — SRP), as **duas versões** do monorepo lidas server-side dos `package.json` de `/web` e `/api` (release-please bumpa cada uma independente conforme escopo dos commits — MNT-149..153), descrição curta do produto e dois links externos (target `_blank` + `rel="noopener noreferrer"`): site do produto `moneta.felipeclacerda.com` (destaque, borda sólida) e portfolio do autor `felipeclacerda.com` (secundário, borda tracejada). `HeroShutterText` passa a compor `ShutterText` internamente, backward-compat preservado (3 testes existentes verdes). Novos testes: `ShutterText.spec` (3 casos — render, aria-hidden, className) e `AboutScreen.spec` (6 casos — MONETA no título, versão web, versão api, link do site, link do portfolio, descrição visível). — `SettingsHub` template (lista clicável de items com ícone/título/descrição, `<Link>` do Next pra cada sub-rota, active state via `useActiveHref`), `/settings/page.tsx` passa a renderizar `SettingsHub` no lugar do `PlaceholderScreen`. Cria sub-rotas `/settings/profile`, `/settings/security`, `/settings/data`, `/settings/about` com `PlaceholderScreen` até serem preenchidas por tasks futuras (dependem de backend `GET/PATCH /users/me`, sessions/passkeys/audit log endpoints, LGPD export/delete). `/settings/assistant` (MNT-66) entra na nav sem alteração. Zero backend novo. Golden test do hub: renderiza 5 items com hrefs corretos, active class quando pathname bate.
+- **`/categories`** — rota criada em `5d0d284` sem task base na spec. Decisão: MNT-220 (integrar listagem com backend real; CRUD via sheet fica pra depois).
+
+- [x] **MNT-220** [T][S] ✅ commit `ff69f10` — `/categories` integração real: `categoriesService.list()` devolve `CategoryWithUsage[]` (mirror do port backend MNT-161 — `spent`, `usagePct`, `overBudget`, `monthlyBudget`), `categoriesHooks.use()` cacheia o shape enriquecido, `CategoriesScreen` consome via Suspense (`list.data` direto), empty via `<EmptyState>`, órfãos do mock removidos (`CategoryRow`, `MOCK_CATEGORY_ROWS`, `MOCK_CATEGORIES_MONTH_LABEL`). Endpoint PATCH `/categories/:id` já aceita todos os campos opcionais (MNT-160) → `rename` do service/hook virou `update`. `CategoryCard` extraído pra `molecules/` (um tsx por arquivo). CRUD via sheet/dialog fica pra ciclo posterior.
+
+Bundle sugerido pra integração (padrão MNT-193/MNT-66c): `banksService` + `accountsService` + `useAccounts()` primeiro (destrava MNT-103); depois `transactionsService` + `useTransactions()` (MNT-102 versão simples); depois `invoicesService` + agregação do dashboard (MNT-100). Fase 6 (MNT-141..145) especializa em cima disso.
+
 ---
 
 ## Fase 2 — Padrões cross-cutting
 
 - [ ] **MNT-107** [T][S] `<EmptyState icon title description action?>` — componente shadcn-style reutilizável. Fixtures de copy pra cada lugar: transactions, banks, recurring, charts, sessions. Sempre com CTA (geralmente redirect pro chat)
 - [ ] **MNT-108** [T][S] Loading states — `<Skeleton>` do shadcn em listas/cards; Suspense boundaries em cada page do App Router; `loading.tsx` por rota
-- [ ] **MNT-109** [S] Toast global — `<Toaster />` do sonner (shadcn) no root layout de `(app)`. Feedback padrão: (a) tool call success (verde curto), (b) tool call error (vermelho com detalhe), (c) mutação de settings salva. Handler central conectado ao WebSocket do assistente
+- [x] **MNT-109** [S] ✅ commit `4c4ca21` — `<Toaster richColors position="top-right" />` do sonner montado em `web/src/app/Providers.tsx` (root Provider), cobre `(auth)` e `(app)`. Callsites usam `toast.success` / `toast.error` inline (auth forms, `updateProfile` mutation em `/settings/assistant`, mic denied em `AppShell`). **Pendente**: handler central conectado ao WebSocket do assistente pra tool-call success/error automáticos — fica pra MNT-101 (chat) trazer junto.
 - [ ] **MNT-110** [T][S] Error boundary — `error.tsx` por segmento do App Router. Fallback com botão "recarregar" e link "reportar bug" (mailto ou form). Envia stack pro Sentry (quando MNT-XX de observabilidade entrar)
 - [ ] **MNT-111** [S] Dark mode — shadcn suporta via CSS variables. Toggle no `/settings/profile` (light/dark/system). Persiste em localStorage + cookie (pra SSR não flashar). Detecta `prefers-color-scheme` como default
+- [ ] **MNT-216** [T][S] i18n framework pra strings da UI — hoje o shell está todo em EN literal (commit `bf3c71c` traduziu de PT-BR pra EN inline). Objetivo: strings viram chaves resolvidas por locale, user pode alternar via `/settings/profile`, e o par com MNT-217 fecha idioma consistente entre UI e fala do assistente:
+  - Adotar **`next-intl`** (App Router first-class, SSR-friendly, TypeScript autocompletar chaves, cobre server + client components sem gambiarra) em vez de `react-i18next` (client-only, ruim com RSC) ou solução caseira
+  - Estrutura: `web/src/messages/{en,pt-BR}.json` (namespaces por área: `shell`, `auth`, `settings`, `dashboard`, `banks`, `transactions`, `categories`, `assistant`, `common`)
+  - `middleware.ts` (MNT-99) detecta locale: (1) `preferredLocale` do user logado > (2) cookie `NEXT_LOCALE` > (3) `Accept-Language` > (4) fallback `en`
+  - `useTranslations("<namespace>")` em client components; `getTranslations()` em server components
+  - Migrar callsites atuais em ordem: `AppShell`/`DockTabs` (labels), `AssistantSettings*` (tabs/labels/copies), `LoginForm`/`SignupForm`, `PlaceholderScreen`, `EmptyState` fixtures (MNT-107)
+  - **Persistência da preferência**: nova coluna `users.preferred_locale VARCHAR(10) NULL` (ISO tag `en` | `pt-BR`; NULL = detectado). Migration + expõe via `PATCH /users/me` (endpoint novo pequeno) OU embutido no `PATCH /agent/profile` como campo top-level de user (a decidir na task)
+  - Toggle no `/settings/profile` (piggyback quando MNT-106 for atacada) e/ou tab novo em `/settings/assistant` (fica próximo de MNT-217, mas semanticamente é preferência do user, não do agent — decidir no ciclo)
+  - **Testes**: refatora as 7 falhas atuais em `test/components/**/AssistantSettings*.spec.tsx` — hoje procuram "carregando"/"Tom"/"Voz"/"Avatar" (PT-BR pré-`bf3c71c`); passam a montar com `NextIntlClientProvider` mockando `en` e queries acessíveis por `role`+chave. Baseline pré-i18n vermelho conhecido — MNT-216 desbloqueia
+  - Golden: renderiza template `AssistantSettingsScreen` em `en` e `pt-BR`, snapshot difere só em strings, não em estrutura DOM
+  - **Cross-ref**: bloqueia MNT-217 (preferência de idioma do agent lê `preferredLocale` como default do `auto` mode)
 
 ---
 
@@ -158,7 +185,7 @@ Tasks originalmente no `specs/003-assistant/tasks.md` que são UI/frontend puro.
 
 Pré-requisito de toda UI. Precisa acontecer **antes** de qualquer outra task deste spec (exceto documentação).
 
-- [ ] **MNT-71** [S] Init shadcn/ui em `/web`: `pnpm dlx shadcn@latest init` (base color neutral, react-server-components on, path `@/components`); adicionar componentes base já esperados — `button`, `input`, `label`, `form`, `dialog`, `radio-group`, `select`, `card`, `avatar`, `tabs`, `scroll-area`, `sonner`. Ajustar `tailwind.config` e `globals.css` conforme output do CLI. Verificar que build passa
+- [x] **MNT-71** [S] ✅ commit `5aba1ba` — Init shadcn/ui em `/web` (base color neutral, path `@/components`, primitives vivem em `atoms/`); componentes esperados presentes: `Button`, `Input`, `Label`, `Form`, `Dialog`, `RadioGroup`, `Select`, `Card`, `Avatar`, `Tabs` (base-ui), `ScrollArea`, `Sonner`. Uma variante custom animada de Tabs adicionada em `02417fb` (`ui/Tabs.tsx`, consumida pelo `AssistantSettingsScreen`); o primitive shadcn em `atoms/Tabs.tsx` fica pra composição com `Form`. `tailwind.config` + `globals.css` ajustados, build passando.
 - [ ] **MNT-72** [S] Adicionar componente `chart` do shadcn: `pnpm dlx shadcn@latest add chart`. Instala Recharts como peer dep, cria `/web/src/components/ui/chart.tsx` com `<ChartContainer>`, `<ChartTooltip>`, `<ChartTooltipContent>`, `<ChartLegend>`, `<ChartLegendContent>` + type `ChartConfig`
 
 ---

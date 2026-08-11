@@ -76,9 +76,9 @@ export class PrismaInstallmentGroupsRepository implements InstallmentGroupsRepos
         userId: groupRow.userId,
         accountId: groupRow.accountId,
         categoryId: groupRow.categoryId,
-        totalAmount: groupRow.totalAmount.toNumber(),
+        totalAmount: groupRow.totalAmount,
         installmentsCount: groupRow.installmentsCount,
-        installmentAmount: groupRow.installmentAmount.toNumber(),
+        installmentAmount: groupRow.installmentAmount,
         description: groupRow.description,
         purchaseDate: groupRow.purchaseDate,
       };
@@ -113,8 +113,10 @@ export class PrismaInstallmentGroupsRepository implements InstallmentGroupsRepos
       const affectedInvoices = new Set<string>();
       let refundedAmount = 0;
       for (const installment of installments) {
-        const amount = installment.amount.toNumber();
-        const delta = signedAmount(installment.type as TransactionType, amount);
+        const delta = signedAmount(
+          installment.type as TransactionType,
+          installment.amount,
+        );
         await tx.userBankAccount.updateMany({
           where: { id: installment.accountId, userId: installment.userId },
           data: { balance: { increment: -delta } },
@@ -126,7 +128,7 @@ export class PrismaInstallmentGroupsRepository implements InstallmentGroupsRepos
           });
           affectedInvoices.add(installment.invoiceId);
         }
-        refundedAmount += amount;
+        refundedAmount += installment.amount;
       }
 
       const { count } = await tx.transaction.deleteMany({

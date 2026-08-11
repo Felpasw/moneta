@@ -21,15 +21,6 @@ const TRANSFER_SELECT = {
   occurredAt: true,
 } satisfies Prisma.TransferSelect;
 
-type PrismaTransferRow = Prisma.TransferGetPayload<{
-  select: typeof TRANSFER_SELECT;
-}>;
-
-const toDomain = (row: PrismaTransferRow): Transfer => ({
-  ...row,
-  amount: row.amount.toNumber(),
-});
-
 @Injectable()
 export class PrismaTransfersRepository implements TransfersRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -50,7 +41,7 @@ export class PrismaTransfersRepository implements TransfersRepository {
       if (credit.count === 0) {
         throw new AccountNotFoundError(input.toAccountId);
       }
-      const row = await tx.transfer.create({
+      return tx.transfer.create({
         data: {
           userId: input.userId,
           fromAccountId: input.fromAccountId,
@@ -61,7 +52,6 @@ export class PrismaTransfersRepository implements TransfersRepository {
         },
         select: TRANSFER_SELECT,
       });
-      return toDomain(row);
     });
   }
 
@@ -74,21 +64,20 @@ export class PrismaTransfersRepository implements TransfersRepository {
       if (!current) {
         throw new TransferNotFoundError(id);
       }
-      const amount = current.amount.toNumber();
       await tx.userBankAccount.updateMany({
         where: { id: current.fromAccountId, userId },
-        data: { balance: { increment: amount } },
+        data: { balance: { increment: current.amount } },
       });
       await tx.userBankAccount.updateMany({
         where: { id: current.toAccountId, userId },
-        data: { balance: { increment: -amount } },
+        data: { balance: { increment: -current.amount } },
       });
       await tx.transfer.delete({ where: { id } });
     });
   }
 
   async list(filters: ListTransfersFilters): Promise<Transfer[]> {
-    const rows = await this.prisma.transfer.findMany({
+    return this.prisma.transfer.findMany({
       where: {
         userId: filters.userId,
         occurredAt: { gte: filters.dateFrom, lte: filters.dateTo },
@@ -102,6 +91,5 @@ export class PrismaTransfersRepository implements TransfersRepository {
       skip: filters.offset,
       select: TRANSFER_SELECT,
     });
-    return rows.map(toDomain);
   }
 }

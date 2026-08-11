@@ -9,14 +9,14 @@ import { JwtTokenService } from '~/auth/infrastructure/jwt-token.service';
 import { AddCategoryUseCase } from '~/finance/categories/application/use-cases/add-category.use-case';
 import { DeleteCategoryUseCase } from '~/finance/categories/application/use-cases/delete-category.use-case';
 import { ListCategoriesUseCase } from '~/finance/categories/application/use-cases/list-categories.use-case';
-import { RenameCategoryUseCase } from '~/finance/categories/application/use-cases/rename-category.use-case';
+import { UpdateCategoryUseCase } from '~/finance/categories/application/use-cases/update-category.use-case';
 import { CategoriesController } from '~/finance/categories/categories.controller';
 import { CategoryNotFoundError } from '~/finance/categories/domain/errors/category-not-found.error';
 
 interface Mocks {
   list: { execute: jest.Mock };
   add: { execute: jest.Mock };
-  rename: { execute: jest.Mock };
+  update: { execute: jest.Mock };
   delete: { execute: jest.Mock };
 }
 
@@ -32,7 +32,7 @@ const buildApp = async (): Promise<{
   const mocks: Mocks = {
     list: { execute: jest.fn() },
     add: { execute: jest.fn() },
-    rename: { execute: jest.fn() },
+    update: { execute: jest.fn() },
     delete: { execute: jest.fn() },
   };
 
@@ -41,7 +41,7 @@ const buildApp = async (): Promise<{
     providers: [
       { provide: ListCategoriesUseCase, useValue: mocks.list },
       { provide: AddCategoryUseCase, useValue: mocks.add },
-      { provide: RenameCategoryUseCase, useValue: mocks.rename },
+      { provide: UpdateCategoryUseCase, useValue: mocks.update },
       { provide: DeleteCategoryUseCase, useValue: mocks.delete },
       { provide: TOKEN_SERVICE, useClass: JwtTokenService },
       JwtAuthGuard,
@@ -96,6 +96,7 @@ describe('CategoriesController', () => {
         name: 'Alimentação',
         icon: null,
         color: null,
+        monthlyBudget: null,
       },
     ]);
 
@@ -111,6 +112,7 @@ describe('CategoriesController', () => {
         name: 'Alimentação',
         icon: null,
         color: null,
+        monthlyBudget: null,
       },
     ]);
     expect(mocks.list.execute).toHaveBeenCalledWith({ userId: USER_ID });
@@ -123,6 +125,7 @@ describe('CategoriesController', () => {
       name: 'Livros',
       icon: null,
       color: null,
+      monthlyBudget: null,
     };
     mocks.add.execute.mockResolvedValue(created);
 
@@ -139,27 +142,43 @@ describe('CategoriesController', () => {
     });
   });
 
-  it('PATCH /categories/:id returns 200 on rename', async () => {
-    const renamed = {
+  it('PATCH /categories/:id returns 200 on update (name + monthlyBudget)', async () => {
+    const updated = {
       id: CATEGORY_ID,
       userId: USER_ID,
       name: 'Livros novos',
       icon: null,
       color: null,
+      monthlyBudget: 150,
     };
-    mocks.rename.execute.mockResolvedValue(renamed);
+    mocks.update.execute.mockResolvedValue(updated);
 
     const res = await request(http)
       .patch(`/categories/${CATEGORY_ID}`)
       .set(...bearer(accessToken))
-      .send({ name: 'Livros novos' });
+      .send({ name: 'Livros novos', monthlyBudget: 150 });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual(renamed);
+    expect(res.body).toEqual(updated);
+    expect(mocks.update.execute).toHaveBeenCalledWith({
+      id: CATEGORY_ID,
+      userId: USER_ID,
+      name: 'Livros novos',
+      monthlyBudget: 150,
+    });
+  });
+
+  it('PATCH /categories/:id returns 400 when the body is empty', async () => {
+    const res = await request(http)
+      .patch(`/categories/${CATEGORY_ID}`)
+      .set(...bearer(accessToken))
+      .send({});
+
+    expect(res.status).toBe(400);
   });
 
   it('PATCH /categories/:id returns 404 when the category is not owned', async () => {
-    mocks.rename.execute.mockRejectedValue(
+    mocks.update.execute.mockRejectedValue(
       new CategoryNotFoundError(CATEGORY_ID),
     );
 

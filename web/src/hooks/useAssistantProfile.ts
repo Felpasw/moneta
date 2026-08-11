@@ -6,7 +6,11 @@
  * `if`/loop.
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 
 import assistantProfileService from "@/services/assistantProfile.service";
 import type {
@@ -32,12 +36,12 @@ class AssistantProfileHooks implements IAssistantProfileHooks {
   use(): AssistantProfileHooksResult {
     const queryClient = useQueryClient();
 
-    const profile = useQuery<AssistantProfile>({
+    const profile = useSuspenseQuery<AssistantProfile>({
       queryKey: ASSISTANT_PROFILE_QUERY_KEYS.profile,
       queryFn: () => assistantProfileService.getProfile(),
     });
 
-    const voices = useQuery<TtsVoice[]>({
+    const voices = useSuspenseQuery<TtsVoice[]>({
       queryKey: ASSISTANT_PROFILE_QUERY_KEYS.voices,
       queryFn: () => assistantProfileService.listVoices(),
       staleTime: VOICES_STALE_TIME_MS,

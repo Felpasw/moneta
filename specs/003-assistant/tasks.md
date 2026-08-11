@@ -131,6 +131,20 @@ Solução: cada tool carrega **seu próprio playbook** (regras, exemplos, edge c
 
 Front do assistente (MNT-66 `/settings/assistant` com radio de treatmentStyle + seletor de voz + seletor de avatar DiceBear) vive em `specs/009-ui-shell/tasks.md` Fase 3. Tasks 3D antigas (MNT-63/64/67/68/69/70) descartadas com a troca RPM→DiceBear.
 
+- [ ] **MNT-217** [T][S] Preferência de idioma da fala do assistente — hoje o `BASE_PROMPT` (MNT-62 `src/agent/domain/prompts/base.ts`) hardcoda "financeiro, PT-BR". Feature: user escolhe idioma da resposta do agent independente da UI (mas com `auto` seguindo `users.preferred_locale` de MNT-216):
+  - Prisma migration: `assistant_profiles.output_language` enum `pt_BR | en_US | auto`, default `auto`, NOT NULL. Estende port `AssistantProfile` + repo Prisma
+  - Zod DTO de `PATCH /agent/profile` (MNT-61) aceita `outputLanguage` opcional; enum validada; passa a bloquear string livre (mesma defesa de MNT-62 pra `treatmentStyle`)
+  - `composeSystemPrompt` (MNT-62) recebe `outputLanguage` resolvido:
+    - `auto` → resolve pra `users.preferred_locale` (MNT-216) ou `en` fallback
+    - concreto → usa direto
+  - Novo snippet em `src/agent/domain/prompts/language/{en-us,pt-br}.ts` + `LANGUAGE_SNIPPETS: Record<ResolvedLanguage, string>` — text tipo "Responda em português brasileiro. Nunca use inglês em respostas ao usuário." (equivalente inverso pra EN). Base prompt perde a menção "PT-BR" e passa a ser neutra; idioma vira slot dedicado
+  - Wire em `AgentRealtimeGateway.wireSystemPrompt` (MNT-62): busca `outputLanguage` do profile, resolve `auto`, injeta no compose. Zero texto livre do user no prompt (memória: user-controlled só via enum)
+  - Tool opcional `set_output_language({ language })` pra user alternar mid-conversa via voz — playbook orienta que persiste no profile e vale pras próximas mensagens (session current já iniciada pode continuar no idioma antigo até session.update seguinte)
+  - UI: novo tab **"Language"** no `AssistantSettingsScreen` (`/settings/assistant`) com 3 radios (`Automatic` / `English` / `Portuguese`). Reusa `AnimatedRadioGroup`. Copy explica que `Automatic` segue preferência da conta
+  - **ElevenLabs**: voz é ortogonal a idioma (voz EN falando PT-BR funciona mas sotaque estranho). Playbook do tool `preview_voice`/`set_voice` orienta preferir voz `multilingual_v2` quando `outputLanguage ≠ en_US`. Não bloqueia seleção — só nudge
+  - Testes: (a) system prompt varia por language (unit em `composeSystemPrompt`); (b) `auto` resolve pra `preferred_locale` do user; (c) `auto` sem `preferred_locale` cai em `en`; (d) DTO Zod rejeita string livre; (e) golden e2e: profile com `pt_BR` → resposta do agent contém texto português (mocked LLM devolve fixture bilíngue e verifica seleção correta)
+  - **Cross-ref**: depende de MNT-216 pra ler `preferred_locale`; roda em paralelo se MNT-216 landar coluna primeiro. Se MNT-216 atrasar, `auto` cai em `en` sempre até a coluna existir
+
 ---
 
 ## Fase 6 — Tools de negócio (referenciadas)

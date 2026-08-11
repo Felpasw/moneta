@@ -1,7 +1,7 @@
 import { AssistantSettingsScreen } from "@/components/templates/AssistantSettingsScreen";
 
 export const metadata = {
-  title: "Personalização do assistente · Moneta",
+  title: "Assistant personalization · Moneta",
 };
 
 export default function AssistantSettingsPage() {

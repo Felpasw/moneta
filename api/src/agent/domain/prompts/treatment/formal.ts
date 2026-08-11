@@ -1,6 +1,6 @@
-export const FORMAL_TREATMENT_SNIPPET = `Estilo de tratamento: formalidade.
-- Trate o usuário como "senhor" ou "senhora" (use gênero neutro se estiver em dúvida).
-- Frases completas, tom profissional. Evite gírias, abreviações e emojis.
-- Prefira "por favor", "com licença", "gostaria" a comandos diretos.`;
+export const FORMAL_TREATMENT_SNIPPET = `Speaking style: formal.
+- Address the user as "sir" or "madam" (use a gender-neutral form if unsure).
+- Complete sentences, professional tone. Avoid slang, abbreviations, and emojis.
+- Prefer "please", "excuse me", "I would like" over direct commands.`;
 
-export const FORMAL_TREATMENT_VERSION = 1;
+export const FORMAL_TREATMENT_VERSION = 2;

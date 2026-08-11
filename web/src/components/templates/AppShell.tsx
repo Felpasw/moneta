@@ -3,72 +3,75 @@
 import {
   ArrowLeftRight,
   Bot,
-  CreditCard,
+  Landmark,
   LayoutDashboard,
   LogOut,
   Settings,
   Tags,
-  Wallet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 
 import { RippleLoader } from "@/components/atoms/RippleLoader";
-import { DockTabs, type DockItem } from "@/components/ui/dock-tabs";
+import { GlobalAssistant } from "@/components/organisms/GlobalAssistant";
+import { DockTabs, type DockItem } from "@/components/ui/DockTabs";
+import { MicState, useAgentSession } from "@/hooks/useAgentSession";
 import authHooks from "@/hooks/useAuth";
+import { useUserHydrated } from "@/hooks/useUserHydrated";
+import { agentSessionActions } from "@/stores/agentSessionStore";
 import { useUserStore } from "@/stores/userStore";
 
+const MIC_DENIED_TOAST =
+  "Allow microphone access in your browser settings to talk to Moneta.";
+const MIC_ERROR_TOAST = "Couldn't open your microphone.";
+
 const ICON_CLASS = "h-5 w-5";
+
+const DOCK_ICON_COLOR = "bg-black";
 
 const MONETA_DOCK_ITEMS: Omit<DockItem, "onClick">[] = [
   {
     id: "dashboard",
-    name: "Início",
+    name: "Home",
     href: "/dashboard",
     icon: <LayoutDashboard className={ICON_CLASS} />,
-    color: "bg-primary",
+    color: DOCK_ICON_COLOR,
   },
   {
     id: "transactions",
-    name: "Transações",
+    name: "Transactions",
     href: "/transactions",
     icon: <ArrowLeftRight className={ICON_CLASS} />,
-    color: "bg-primary",
+    color: DOCK_ICON_COLOR,
   },
   {
-    id: "cards",
-    name: "Cartões",
-    href: "/cards",
-    icon: <CreditCard className={ICON_CLASS} />,
-    color: "bg-primary",
-  },
-  {
-    id: "accounts",
-    name: "Contas",
-    href: "/accounts",
-    icon: <Wallet className={ICON_CLASS} />,
-    color: "bg-primary",
+    id: "banks",
+    name: "Banks",
+    href: "/banks",
+    icon: <Landmark className={ICON_CLASS} />,
+    color: DOCK_ICON_COLOR,
   },
   {
     id: "categories",
-    name: "Categorias",
+    name: "Categories",
     href: "/categories",
     icon: <Tags className={ICON_CLASS} />,
-    color: "bg-primary",
+    color: DOCK_ICON_COLOR,
   },
   {
     id: "settings",
-    name: "Configurações",
+    name: "Settings",
     href: "/settings",
     icon: <Settings className={ICON_CLASS} />,
-    color: "bg-muted-foreground",
+    color: DOCK_ICON_COLOR,
   },
   {
     id: "assistant",
-    name: "Assistente",
+    name: "Assistant",
     href: "/settings/assistant",
     icon: <Bot className={ICON_CLASS} />,
-    color: "bg-muted-foreground",
+    color: DOCK_ICON_COLOR,
   },
 ];
 
@@ -83,10 +86,14 @@ export function AppShell({ children }: AppShellProps) {
   const { logout, refresh } = authHooks.use();
   const storedUser = useUserStore((s) => s.user);
 
+  const hydrated = useUserHydrated();
   const [bootStatus, setBootStatus] = useState<BootStatus>("booting");
   const didBootRef = useRef(false);
 
+  const { micState } = useAgentSession({ enabled: bootStatus === "ready" });
+
   useEffect(() => {
+    if (!hydrated) return;
     if (didBootRef.current) return;
     didBootRef.current = true;
 
@@ -105,7 +112,15 @@ export function AppShell({ children }: AppShellProps) {
         router.push("/login");
       }
     })();
-  }, [refresh, router, storedUser]);
+  }, [hydrated, refresh, router, storedUser]);
+
+  useEffect(() => {
+    if (micState !== MicState.Denied && micState !== MicState.Error) return;
+    const message =
+      micState === MicState.Denied ? MIC_DENIED_TOAST : MIC_ERROR_TOAST;
+    toast.error(message);
+    queueMicrotask(() => agentSessionActions.setMicEnabled(false));
+  }, [micState]);
 
   const handleLogout = () => {
     logout.mutate(undefined, {
@@ -117,28 +132,30 @@ export function AppShell({ children }: AppShellProps) {
     ...MONETA_DOCK_ITEMS,
     {
       id: "logout",
-      name: "Sair",
+      name: "Sign out",
       icon: <LogOut className={ICON_CLASS} />,
-      color: "bg-destructive",
+      color: DOCK_ICON_COLOR,
       onClick: handleLogout,
     },
   ];
 
   return (
     <div className="relative flex min-h-screen flex-col">
-      <div className="flex flex-1 flex-col pb-28">
+      <div className="flex flex-1 flex-col pb-36">
         {bootStatus === "ready" ? (
           children
         ) : (
           <div className="flex flex-1 items-center justify-center">
-            <RippleLoader label="Preparando sua sessão" />
+            <RippleLoader label="Getting your session ready" />
           </div>
         )}
       </div>
 
+      {bootStatus === "ready" ? <GlobalAssistant /> : null}
+
       <aside
         aria-label="User Profile Menu"
-        className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2"
+        className="fixed bottom-12 left-1/2 z-50 -translate-x-1/2"
       >
         <DockTabs items={dockItems} />
       </aside>

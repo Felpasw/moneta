@@ -5,21 +5,19 @@ import {
   CATEGORIES_REPOSITORY,
   type CategoriesRepository,
   type Category,
-  type RenameCategoryInput,
+  type UpdateCategoryInput,
 } from '../../domain/ports/categories-repository';
 
 @Injectable()
-export class RenameCategoryUseCase {
+export class UpdateCategoryUseCase {
   constructor(
     @Inject(CATEGORIES_REPOSITORY)
     private readonly categories: CategoriesRepository,
   ) {}
 
-  async execute(input: RenameCategoryInput): Promise<Category> {
-    const renamed = await this.categories.rename(input);
-    if (!renamed) {
-      throw new CategoryNotFoundError(input.id);
-    }
-    return renamed;
+  async execute(input: UpdateCategoryInput): Promise<Category> {
+    const updated = await this.categories.update(input);
+    if (updated === null) throw new CategoryNotFoundError(input.id);
+    return updated;
   }
 }

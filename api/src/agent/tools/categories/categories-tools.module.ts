@@ -4,14 +4,14 @@ import { CategoriesModule } from '../../../finance/categories/categories.module'
 import { AddCategoryTool } from './add-category.tool';
 import { DeleteCategoryTool } from './delete-category.tool';
 import { ListCategoriesTool } from './list-categories.tool';
-import { RenameCategoryTool } from './rename-category.tool';
+import { UpdateCategoryTool } from './update-category.tool';
 
 @Module({
   imports: [CategoriesModule],
   providers: [
     ListCategoriesTool,
     AddCategoryTool,
-    RenameCategoryTool,
+    UpdateCategoryTool,
     DeleteCategoryTool,
   ],
 })
