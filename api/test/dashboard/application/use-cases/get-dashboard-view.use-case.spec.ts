@@ -4,14 +4,23 @@ const buildUseCase = () => {
   const listAccounts = { execute: jest.fn() };
   const listTransactions = { execute: jest.fn() };
   const getTopCategories = { execute: jest.fn().mockResolvedValue([]) };
+  const getMonthlyFlow = { execute: jest.fn().mockResolvedValue([]) };
   const clock = { now: jest.fn() };
   const useCase = new GetDashboardViewUseCase(
     clock,
     listAccounts as never,
     listTransactions as never,
     getTopCategories as never,
+    getMonthlyFlow as never,
   );
-  return { useCase, listAccounts, listTransactions, getTopCategories, clock };
+  return {
+    useCase,
+    listAccounts,
+    listTransactions,
+    getTopCategories,
+    getMonthlyFlow,
+    clock,
+  };
 };
 
 const emptyAccountsResult = {
@@ -55,6 +64,41 @@ describe('GetDashboardViewUseCase', () => {
         monthNet: 4789.5,
       },
       topCategories: [],
+      monthlyFlow: [],
+    });
+  });
+
+  it('returns monthlyFlow straight from the repo', async () => {
+    const { useCase, listAccounts, listTransactions, getMonthlyFlow, clock } =
+      buildUseCase();
+    clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
+    listAccounts.execute.mockResolvedValue(emptyAccountsResult);
+    listTransactions.execute.mockResolvedValue(emptyTransactionsResult);
+    const flow = [
+      { monthKey: '2026-03', income: 3000, expense: 1200 },
+      { monthKey: '2026-04', income: 3200, expense: 900 },
+    ];
+    getMonthlyFlow.execute.mockResolvedValue(flow);
+
+    const result = await useCase.execute({ userId: 'user-1' });
+
+    expect(result.monthlyFlow).toBe(flow);
+  });
+
+  it('scopes monthly flow to last 6 months from Clock', async () => {
+    const { useCase, listAccounts, listTransactions, getMonthlyFlow, clock } =
+      buildUseCase();
+    const now = new Date('2026-08-15T12:00:00Z');
+    clock.now.mockReturnValue(now);
+    listAccounts.execute.mockResolvedValue(emptyAccountsResult);
+    listTransactions.execute.mockResolvedValue(emptyTransactionsResult);
+
+    await useCase.execute({ userId: 'user-1' });
+
+    expect(getMonthlyFlow.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      now,
+      monthsBack: 6,
     });
   });
 
@@ -142,9 +186,15 @@ describe('GetDashboardViewUseCase', () => {
     );
   });
 
-  it('runs all three data sources in parallel', async () => {
-    const { useCase, listAccounts, listTransactions, getTopCategories, clock } =
-      buildUseCase();
+  it('runs all four data sources in parallel', async () => {
+    const {
+      useCase,
+      listAccounts,
+      listTransactions,
+      getTopCategories,
+      getMonthlyFlow,
+      clock,
+    } = buildUseCase();
     clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
     const order: string[] = [];
     listAccounts.execute.mockImplementation(async () => {
@@ -165,11 +215,18 @@ describe('GetDashboardViewUseCase', () => {
       order.push('top-end');
       return [];
     });
+    getMonthlyFlow.execute.mockImplementation(async () => {
+      order.push('flow-start');
+      await new Promise((r) => setTimeout(r, 10));
+      order.push('flow-end');
+      return [];
+    });
 
     await useCase.execute({ userId: 'user-1' });
 
-    expect(order.slice(0, 3).sort()).toEqual([
+    expect(order.slice(0, 4).sort()).toEqual([
       'accounts-start',
+      'flow-start',
       'top-start',
       'transactions-start',
     ]);

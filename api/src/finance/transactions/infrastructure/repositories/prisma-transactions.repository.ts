@@ -9,7 +9,9 @@ import { TransactionNotFoundError } from '../../domain/errors/transaction-not-fo
 import type {
   AddTransactionInput,
   EditTransactionInput,
+  GetMonthlyFlowInput,
   ListTransactionsFilters,
+  MonthlyFlowRow,
   Transaction,
   TransactionWithEmbeds,
   TransactionsRepository,
@@ -348,5 +350,29 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       select: TRANSACTION_SELECT,
     });
     return toDomain(row);
+  }
+
+  async getMonthlyFlow(input: GetMonthlyFlowInput): Promise<MonthlyFlowRow[]> {
+    return this.prisma.$queryRaw<MonthlyFlowRow[]>`
+      WITH month_series AS (
+        SELECT date_trunc('month', ${input.now}::timestamptz - (interval '1 month' * gs))::date AS month_start
+        FROM generate_series(0, ${input.monthsBack}::int - 1) gs
+      ),
+      month_sums AS (
+        SELECT date_trunc('month', occurred_at)::date AS month_start,
+               SUM(CASE WHEN type = 'income'::transaction_type THEN amount ELSE 0 END)::float8 AS income,
+               SUM(CASE WHEN type = 'expense'::transaction_type THEN amount ELSE 0 END)::float8 AS expense
+        FROM transactions
+        WHERE user_id = ${input.userId}::uuid
+          AND occurred_at >= date_trunc('month', ${input.now}::timestamptz - (interval '1 month' * (${input.monthsBack}::int - 1)))
+        GROUP BY month_start
+      )
+      SELECT to_char(s.month_start, 'YYYY-MM') AS "monthKey",
+             COALESCE(ms.income, 0)::float8 AS income,
+             COALESCE(ms.expense, 0)::float8 AS expense
+      FROM month_series s
+      LEFT JOIN month_sums ms ON ms.month_start = s.month_start
+      ORDER BY s.month_start ASC
+    `;
   }
 }

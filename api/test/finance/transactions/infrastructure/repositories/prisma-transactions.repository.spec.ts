@@ -957,4 +957,66 @@ describe('PrismaTransactionsRepository', () => {
       });
     });
   });
+
+  describe('getMonthlyFlow', () => {
+    const buildQueryRawPrisma = () => {
+      const $queryRaw = jest.fn();
+      const prisma = { $queryRaw } as unknown as PrismaService;
+      return { prisma, $queryRaw };
+    };
+
+    it('returns the raw rows straight from $queryRaw', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      const raw = [
+        { monthKey: '2026-03', income: 3000, expense: 1200 },
+        { monthKey: '2026-04', income: 3200, expense: 900 },
+      ];
+      $queryRaw.mockResolvedValue(raw);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const rows = await repo.getMonthlyFlow({
+        userId: CURRENT_USER,
+        now: new Date('2026-08-15T12:00:00Z'),
+        monthsBack: 6,
+      });
+
+      expect(rows).toBe(raw);
+      expect($queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('passes parameterized args to $queryRaw and SQL zero-pads via generate_series', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      $queryRaw.mockResolvedValue([]);
+      const repo = new PrismaTransactionsRepository(prisma);
+      const now = new Date('2026-08-15T12:00:00Z');
+
+      await repo.getMonthlyFlow({
+        userId: CURRENT_USER,
+        now,
+        monthsBack: 6,
+      });
+
+      const call = $queryRaw.mock.calls[0] as [string[], ...unknown[]];
+      expect(call.slice(1)).toEqual([now, 6, CURRENT_USER, now, 6]);
+      const fullSql = call[0].join('$');
+      expect(fullSql).toContain('generate_series');
+      expect(fullSql).toContain("date_trunc('month'");
+      expect(fullSql).toContain('LEFT JOIN');
+      expect(fullSql).toContain('CASE WHEN');
+    });
+
+    it('returns empty list when SQL yields no rows', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      $queryRaw.mockResolvedValue([]);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const rows = await repo.getMonthlyFlow({
+        userId: CURRENT_USER,
+        now: new Date('2026-08-15T12:00:00Z'),
+        monthsBack: 6,
+      });
+
+      expect(rows).toEqual([]);
+    });
+  });
 });

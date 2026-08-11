@@ -93,6 +93,7 @@ describe('DashboardController', () => {
             share: 0.28,
           },
         ],
+        monthlyFlow: [{ monthKey: '2026-08', income: 3000, expense: 1800 }],
       };
       mocks.getView.execute.mockResolvedValue(view);
 
