@@ -6,6 +6,33 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.6.0](https://github.com/Felpasw/moneta/compare/web-v0.5.0...web-v0.6.0) (2026-08-11)
+
+
+### ✨ Features
+
+* **web/banks:** consume backend summary + real accounts via Suspense [MNT-103] ([99cbb87](https://github.com/Felpasw/moneta/commit/99cbb8748ebbbc6645d0c370751056ac3c6a34be))
+* **web/banks:** render invoice section on CreditAccountCard from backend embed [MNT-103] ([49f7eaf](https://github.com/Felpasw/moneta/commit/49f7eaf30d4f05e76c44baf38dfb8d602471dac5))
+* **web/categories:** integrate real backend with CategoryWithUsage shape [MNT-220] ([ff69f10](https://github.com/Felpasw/moneta/commit/ff69f103d7419a8522530facbe1502dbbb0faa00))
+* **web/dashboard:** consume backend summaries and drop mock scaffolding [MNT-100] ([e675b99](https://github.com/Felpasw/moneta/commit/e675b99f8681a91074731362e44d7649bbad7eb8))
+* **web/dock:** glass effect + active indicator + hover animations [MNT-215] ([e593960](https://github.com/Felpasw/moneta/commit/e5939608bc8a4bb8761efd93fb78b131f611abc5))
+* **web/finance:** banks/accounts/categories services + hooks (TDD) [MNT-215] ([a5a704c](https://github.com/Felpasw/moneta/commit/a5a704cf7d734047d85914f86b22708b491264e9))
+* **web/settings:** hub navigation + sub-rotas placeholder [MNT-221] ([2dcda23](https://github.com/Felpasw/moneta/commit/2dcda23af1f880eca58dd17698b3703be601985f))
+* **web/settings:** tela About real com título shutter + versões do monorepo + links [MNT-222] ([72374a1](https://github.com/Felpasw/moneta/commit/72374a1dcc90bf2f60032814b23a50ca086e02e3))
+* **web/shell:** add global assistant organism with capabilities popover [MNT-215] ([7350476](https://github.com/Felpasw/moneta/commit/7350476d048e6c7e131dab67d48ce0a49d7ae5b7))
+* **web/shell:** add Tabs primitive + settingsStagger util + polish assistant settings [MNT-215] ([02417fb](https://github.com/Felpasw/moneta/commit/02417fbc94e2256beba64eea1fb64dd3830c507d))
+* **web/shell:** adopt Next Suspense boundaries + backend summary contract [MNT-215] ([84a89ed](https://github.com/Felpasw/moneta/commit/84a89ed75e355e0048dee91485773234d38f0b72))
+* **web/shell:** global agent session + hydration fix + dock reposition [MNT-215] ([a73547f](https://github.com/Felpasw/moneta/commit/a73547f5b88edc4deedd87054fba64fcecd07719))
+* **web/shell:** merge /accounts and /cards into /banks [MNT-215] ([1658901](https://github.com/Felpasw/moneta/commit/1658901e0b85e2bb8339f88aa05dc05f784ab667))
+* **web/shell:** shell routes + dumb templates + finance mocks as backend-ready views [MNT-215] ([5d0d284](https://github.com/Felpasw/moneta/commit/5d0d284ba2d9db11e5a2266601644ccc2b227122))
+* **web/transactions:** add transactionsService + useTransactions hook [MNT-102] ([7b364fc](https://github.com/Felpasw/moneta/commit/7b364fcb434af09234861c5b1106172536ec8084))
+* **web/transactions:** consume real backend via Suspense + day grouping [MNT-102] ([ae014ee](https://github.com/Felpasw/moneta/commit/ae014ee6168e4c5eefac1b96290bae77fa5c37e1))
+
+
+### 🔨 Refactoring
+
+* **web/settings:** scroll long voice list + center layout [MNT-215] ([411c1d3](https://github.com/Felpasw/moneta/commit/411c1d332ac258f72716fa3624b0cbe98010b72f))
+
 ## [0.5.0](https://github.com/Felpasw/moneta/compare/web-v0.4.0...web-v0.5.0) (2026-08-04)
 
 

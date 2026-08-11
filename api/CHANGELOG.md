@@ -6,6 +6,24 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.9.0](https://github.com/Felpasw/moneta/compare/api-v0.8.0...api-v0.9.0) (2026-08-11)
+
+
+### ✨ Features
+
+* **api/accounts:** embed bank in GET /accounts payload [MNT-158] ([32f8841](https://github.com/Felpasw/moneta/commit/32f8841380f7cdcb6c21f151e0e2c42b8487bcab))
+* **api/accounts:** embed currentInvoice + usagePct in GET /accounts [MNT-159] ([0bf692d](https://github.com/Felpasw/moneta/commit/0bf692d7fb342ea3ca49f87993ea9c3c6654c371))
+* **api/accounts:** embed summary in GET /accounts payload [MNT-103] ([20b9a2a](https://github.com/Felpasw/moneta/commit/20b9a2ad88b26f844d658f1cd4d3e827436a8a85))
+* **api/categories:** add monthlyBudget + refactor rename to update [MNT-160] ([a6d8fff](https://github.com/Felpasw/moneta/commit/a6d8fff273cb3be58ecd16410806500a9703acc6))
+* **api/finance:** mover summaries de JS reduce pra Postgres aggregate [MNT-219] ([3907917](https://github.com/Felpasw/moneta/commit/3907917d15c9e578769e560e9b41856982bb0250))
+* **api/transactions:** embed items + summary in GET /transactions [MNT-102] ([3f2d255](https://github.com/Felpasw/moneta/commit/3f2d2553eb3db4e88d8833d2e9e945853dbdb339))
+* **api/transactions:** expose dayGroupKey on GET /transactions items [MNT-102] ([28215f8](https://github.com/Felpasw/moneta/commit/28215f88e2ad215bc9f0952b3f11fb2e2d8394e5))
+
+
+### 🔨 Refactoring
+
+* **api/prisma:** extension for Decimal-&gt;number kills toDomain mappers [MNT-162] ([d7bae3d](https://github.com/Felpasw/moneta/commit/d7bae3d5abc52219edfa546ef33d1e6f31a773bb))
+
 ## [0.8.0](https://github.com/Felpasw/moneta/compare/api-v0.7.0...api-v0.8.0) (2026-08-04)
 
 
