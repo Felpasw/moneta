@@ -83,6 +83,16 @@ describe('DashboardController', () => {
           monthExpense: 1800,
           monthNet: 1200,
         },
+        topCategories: [
+          {
+            id: 'c-1',
+            name: 'Food',
+            icon: null,
+            color: null,
+            spent: 500,
+            share: 0.28,
+          },
+        ],
       };
       mocks.getView.execute.mockResolvedValue(view);
 

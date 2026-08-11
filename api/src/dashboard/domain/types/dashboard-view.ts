@@ -1,3 +1,5 @@
+import type { TopSpentCategory } from '~/finance/categories/domain/ports/categories-repository';
+
 export interface DashboardSummary {
   totalBalance: number;
   monthIncome: number;
@@ -7,4 +9,5 @@ export interface DashboardSummary {
 
 export interface DashboardView {
   summary: DashboardSummary;
+  topCategories: TopSpentCategory[];
 }

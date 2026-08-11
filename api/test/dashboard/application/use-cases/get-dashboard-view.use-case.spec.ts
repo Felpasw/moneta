@@ -3,13 +3,15 @@ import { GetDashboardViewUseCase } from '~/dashboard/application/use-cases/get-d
 const buildUseCase = () => {
   const listAccounts = { execute: jest.fn() };
   const listTransactions = { execute: jest.fn() };
+  const getTopCategories = { execute: jest.fn().mockResolvedValue([]) };
   const clock = { now: jest.fn() };
   const useCase = new GetDashboardViewUseCase(
     clock,
     listAccounts as never,
     listTransactions as never,
+    getTopCategories as never,
   );
-  return { useCase, listAccounts, listTransactions, clock };
+  return { useCase, listAccounts, listTransactions, getTopCategories, clock };
 };
 
 const emptyAccountsResult = {
@@ -52,6 +54,58 @@ describe('GetDashboardViewUseCase', () => {
         monthExpense: 3210.5,
         monthNet: 4789.5,
       },
+      topCategories: [],
+    });
+  });
+
+  it('returns topCategories straight from the repo (share is precomputed in SQL)', async () => {
+    const { useCase, listAccounts, listTransactions, getTopCategories, clock } =
+      buildUseCase();
+    clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
+    listAccounts.execute.mockResolvedValue(emptyAccountsResult);
+    listTransactions.execute.mockResolvedValue({
+      items: [],
+      summary: { totalIncome: 0, totalExpense: 1000, net: -1000 },
+    });
+    const topRows = [
+      {
+        id: 'c-1',
+        name: 'Food',
+        icon: '🍔',
+        color: '#f00',
+        spent: 400,
+        share: 0.4,
+      },
+      {
+        id: 'c-2',
+        name: 'Rent',
+        icon: null,
+        color: null,
+        spent: 250,
+        share: 0.25,
+      },
+    ];
+    getTopCategories.execute.mockResolvedValue(topRows);
+
+    const result = await useCase.execute({ userId: 'user-1' });
+
+    expect(result.topCategories).toBe(topRows);
+  });
+
+  it('scopes top categories to same month bounds with limit=5', async () => {
+    const { useCase, listAccounts, listTransactions, getTopCategories, clock } =
+      buildUseCase();
+    clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
+    listAccounts.execute.mockResolvedValue(emptyAccountsResult);
+    listTransactions.execute.mockResolvedValue(emptyTransactionsResult);
+
+    await useCase.execute({ userId: 'user-1' });
+
+    expect(getTopCategories.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      dateFrom: new Date(Date.UTC(2026, 7, 1)),
+      dateTo: new Date(Date.UTC(2026, 8, 1)),
+      limit: 5,
     });
   });
 
@@ -88,8 +142,9 @@ describe('GetDashboardViewUseCase', () => {
     );
   });
 
-  it('runs accounts and transactions summaries in parallel', async () => {
-    const { useCase, listAccounts, listTransactions, clock } = buildUseCase();
+  it('runs all three data sources in parallel', async () => {
+    const { useCase, listAccounts, listTransactions, getTopCategories, clock } =
+      buildUseCase();
     clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
     const order: string[] = [];
     listAccounts.execute.mockImplementation(async () => {
@@ -104,11 +159,18 @@ describe('GetDashboardViewUseCase', () => {
       order.push('transactions-end');
       return emptyTransactionsResult;
     });
+    getTopCategories.execute.mockImplementation(async () => {
+      order.push('top-start');
+      await new Promise((r) => setTimeout(r, 10));
+      order.push('top-end');
+      return [];
+    });
 
     await useCase.execute({ userId: 'user-1' });
 
-    expect(order.slice(0, 2).sort()).toEqual([
+    expect(order.slice(0, 3).sort()).toEqual([
       'accounts-start',
+      'top-start',
       'transactions-start',
     ]);
   });
