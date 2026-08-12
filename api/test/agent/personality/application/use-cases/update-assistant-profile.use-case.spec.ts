@@ -1,3 +1,4 @@
+import { OutputLanguage } from '~/agent/domain/constants/output-language';
 import { UpdateAssistantProfileUseCase } from '~/agent/personality/application/use-cases/update-assistant-profile.use-case';
 import { TreatmentStyle } from '~/agent/personality/domain/constants/treatment-style';
 import { InvalidAvatarUrlError } from '~/agent/personality/domain/errors/invalid-avatar-url.error';
@@ -8,6 +9,7 @@ const PROFILE: AssistantProfile = {
   id: 'p-1',
   userId: 'u-1',
   treatmentStyle: TreatmentStyle.Informal,
+  outputLanguage: OutputLanguage.PtBr,
   voiceId: 'v-old',
   avatarUrl: null,
   createdAt: new Date(),
@@ -49,6 +51,20 @@ describe('UpdateAssistantProfileUseCase', () => {
     });
     expect(result.treatmentStyle).toBe(TreatmentStyle.Formal);
     expect(result.voiceId).toBe('v-new');
+  });
+
+  it('forwards outputLanguage patches to the repository', async () => {
+    const { repo, update } = buildRepo();
+    const useCase = new UpdateAssistantProfileUseCase(repo);
+
+    const result = await useCase.execute('u-1', {
+      outputLanguage: OutputLanguage.EnUs,
+    });
+
+    expect(update).toHaveBeenCalledWith('u-1', {
+      outputLanguage: OutputLanguage.EnUs,
+    });
+    expect(result.outputLanguage).toBe(OutputLanguage.EnUs);
   });
 
   it('accepts a null avatarUrl (unset avatar)', async () => {
