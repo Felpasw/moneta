@@ -6,6 +6,15 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.6.1](https://github.com/Felpasw/moneta/compare/web-v0.6.0...web-v0.6.1) (2026-08-12)
+
+
+### 🔨 Refactoring
+
+* **accounts:** precompute invoice.available, front consumes direct [MNT-218] ([ccb38bf](https://github.com/Felpasw/moneta/commit/ccb38bf5ede93d4ba0e60dfa33fb9720554864ae))
+* **dashboard:** SQL precomputes SVG paths and pct, front is pure render [MNT-218] ([21a3f03](https://github.com/Felpasw/moneta/commit/21a3f0357953967c9d1556883561e5c0a23ab7b1))
+* **dashboard:** SQL-owned aggregation, monetary boundary as string [MNT-218] ([b1b115e](https://github.com/Felpasw/moneta/commit/b1b115ec1e595be1fe167d75d855af94bfaf7064))
+
 ## [0.6.0](https://github.com/Felpasw/moneta/compare/web-v0.5.0...web-v0.6.0) (2026-08-11)
 
 

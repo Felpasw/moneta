@@ -6,6 +6,23 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.10.0](https://github.com/Felpasw/moneta/compare/api-v0.9.0...api-v0.10.0) (2026-08-12)
+
+
+### ✨ Features
+
+* **api/dashboard:** balanceChart via window function walking backwards [MNT-218] ([53c825e](https://github.com/Felpasw/moneta/commit/53c825e43f4e00fc6267ce250d471692700de7ba))
+* **api/dashboard:** GET /dashboard/view returns aggregated month summary [MNT-218] ([5034563](https://github.com/Felpasw/moneta/commit/5034563ff2f56a5ae1bc4227fe0c1fab3108ca5f))
+* **api/dashboard:** monthlyFlow with zero-padded 6-month series [MNT-218] ([316ca4a](https://github.com/Felpasw/moneta/commit/316ca4a5bc93c7befcc72107f701867f81cf8133))
+* **api/dashboard:** topCategories with per-category share [MNT-218] ([c39ba45](https://github.com/Felpasw/moneta/commit/c39ba45501aa1d8edbc606263ac925840cd94250))
+
+
+### 🔨 Refactoring
+
+* **accounts:** precompute invoice.available, front consumes direct [MNT-218] ([ccb38bf](https://github.com/Felpasw/moneta/commit/ccb38bf5ede93d4ba0e60dfa33fb9720554864ae))
+* **dashboard:** SQL precomputes SVG paths and pct, front is pure render [MNT-218] ([21a3f03](https://github.com/Felpasw/moneta/commit/21a3f0357953967c9d1556883561e5c0a23ab7b1))
+* **dashboard:** SQL-owned aggregation, monetary boundary as string [MNT-218] ([b1b115e](https://github.com/Felpasw/moneta/commit/b1b115ec1e595be1fe167d75d855af94bfaf7064))
+
 ## [0.9.0](https://github.com/Felpasw/moneta/compare/api-v0.8.0...api-v0.9.0) (2026-08-11)
 
 
