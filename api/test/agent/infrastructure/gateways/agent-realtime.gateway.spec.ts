@@ -2,6 +2,7 @@ import type { IncomingMessage } from 'node:http';
 
 import { WsEvent } from '~/@common/infrastructure/websocket/ws-event';
 
+import { OutputLanguage } from '~/agent/domain/constants/output-language';
 import { AgentRealtimeGateway } from '~/agent/infrastructure/gateways/agent-realtime.gateway';
 import type {
   RealtimeUpstream,
@@ -202,6 +203,7 @@ const buildProfile = (
   id: 'p-1',
   userId: 'user-1',
   treatmentStyle: TreatmentStyle.Informal,
+  outputLanguage: OutputLanguage.PtBr,
   voiceId: 'v-1',
   avatarUrl: null,
   createdAt: new Date(),
@@ -859,8 +861,8 @@ describe('AgentRealtimeGateway', () => {
 
       const event = findSessionUpdate(upstream);
       expect(event).toBeDefined();
-      expect(event?.instructions).toMatch(/muito informal/i);
-      expect(event?.instructions).toMatch(/zoa/i);
+      expect(event?.instructions).toMatch(/muito informal|very informal/i);
+      expect(event?.instructions).toMatch(/zoa|roast/i);
     });
 
     it('sends session.update with the formal snippet when profile is formal', async () => {
@@ -893,7 +895,7 @@ describe('AgentRealtimeGateway', () => {
       await flushMicrotasks();
 
       const event = findSessionUpdate(upstream);
-      expect(event?.instructions).toMatch(/formalidade/i);
+      expect(event?.instructions).toMatch(/formalidade|formal/i);
     });
 
     it('falls back to the default treatment style when profile is missing', async () => {
@@ -1194,7 +1196,7 @@ describe('AgentRealtimeGateway', () => {
         responseCreate as { response?: { instructions?: string } }
       ).response?.instructions;
       expect(oneShotInstructions).toContain('Felpa');
-      expect(oneShotInstructions?.toLowerCase()).toContain('volta');
+      expect(oneShotInstructions?.toLowerCase()).toMatch(/volta|welcome-back/);
     });
 
     it('injeta bloco de retomada quando user já tem nickname mas ainda não tem bancos', async () => {

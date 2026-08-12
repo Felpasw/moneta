@@ -1,3 +1,4 @@
+import { OutputLanguage } from '~/agent/domain/constants/output-language';
 import { GetAssistantProfileUseCase } from '~/agent/personality/application/use-cases/get-assistant-profile.use-case';
 import { TreatmentStyle } from '~/agent/personality/domain/constants/treatment-style';
 import { ProfileNotFoundError } from '~/agent/personality/domain/errors/profile-not-found.error';
@@ -8,6 +9,7 @@ const PROFILE: AssistantProfile = {
   id: 'p-1',
   userId: 'u-1',
   treatmentStyle: TreatmentStyle.Informal,
+  outputLanguage: OutputLanguage.PtBr,
   voiceId: 'v-1',
   avatarUrl: null,
   createdAt: new Date(),

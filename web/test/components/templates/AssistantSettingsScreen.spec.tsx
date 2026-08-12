@@ -55,6 +55,7 @@ const mockedService = vi.mocked(assistantProfileService);
 
 const PROFILE = {
   treatmentStyle: "informal" as const,
+  outputLanguage: "pt_BR" as const,
   voiceId: "v-1",
   avatarUrl: "dicebear:notionists:felps" as const,
 };
@@ -171,6 +172,36 @@ describe("AssistantSettingsScreen", () => {
       });
     });
     expect(toastSuccess).toHaveBeenCalled();
+  });
+
+  it("dispara updateProfile com outputLanguage ao alternar no tab Language", async () => {
+    const { Wrapper } = wrap();
+    render(
+      <Wrapper>
+        <AssistantSettingsScreen />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("tab", { name: /language/i }),
+      ).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByRole("tab", { name: /language/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("radio", { name: /english/i }),
+      ).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("radio", { name: /english/i }));
+
+    await waitFor(() => {
+      expect(mockedService.updateProfile).toHaveBeenCalledWith({
+        outputLanguage: "en_US",
+      });
+    });
   });
 
   it("dispara updateProfile com voiceId ao selecionar outra voz", async () => {

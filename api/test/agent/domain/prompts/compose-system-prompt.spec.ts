@@ -1,6 +1,11 @@
+import {
+  DEFAULT_OUTPUT_LANGUAGE,
+  OutputLanguage,
+} from '~/agent/domain/constants/output-language';
 import { BASE_PROMPT } from '~/agent/domain/prompts/base';
 import { composeSystemPrompt } from '~/agent/domain/prompts/compose-system-prompt';
 import { DASHBOARD_TOUR_SNIPPET } from '~/agent/domain/prompts/dashboard-tour';
+import { LANGUAGE_SNIPPETS } from '~/agent/domain/prompts/language';
 import { ONBOARDING_SNIPPET } from '~/agent/domain/prompts/onboarding';
 import { TREATMENT_SNIPPETS } from '~/agent/domain/prompts/treatment';
 import { TreatmentStyle } from '~/agent/personality/domain/constants/treatment-style';
@@ -16,14 +21,46 @@ describe('composeSystemPrompt', () => {
     },
   );
 
-  it('separates base and treatment with a blank line', () => {
+  it('composes base + language snippet + treatment separated by blank lines', () => {
     const prompt = composeSystemPrompt({
       treatmentStyle: TreatmentStyle.Informal,
     });
 
     expect(prompt).toBe(
-      `${BASE_PROMPT}\n\n${TREATMENT_SNIPPETS[TreatmentStyle.Informal]}`,
+      `${BASE_PROMPT}\n\n${LANGUAGE_SNIPPETS[DEFAULT_OUTPUT_LANGUAGE]}\n\n${TREATMENT_SNIPPETS[TreatmentStyle.Informal]}`,
     );
+  });
+
+  it('defaults to pt-BR language snippet when outputLanguage is omitted', () => {
+    const prompt = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+    });
+
+    expect(prompt).toContain(LANGUAGE_SNIPPETS[OutputLanguage.PtBr]);
+    expect(prompt).not.toContain(LANGUAGE_SNIPPETS[OutputLanguage.EnUs]);
+  });
+
+  it('injects the en-US snippet and drops pt-BR when outputLanguage=en_US', () => {
+    const prompt = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      outputLanguage: OutputLanguage.EnUs,
+    });
+
+    expect(prompt).toContain(LANGUAGE_SNIPPETS[OutputLanguage.EnUs]);
+    expect(prompt).not.toContain(LANGUAGE_SNIPPETS[OutputLanguage.PtBr]);
+  });
+
+  it('produces different prompts for different languages with the same treatment', () => {
+    const ptBr = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      outputLanguage: OutputLanguage.PtBr,
+    });
+    const enUs = composeSystemPrompt({
+      treatmentStyle: TreatmentStyle.Informal,
+      outputLanguage: OutputLanguage.EnUs,
+    });
+
+    expect(ptBr).not.toBe(enUs);
   });
 
   it('não inclui snippet de onboarding quando onboarding=false (default)', () => {

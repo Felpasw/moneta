@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import type { Server } from 'node:http';
 import request from 'supertest';
 
+import { OutputLanguage } from '~/agent/domain/constants/output-language';
 import { GetAssistantProfileUseCase } from '~/agent/personality/application/use-cases/get-assistant-profile.use-case';
 import { UpdateAssistantProfileUseCase } from '~/agent/personality/application/use-cases/update-assistant-profile.use-case';
 import { TreatmentStyle } from '~/agent/personality/domain/constants/treatment-style';
@@ -52,6 +53,7 @@ const PROFILE = {
   id: 'p-1',
   userId: 'u-1',
   treatmentStyle: TreatmentStyle.Informal,
+  outputLanguage: OutputLanguage.PtBr,
   voiceId: 'v-1',
   avatarUrl: null,
   createdAt: new Date('2026-07-16T10:00:00Z').toISOString(),
@@ -130,6 +132,34 @@ describe('PersonalityController', () => {
         .patch('/agent/profile')
         .set('Authorization', bearer('u-1'))
         .send({ treatmentStyle: 'casual' });
+      expect(res.status).toBe(400);
+      expect(mocks.update.execute).not.toHaveBeenCalled();
+    });
+
+    it('applies an outputLanguage change and forwards it to the use-case', async () => {
+      const updated = {
+        ...PROFILE,
+        outputLanguage: OutputLanguage.EnUs,
+      };
+      mocks.update.execute.mockResolvedValue(updated);
+
+      const res = await request(http)
+        .patch('/agent/profile')
+        .set('Authorization', bearer('u-1'))
+        .send({ outputLanguage: 'en_US' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(updated);
+      expect(mocks.update.execute).toHaveBeenCalledWith('u-1', {
+        outputLanguage: 'en_US',
+      });
+    });
+
+    it('returns 400 when outputLanguage is not one of the enum values', async () => {
+      const res = await request(http)
+        .patch('/agent/profile')
+        .set('Authorization', bearer('u-1'))
+        .send({ outputLanguage: 'fr_FR' });
       expect(res.status).toBe(400);
       expect(mocks.update.execute).not.toHaveBeenCalled();
     });
