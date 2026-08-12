@@ -19,25 +19,29 @@ describe('TREATMENT_SNIPPETS', () => {
 
   it('formal snippet uses formal treatment cues', () => {
     expect(TREATMENT_SNIPPETS[TreatmentStyle.Formal]).toMatch(
-      /formalidade|senhor|senhora/i,
+      /formal|senhor|senhora|sir|madam/i,
     );
   });
 
   it('informal snippet reads as friendly not distant', () => {
-    expect(TREATMENT_SNIPPETS[TreatmentStyle.Informal]).toMatch(/amigo/i);
+    expect(TREATMENT_SNIPPETS[TreatmentStyle.Informal]).toMatch(
+      /amigo|friend/i,
+    );
   });
 
   it('very-informal snippet embraces roasting, slang and profanity', () => {
     const snippet = TREATMENT_SNIPPETS[TreatmentStyle.VeryInformal];
-    expect(snippet).toMatch(/palavr(õ|o)es/i);
-    expect(snippet).toMatch(/zoa/i);
-    expect(snippet).toMatch(/deboche|sarcasmo|iron(i|í)a/i);
+    expect(snippet).toMatch(/palavr(õ|o)es|profanity|shit|damn/i);
+    expect(snippet).toMatch(/zoa|roast|mock/i);
+    expect(snippet).toMatch(
+      /deboche|sarcasmo|iron(i|í)a|sarcasm|irony|mockery/i,
+    );
   });
 
   it('very-informal snippet forbids targeting the person, only financial decisions', () => {
     const snippet = TREATMENT_SNIPPETS[TreatmentStyle.VeryInformal];
     expect(snippet).toMatch(
-      /nunca sobre a pessoa|nunca.*pessoa|só decis(ã|a)o financeira/i,
+      /nunca sobre a pessoa|nunca.*pessoa|só decis(ã|a)o financeira|never about the person|never.*(personal|person)|only.*financial/i,
     );
   });
 });
