@@ -76,13 +76,7 @@ export function CreditAccountCard({ account }: CreditAccountCardProps) {
             <div>
               <dt className="opacity-60">Available</dt>
               <dd className="mt-0.5 text-sm font-medium">
-                {formatBRL(
-                  Math.max(
-                    0,
-                    (account.creditLimit ?? 0) -
-                      account.currentInvoice.totalAmount,
-                  ),
-                )}
+                {formatBRL(account.currentInvoice.available)}
               </dd>
             </div>
             <div>

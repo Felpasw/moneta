@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../../auth/auth.module';
 import { AddCategoryUseCase } from './application/use-cases/add-category.use-case';
 import { DeleteCategoryUseCase } from './application/use-cases/delete-category.use-case';
+import { GetTopSpentCategoriesUseCase } from './application/use-cases/get-top-spent-categories.use-case';
 import { ListCategoriesUseCase } from './application/use-cases/list-categories.use-case';
 import { UpdateCategoryUseCase } from './application/use-cases/update-category.use-case';
 import { CategoriesController } from './categories.controller';
@@ -18,12 +19,14 @@ import { PrismaCategoriesRepository } from './infrastructure/repositories/prisma
     AddCategoryUseCase,
     UpdateCategoryUseCase,
     DeleteCategoryUseCase,
+    GetTopSpentCategoriesUseCase,
   ],
   exports: [
     ListCategoriesUseCase,
     AddCategoryUseCase,
     UpdateCategoryUseCase,
     DeleteCategoryUseCase,
+    GetTopSpentCategoriesUseCase,
   ],
 })
 export class CategoriesModule {}

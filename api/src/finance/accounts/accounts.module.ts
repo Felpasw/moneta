@@ -8,6 +8,7 @@ import { AddUserBanksUseCase } from './application/use-cases/add-user-banks.use-
 import { ConfigureAccountDetailsUseCase } from './application/use-cases/configure-account-details.use-case';
 import { DeleteBankAccountUseCase } from './application/use-cases/delete-bank-account.use-case';
 import { GetAccountByIdUseCase } from './application/use-cases/get-account-by-id.use-case';
+import { GetBalanceChartUseCase } from './application/use-cases/get-balance-chart.use-case';
 import { ListMyAccountsUseCase } from './application/use-cases/list-my-accounts.use-case';
 import { SetAccountBalancesUseCase } from './application/use-cases/set-account-balances.use-case';
 import { SetBalanceUseCase } from './application/use-cases/set-balance.use-case';
@@ -32,6 +33,7 @@ import { PrismaUserBankAccountsRepository } from './infrastructure/repositories/
     SetBalanceUseCase,
     SetAccountBalancesUseCase,
     ConfigureAccountDetailsUseCase,
+    GetBalanceChartUseCase,
   ],
   exports: [
     ListMyAccountsUseCase,
@@ -43,6 +45,7 @@ import { PrismaUserBankAccountsRepository } from './infrastructure/repositories/
     SetBalanceUseCase,
     SetAccountBalancesUseCase,
     ConfigureAccountDetailsUseCase,
+    GetBalanceChartUseCase,
   ],
 })
 export class AccountsModule {}

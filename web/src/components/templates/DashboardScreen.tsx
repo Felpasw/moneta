@@ -5,8 +5,11 @@ import { motion } from "motion/react";
 import { HeroShutterText } from "@/components/atoms/HeroShutterText";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { KpiCard } from "@/components/molecules/KpiCard";
-import accountsHooks from "@/hooks/useAccounts";
-import transactionsHooks from "@/hooks/useTransactions";
+import { ChartCard } from "@/components/molecules/ChartCard";
+import { BalanceLineChart } from "@/components/organisms/BalanceLineChart";
+import { MonthlyFlowChart } from "@/components/organisms/MonthlyFlowChart";
+import { TopCategoriesChart } from "@/components/organisms/TopCategoriesChart";
+import dashboardHooks from "@/hooks/useDashboard";
 import { useUserStore } from "@/stores/userStore";
 import { formatBRL } from "@/utils/currency";
 import { SETTINGS_STAGGER_CONTAINER } from "@/utils/settingsStagger";
@@ -14,15 +17,13 @@ import { SETTINGS_STAGGER_CONTAINER } from "@/utils/settingsStagger";
 const GREETING_FALLBACK = "there";
 
 export function DashboardScreen() {
-  const { list: accountsList } = accountsHooks.use();
-  const { list: transactionsList } = transactionsHooks.use();
+  const { view } = dashboardHooks.use();
   const user = useUserStore((s) => s.user);
 
-  const { summary: accountsSummary, items: accountItems } = accountsList.data;
-  const { summary: transactionsSummary } = transactionsList.data;
+  const { summary, topCategories, monthlyFlow, balanceChart } = view.data;
 
   const greetingName = user?.name ?? GREETING_FALLBACK;
-  const isEmpty = accountItems.length === 0;
+  const isEmpty = summary.checkingCount === 0;
 
   return (
     <main className="mx-auto w-full max-w-[1600px] px-6 py-6 xl:px-10">
@@ -46,36 +47,59 @@ export function DashboardScreen() {
       )}
 
       {!isEmpty && (
-        <motion.section
-          variants={SETTINGS_STAGGER_CONTAINER}
-          initial="hidden"
-          animate="visible"
-          aria-label="Key indicators"
-          className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          <KpiCard
-            label="Total balance"
-            value={formatBRL(accountsSummary.totalBalance)}
-            hint="Checking accounts combined"
-          />
-          <KpiCard
-            label="Recent income"
-            value={formatBRL(transactionsSummary.totalIncome)}
-            hint="Latest transactions"
-          />
-          <KpiCard
-            label="Recent expenses"
-            value={formatBRL(transactionsSummary.totalExpense)}
-            hint="Latest transactions"
-            emphasis="secondary"
-          />
-          <KpiCard
-            label="Net"
-            value={formatBRL(transactionsSummary.net)}
-            hint="Income minus expenses"
-            negative={transactionsSummary.net < 0}
-          />
-        </motion.section>
+        <>
+          <motion.section
+            variants={SETTINGS_STAGGER_CONTAINER}
+            initial="hidden"
+            animate="visible"
+            aria-label="Key indicators"
+            className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            <KpiCard
+              label="Total balance"
+              value={formatBRL(summary.totalBalance)}
+              hint="Checking accounts combined"
+            />
+            <KpiCard
+              label="Month income"
+              value={formatBRL(summary.monthIncome)}
+              hint="Current month so far"
+            />
+            <KpiCard
+              label="Month expenses"
+              value={formatBRL(summary.monthExpense)}
+              hint="Current month so far"
+              emphasis="secondary"
+            />
+            <KpiCard
+              label="Net"
+              value={formatBRL(summary.monthNet)}
+              hint="Income minus expenses"
+              negative={summary.monthNet.startsWith("-")}
+            />
+          </motion.section>
+
+          <section
+            aria-label="Balance and cash flow"
+            className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2"
+          >
+            <ChartCard label="Last 30 days" title="Balance">
+              <BalanceLineChart data={balanceChart} />
+            </ChartCard>
+            <ChartCard label="Last 6 months" title="Monthly flow">
+              <MonthlyFlowChart data={monthlyFlow} />
+            </ChartCard>
+          </section>
+
+          <section
+            aria-label="Top categories"
+            className="mt-4 grid grid-cols-1 gap-4"
+          >
+            <ChartCard label="This month" title="Top categories">
+              <TopCategoriesChart data={topCategories} />
+            </ChartCard>
+          </section>
+        </>
       )}
     </main>
   );

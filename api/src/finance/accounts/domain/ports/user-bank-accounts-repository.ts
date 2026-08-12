@@ -23,6 +23,7 @@ export interface CurrentInvoice {
   dueDate: Date;
   cycleStart: Date;
   cycleEnd: Date;
+  available: number;
 }
 
 export interface UserBankAccountWithBank extends UserBankAccount {
@@ -35,6 +36,31 @@ export interface AccountsSummary {
   totalBalance: number;
   checkingCount: number;
   totalOverdraft: number;
+}
+
+export interface BalanceChartPoint {
+  date: string;
+  balance: string;
+}
+
+export interface BalanceChartLastPoint {
+  x: number;
+  y: number;
+}
+
+export interface BalanceChartResult {
+  points: BalanceChartPoint[];
+  min: string;
+  max: string;
+  linePath: string;
+  areaPath: string;
+  lastPoint: BalanceChartLastPoint | null;
+}
+
+export interface GetBalanceChartInput {
+  userId: string;
+  now: Date;
+  days: number;
 }
 
 export interface ListAccountsResult {
@@ -75,4 +101,5 @@ export interface UserBankAccountsRepository {
     userId: string,
     amount: number,
   ): Promise<UserBankAccount | null>;
+  getBalanceChart(input: GetBalanceChartInput): Promise<BalanceChartResult>;
 }

@@ -10,6 +10,8 @@ import type {
   CategoriesRepository,
   Category,
   CategoryWithUsage,
+  GetTopSpentInMonthInput,
+  TopSpentCategory,
   UpdateCategoryInput,
 } from '../../domain/ports/categories-repository';
 
@@ -101,5 +103,36 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
       where: { id, userId },
     });
     return count > 0;
+  }
+
+  async getTopSpentInMonth(
+    input: GetTopSpentInMonthInput,
+  ): Promise<TopSpentCategory[]> {
+    return this.prisma.$queryRaw<TopSpentCategory[]>`
+      WITH month_total AS (
+        SELECT COALESCE(SUM(amount), 0) AS total
+        FROM transactions
+        WHERE user_id = ${input.userId}::uuid
+          AND type = 'expense'::transaction_type
+          AND occurred_at >= ${input.dateFrom}
+          AND occurred_at < ${input.dateTo}
+      )
+      SELECT c.id, c.name, c.icon, c.color,
+             ROUND(SUM(t.amount), 2)::text AS spent,
+             CASE WHEN (SELECT total FROM month_total) > 0
+                  THEN ROUND((SUM(t.amount) / (SELECT total FROM month_total)) * 100, 2)::double precision
+                  ELSE 0::double precision
+             END AS "sharePct"
+      FROM transactions t
+      INNER JOIN categories c ON c.id = t.category_id
+      WHERE t.user_id = ${input.userId}::uuid
+        AND t.type = 'expense'::transaction_type
+        AND t.occurred_at >= ${input.dateFrom}
+        AND t.occurred_at < ${input.dateTo}
+        AND (c.user_id IS NULL OR c.user_id = ${input.userId}::uuid)
+      GROUP BY c.id
+      ORDER BY spent DESC
+      LIMIT ${input.limit}
+    `;
   }
 }

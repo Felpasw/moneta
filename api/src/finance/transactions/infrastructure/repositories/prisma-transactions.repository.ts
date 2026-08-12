@@ -9,7 +9,9 @@ import { TransactionNotFoundError } from '../../domain/errors/transaction-not-fo
 import type {
   AddTransactionInput,
   EditTransactionInput,
+  GetMonthlyFlowInput,
   ListTransactionsFilters,
+  MonthlyFlowResult,
   Transaction,
   TransactionWithEmbeds,
   TransactionsRepository,
@@ -348,5 +350,61 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       select: TRANSACTION_SELECT,
     });
     return toDomain(row);
+  }
+
+  async getMonthlyFlow(input: GetMonthlyFlowInput): Promise<MonthlyFlowResult> {
+    const [{ result }] = await this.prisma.$queryRaw<
+      [{ result: MonthlyFlowResult }]
+    >`
+      WITH month_series AS (
+        SELECT date_trunc('month', ${input.now}::timestamptz - (interval '1 month' * gs))::date AS month_start
+        FROM generate_series(0, ${input.monthsBack}::int - 1) gs
+      ),
+      month_sums AS (
+        SELECT date_trunc('month', occurred_at)::date AS month_start,
+               SUM(CASE WHEN type = 'income'::transaction_type THEN amount ELSE 0 END) AS income,
+               SUM(CASE WHEN type = 'expense'::transaction_type THEN amount ELSE 0 END) AS expense
+        FROM transactions
+        WHERE user_id = ${input.userId}::uuid
+          AND occurred_at >= date_trunc('month', ${input.now}::timestamptz - (interval '1 month' * (${input.monthsBack}::int - 1)))
+        GROUP BY month_start
+      ),
+      series AS (
+        SELECT to_char(s.month_start, 'YYYY-MM') AS month_key,
+               s.month_start,
+               ROUND(COALESCE(ms.income, 0), 2) AS income,
+               ROUND(COALESCE(ms.expense, 0), 2) AS expense
+        FROM month_series s
+        LEFT JOIN month_sums ms ON ms.month_start = s.month_start
+      ),
+      with_max AS (
+        SELECT month_key, month_start, income, expense,
+               MAX(GREATEST(income, expense)) OVER () AS max_flow
+        FROM series
+      )
+      SELECT json_build_object(
+        'rows', COALESCE((
+          SELECT json_agg(
+            json_build_object(
+              'monthKey', month_key,
+              'income', income::text,
+              'expense', expense::text,
+              'incomePct', CASE WHEN max_flow > 0
+                                THEN ROUND((income / max_flow) * 100, 2)::double precision
+                                ELSE 0::double precision END,
+              'expensePct', CASE WHEN max_flow > 0
+                                 THEN ROUND((expense / max_flow) * 100, 2)::double precision
+                                 ELSE 0::double precision END
+            ) ORDER BY month_start ASC
+          )
+          FROM with_max
+        ), '[]'::json),
+        'maxFlow', COALESCE(
+          (SELECT ROUND(MAX(max_flow), 2)::text FROM with_max),
+          '0.00'
+        )
+      ) AS result
+    `;
+    return result;
   }
 }

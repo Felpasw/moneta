@@ -957,4 +957,91 @@ describe('PrismaTransactionsRepository', () => {
       });
     });
   });
+
+  describe('getMonthlyFlow', () => {
+    const buildQueryRawPrisma = () => {
+      const $queryRaw = jest.fn();
+      const prisma = { $queryRaw } as unknown as PrismaService;
+      return { prisma, $queryRaw };
+    };
+
+    it('unwraps the json_build_object result and returns rows with incomePct/expensePct precomputed by SQL', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      const result = {
+        rows: [
+          {
+            monthKey: '2026-03',
+            income: '3000.00',
+            expense: '1200.55',
+            incomePct: 93.75,
+            expensePct: 37.52,
+          },
+          {
+            monthKey: '2026-04',
+            income: '3200.10',
+            expense: '900.00',
+            incomePct: 100,
+            expensePct: 28.12,
+          },
+        ],
+        maxFlow: '3200.10',
+      };
+      $queryRaw.mockResolvedValue([{ result }]);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const flow = await repo.getMonthlyFlow({
+        userId: CURRENT_USER,
+        now: new Date('2026-08-15T12:00:00Z'),
+        monthsBack: 6,
+      });
+
+      expect(flow).toBe(result);
+      expect($queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('emits SQL that precomputes incomePct/expensePct via window MAX(GREATEST), no float8, text casts on monetary fields', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      $queryRaw.mockResolvedValue([{ result: { rows: [], maxFlow: '0.00' } }]);
+      const repo = new PrismaTransactionsRepository(prisma);
+      const now = new Date('2026-08-15T12:00:00Z');
+
+      await repo.getMonthlyFlow({
+        userId: CURRENT_USER,
+        now,
+        monthsBack: 6,
+      });
+
+      const call = $queryRaw.mock.calls[0] as [string[], ...unknown[]];
+      expect(call.slice(1)).toEqual([now, 6, CURRENT_USER, now, 6]);
+      const fullSql = call[0].join('$');
+      expect(fullSql).toContain('generate_series');
+      expect(fullSql).toContain("date_trunc('month'");
+      expect(fullSql).toContain('LEFT JOIN');
+      expect(fullSql).toContain('CASE WHEN');
+      expect(fullSql).toContain('json_build_object');
+      expect(fullSql).toContain('json_agg');
+      expect(fullSql).toContain('income::text');
+      expect(fullSql).toContain('expense::text');
+      expect(fullSql).toContain('MAX(GREATEST(');
+      expect(fullSql).toContain('OVER ()');
+      expect(fullSql).toContain('incomePct');
+      expect(fullSql).toContain('expensePct');
+      expect(fullSql).toContain('ROUND(');
+      expect(fullSql).not.toContain('::float8');
+    });
+
+    it('returns empty rows + zero maxFlow when SQL yields no data', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      $queryRaw.mockResolvedValue([{ result: { rows: [], maxFlow: '0.00' } }]);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      const flow = await repo.getMonthlyFlow({
+        userId: CURRENT_USER,
+        now: new Date('2026-08-15T12:00:00Z'),
+        monthsBack: 6,
+      });
+
+      expect(flow).toEqual({ rows: [], maxFlow: '0.00' });
+    });
+  });
 });

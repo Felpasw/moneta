@@ -8,6 +8,7 @@ import { AddTransactionUseCase } from './application/use-cases/add-transaction.u
 import { DeleteTransactionUseCase } from './application/use-cases/delete-transaction.use-case';
 import { EditManyTransactionsUseCase } from './application/use-cases/edit-many-transactions.use-case';
 import { EditTransactionUseCase } from './application/use-cases/edit-transaction.use-case';
+import { GetMonthlyFlowUseCase } from './application/use-cases/get-monthly-flow.use-case';
 import { ListTransactionsUseCase } from './application/use-cases/list-transactions.use-case';
 import { TRANSACTIONS_REPOSITORY } from './domain/ports/transactions-repository';
 import { PrismaTransactionsRepository } from './infrastructure/repositories/prisma-transactions.repository';
@@ -27,6 +28,7 @@ import { TransactionsController } from './transactions.controller';
     EditTransactionUseCase,
     EditManyTransactionsUseCase,
     DeleteTransactionUseCase,
+    GetMonthlyFlowUseCase,
   ],
   exports: [
     ListTransactionsUseCase,
@@ -35,6 +37,7 @@ import { TransactionsController } from './transactions.controller';
     EditTransactionUseCase,
     EditManyTransactionsUseCase,
     DeleteTransactionUseCase,
+    GetMonthlyFlowUseCase,
   ],
 })
 export class TransactionsModule {}

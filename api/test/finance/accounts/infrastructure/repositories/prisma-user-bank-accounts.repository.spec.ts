@@ -186,8 +186,46 @@ describe('PrismaUserBankAccountsRepository', () => {
         dueDate,
         cycleStart,
         cycleEnd,
+        available: 7500,
       });
       expect(card.usagePct).toBe(25);
+    });
+
+    it('caps available at 0 when totalAmount exceeds creditLimit', async () => {
+      const { prisma, mock } = buildPrisma();
+      mock.userBankAccount.findMany.mockResolvedValue([
+        {
+          id: 'acc-nu',
+          userId: 'user-1',
+          bankId: 'bank-nu',
+          nickname: 'Overspent',
+          balance: decimal(0),
+          creditLimit: decimal(1000),
+          overdraftLimit: null,
+          closeDay: 5,
+          dueDay: 12,
+          bank: {
+            id: 'bank-nu',
+            name: 'Nubank',
+            compeCode: '260',
+            logoUrl: null,
+          },
+          invoices: [
+            {
+              totalAmount: decimal(1500),
+              status: 'open',
+              dueDate: new Date('2026-09-12'),
+              cycleStart: new Date('2026-08-05'),
+              cycleEnd: new Date('2026-09-04'),
+            },
+          ],
+        },
+      ]);
+      const repo = new PrismaUserBankAccountsRepository(prisma);
+
+      const [card] = await repo.listByUserId('user-1');
+
+      expect(card.currentInvoice?.available).toBe(0);
     });
 
     it('caps usagePct at 100 when totalAmount exceeds creditLimit', async () => {
@@ -306,6 +344,117 @@ describe('PrismaUserBankAccountsRepository', () => {
         totalBalance: 0,
         checkingCount: 0,
         totalOverdraft: 0,
+      });
+    });
+  });
+
+  describe('getBalanceChart', () => {
+    const buildQueryRawPrisma = () => {
+      const $queryRaw = jest.fn();
+      const prisma = { $queryRaw } as unknown as PrismaService;
+      return { prisma, $queryRaw };
+    };
+
+    it('unwraps the json_build_object result and returns SVG paths + lastPoint precomputed by SQL', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      const result = {
+        points: [
+          { date: '2026-07-17', balance: '4000.00' },
+          { date: '2026-07-18', balance: '3900.55' },
+        ],
+        min: '3900.55',
+        max: '4000.00',
+        linePath: 'M 0 0 L 100 40',
+        areaPath: 'M 0 0 L 100 40 L 100 40 L 0 40 Z',
+        lastPoint: { x: 100, y: 40 },
+      };
+      $queryRaw.mockResolvedValue([{ result }]);
+      const repo = new PrismaUserBankAccountsRepository(prisma);
+
+      const chart = await repo.getBalanceChart({
+        userId: 'user-1',
+        now: new Date('2026-08-15T12:00:00Z'),
+        days: 30,
+      });
+
+      expect(chart).toBe(result);
+      expect($queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('emits SQL that precomputes SVG paths via string_agg, no float8', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      $queryRaw.mockResolvedValue([
+        {
+          result: {
+            points: [],
+            min: '0.00',
+            max: '0.00',
+            linePath: '',
+            areaPath: '',
+            lastPoint: null,
+          },
+        },
+      ]);
+      const repo = new PrismaUserBankAccountsRepository(prisma);
+      const now = new Date('2026-08-15T12:00:00Z');
+
+      await repo.getBalanceChart({
+        userId: 'user-1',
+        now,
+        days: 30,
+      });
+
+      const call = $queryRaw.mock.calls[0] as [string[], ...unknown[]];
+      expect(call.slice(1)).toEqual([now, 30, 'user-1', now, 30, 'user-1']);
+      const fullSql = call[0].join('$');
+      expect(fullSql).toContain('generate_series');
+      expect(fullSql).toContain('credit_limit IS NULL');
+      expect(fullSql).toContain('CASE WHEN');
+      expect(fullSql).toMatch(/OVER \(\s*ORDER BY/);
+      expect(fullSql).toContain('json_build_object');
+      expect(fullSql).toContain('json_agg');
+      expect(fullSql).toContain('balance::text');
+      expect(fullSql).toContain('MIN(');
+      expect(fullSql).toContain('MAX(');
+      expect(fullSql).toContain('OVER ()');
+      expect(fullSql).toContain('ROW_NUMBER()');
+      expect(fullSql).toContain('string_agg');
+      expect(fullSql).toContain("'linePath'");
+      expect(fullSql).toContain("'areaPath'");
+      expect(fullSql).toContain("'lastPoint'");
+      expect(fullSql).toContain('ROUND(');
+      expect(fullSql).not.toContain('::float8');
+    });
+
+    it('returns empty points + zero min/max + empty paths when SQL yields no rows', async () => {
+      const { prisma, $queryRaw } = buildQueryRawPrisma();
+      $queryRaw.mockResolvedValue([
+        {
+          result: {
+            points: [],
+            min: '0.00',
+            max: '0.00',
+            linePath: '',
+            areaPath: '',
+            lastPoint: null,
+          },
+        },
+      ]);
+      const repo = new PrismaUserBankAccountsRepository(prisma);
+
+      const chart = await repo.getBalanceChart({
+        userId: 'user-1',
+        now: new Date('2026-08-15T12:00:00Z'),
+        days: 30,
+      });
+
+      expect(chart).toEqual({
+        points: [],
+        min: '0.00',
+        max: '0.00',
+        linePath: '',
+        areaPath: '',
+        lastPoint: null,
       });
     });
   });

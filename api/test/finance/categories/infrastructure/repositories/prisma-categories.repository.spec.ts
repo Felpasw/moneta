@@ -14,6 +14,7 @@ interface MockPrisma {
   transaction: {
     groupBy: jest.Mock;
   };
+  $queryRaw: jest.Mock;
 }
 
 const buildPrisma = (): { prisma: PrismaService; mock: MockPrisma } => {
@@ -28,6 +29,7 @@ const buildPrisma = (): { prisma: PrismaService; mock: MockPrisma } => {
     transaction: {
       groupBy: jest.fn().mockResolvedValue([]),
     },
+    $queryRaw: jest.fn().mockResolvedValue([]),
   };
   return { prisma: mock as unknown as PrismaService, mock };
 };
@@ -284,6 +286,95 @@ describe('PrismaCategoriesRepository', () => {
 
       expect(result).toBeNull();
       expect(mock.category.findUnique).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getTopSpentInMonth', () => {
+    it('returns the raw rows with sharePct (0..100) precomputed in SQL and spent as string', async () => {
+      const { prisma, mock } = buildPrisma();
+      const raw = [
+        {
+          id: 'c-1',
+          name: 'Food',
+          icon: '🍔',
+          color: '#f00',
+          spent: '400.00',
+          sharePct: 40,
+        },
+        {
+          id: 'c-2',
+          name: 'Rent',
+          icon: null,
+          color: null,
+          spent: '150.55',
+          sharePct: 15,
+        },
+      ];
+      mock.$queryRaw.mockResolvedValue(raw);
+      const repo = new PrismaCategoriesRepository(prisma);
+
+      const rows = await repo.getTopSpentInMonth({
+        userId: 'user-1',
+        dateFrom: new Date('2026-08-01'),
+        dateTo: new Date('2026-09-01'),
+        limit: 5,
+      });
+
+      expect(rows).toBe(raw);
+      expect(mock.$queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('emits SQL that precomputes sharePct (0..100) with ROUND+text on spent, no float8', async () => {
+      const { prisma, mock } = buildPrisma();
+      mock.$queryRaw.mockResolvedValue([]);
+      const repo = new PrismaCategoriesRepository(prisma);
+
+      const dateFrom = new Date('2026-08-01T00:00:00Z');
+      const dateTo = new Date('2026-09-01T00:00:00Z');
+      await repo.getTopSpentInMonth({
+        userId: 'user-1',
+        dateFrom,
+        dateTo,
+        limit: 5,
+      });
+
+      const call = mock.$queryRaw.mock.calls[0] as [string[], ...unknown[]];
+      expect(call.slice(1)).toEqual([
+        'user-1',
+        dateFrom,
+        dateTo,
+        'user-1',
+        dateFrom,
+        dateTo,
+        'user-1',
+        5,
+      ]);
+      const fullSql = call[0].join('$');
+      expect(fullSql).toContain('WITH month_total AS');
+      expect(fullSql).toContain('FROM transactions t');
+      expect(fullSql).toContain('INNER JOIN categories c');
+      expect(fullSql).toContain('sharePct');
+      expect(fullSql).toContain('ORDER BY spent DESC');
+      expect(fullSql).toContain('LIMIT');
+      expect(fullSql).toContain('ROUND(');
+      expect(fullSql).toContain('::text');
+      expect(fullSql).not.toContain('::float8');
+      expect(fullSql).not.toContain('AS share ');
+    });
+
+    it('returns empty list when SQL yields no rows', async () => {
+      const { prisma, mock } = buildPrisma();
+      mock.$queryRaw.mockResolvedValue([]);
+      const repo = new PrismaCategoriesRepository(prisma);
+
+      const rows = await repo.getTopSpentInMonth({
+        userId: 'user-1',
+        dateFrom: new Date('2026-08-01'),
+        dateTo: new Date('2026-09-01'),
+        limit: 5,
+      });
+
+      expect(rows).toEqual([]);
     });
   });
 });
