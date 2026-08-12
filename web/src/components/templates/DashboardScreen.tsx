@@ -58,7 +58,7 @@ export function DashboardScreen() {
             <KpiCard
               label="Total balance"
               value={formatBRL(summary.totalBalance)}
-              hint="Checking accounts combined"
+              hint="All accounts combined"
             />
             <KpiCard
               label="Month income"

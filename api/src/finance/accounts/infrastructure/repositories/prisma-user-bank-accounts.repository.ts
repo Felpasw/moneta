@@ -93,15 +93,21 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
   }
 
   async summarizeCheckings(userId: string): Promise<AccountsSummary> {
-    const result = await this.prisma.userBankAccount.aggregate({
-      where: { userId, creditLimit: null },
-      _sum: { balance: true, overdraftLimit: true },
-      _count: { _all: true },
-    });
+    const [allAccounts, checkings] = await Promise.all([
+      this.prisma.userBankAccount.aggregate({
+        where: { userId },
+        _sum: { balance: true },
+      }),
+      this.prisma.userBankAccount.aggregate({
+        where: { userId, creditLimit: null },
+        _sum: { overdraftLimit: true },
+        _count: { _all: true },
+      }),
+    ]);
     return {
-      totalBalance: decimalToNumber(result._sum.balance),
-      checkingCount: result._count._all,
-      totalOverdraft: decimalToNumber(result._sum.overdraftLimit),
+      totalBalance: decimalToNumber(allAccounts._sum.balance),
+      checkingCount: checkings._count._all,
+      totalOverdraft: decimalToNumber(checkings._sum.overdraftLimit),
     };
   }
 
