@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { AssistantProfile as PrismaAssistantProfile } from '@prisma/client';
 
+import { OutputLanguage } from '~/agent/domain/constants/output-language';
 import { PrismaService } from '~/infrastructure/prisma/prisma.service';
 
 import { TreatmentStyle } from '../../domain/constants/treatment-style';
@@ -20,6 +21,7 @@ const isRecordNotFound = (err: unknown): boolean =>
 const toDomain = (row: PrismaAssistantProfile): AssistantProfile => ({
   ...row,
   treatmentStyle: row.treatmentStyle as TreatmentStyle,
+  outputLanguage: row.outputLanguage as OutputLanguage,
 });
 
 @Injectable()
@@ -38,6 +40,7 @@ export class PrismaAssistantProfileRepository implements AssistantProfileReposit
       data: {
         userId: input.userId,
         treatmentStyle: input.treatmentStyle,
+        outputLanguage: input.outputLanguage,
         voiceId: input.voiceId,
         avatarUrl: input.avatarUrl,
       },

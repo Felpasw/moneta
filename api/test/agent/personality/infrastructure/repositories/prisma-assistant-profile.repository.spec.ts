@@ -1,3 +1,4 @@
+import { OutputLanguage } from '~/agent/domain/constants/output-language';
 import { TreatmentStyle } from '~/agent/personality/domain/constants/treatment-style';
 import { PrismaAssistantProfileRepository } from '~/agent/personality/infrastructure/repositories/prisma-assistant-profile.repository';
 import type { PrismaService } from '~/infrastructure/prisma/prisma.service';
@@ -6,6 +7,7 @@ const CREATED_PROFILE = {
   id: 'profile-1',
   userId: 'user-1',
   treatmentStyle: 'informal' as const,
+  outputLanguage: 'pt_BR' as const,
   voiceId: 'voice-42',
   avatarUrl: null,
   createdAt: new Date('2026-07-16T10:00:00Z'),
@@ -40,6 +42,7 @@ describe('PrismaAssistantProfileRepository', () => {
         data: {
           userId: 'user-1',
           treatmentStyle: 'informal',
+          outputLanguage: undefined,
           voiceId: 'voice-42',
           avatarUrl: null,
         },
@@ -48,11 +51,34 @@ describe('PrismaAssistantProfileRepository', () => {
         id: 'profile-1',
         userId: 'user-1',
         treatmentStyle: TreatmentStyle.Informal,
+        outputLanguage: OutputLanguage.PtBr,
         voiceId: 'voice-42',
         avatarUrl: null,
         createdAt: CREATED_PROFILE.createdAt,
         updatedAt: CREATED_PROFILE.updatedAt,
       });
+    });
+
+    it('forwards outputLanguage when provided', async () => {
+      const create = jest.fn().mockResolvedValue({
+        ...CREATED_PROFILE,
+        outputLanguage: 'en_US',
+      });
+      const repo = new PrismaAssistantProfileRepository(makePrisma({ create }));
+
+      const result = await repo.create({
+        userId: 'user-1',
+        treatmentStyle: TreatmentStyle.Informal,
+        outputLanguage: OutputLanguage.EnUs,
+        voiceId: 'voice-42',
+        avatarUrl: null,
+      });
+
+      const calls = create.mock.calls as [
+        [{ data: { outputLanguage: unknown } }],
+      ];
+      expect(calls[0][0].data.outputLanguage).toBe(OutputLanguage.EnUs);
+      expect(result.outputLanguage).toBe(OutputLanguage.EnUs);
     });
 
     it('forwards avatarUrl when provided', async () => {
@@ -127,6 +153,24 @@ describe('PrismaAssistantProfileRepository', () => {
       });
       expect(result.treatmentStyle).toBe(TreatmentStyle.Formal);
       expect(result.avatarUrl).toBe('https://models.readyplayer.me/xyz.glb');
+    });
+
+    it('patches outputLanguage on update and reflects it back on the returned row', async () => {
+      const update = jest.fn().mockResolvedValue({
+        ...CREATED_PROFILE,
+        outputLanguage: 'en_US',
+      });
+      const repo = new PrismaAssistantProfileRepository(makePrisma({ update }));
+
+      const result = await repo.update('user-1', {
+        outputLanguage: OutputLanguage.EnUs,
+      });
+
+      expect(update).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+        data: { outputLanguage: OutputLanguage.EnUs },
+      });
+      expect(result.outputLanguage).toBe(OutputLanguage.EnUs);
     });
 
     it('translates a Prisma P2025 (record not found) into ProfileNotFoundError', async () => {
