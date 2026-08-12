@@ -6,6 +6,16 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.11.0](https://github.com/Felpasw/moneta/compare/api-v0.10.0...api-v0.11.0) (2026-08-12)
+
+
+### ✨ Features
+
+* **agent/prompts:** output language snippet, base becomes language-neutral [MNT-217] ([7852f0d](https://github.com/Felpasw/moneta/commit/7852f0dd5f1e037dd08671546ee246d5fbdfa653))
+* **assistant:** output_language column + port with pt_BR default [MNT-217] ([961e670](https://github.com/Felpasw/moneta/commit/961e670a36e8c962fbb40f7dd90938ccfc56ec39))
+* **assistant:** PATCH /agent/profile accepts outputLanguage [MNT-217] ([a9654a2](https://github.com/Felpasw/moneta/commit/a9654a2636cc221f9920bb88eb1ef6554f59718c))
+* **assistant:** wire outputLanguage into system prompt + welcome-back [MNT-217] ([1640f20](https://github.com/Felpasw/moneta/commit/1640f20c7ff7e6549b0619280f0ad2d9dffb2c2b))
+
 ## [0.10.0](https://github.com/Felpasw/moneta/compare/api-v0.9.0...api-v0.10.0) (2026-08-12)
 
 
