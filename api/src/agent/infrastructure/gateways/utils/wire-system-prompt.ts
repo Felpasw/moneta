@@ -1,4 +1,5 @@
 import { AgentMode } from '~/agent/domain/constants/agent-mode';
+import { DEFAULT_OUTPUT_LANGUAGE } from '~/agent/domain/constants/output-language';
 import { resolveAgentMode } from '~/agent/domain/prompts/agent-mode';
 import { composeSystemPrompt } from '~/agent/domain/prompts/compose-system-prompt';
 import { buildOnboardingResumeBlock } from '~/agent/domain/prompts/onboarding-resume';
@@ -17,6 +18,7 @@ const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
   ]);
   const userAccounts = accountsResult.items;
   const treatmentStyle = profile?.treatmentStyle ?? DEFAULT_TREATMENT_STYLE;
+  const outputLanguage = profile?.outputLanguage ?? DEFAULT_OUTPUT_LANGUAGE;
   const mode = resolveAgentMode({
     hasNickname: Boolean(user?.nickname),
     hasBanks: userAccounts.length > 0,
@@ -29,6 +31,7 @@ const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
   });
   const instructions = composeSystemPrompt({
     treatmentStyle,
+    outputLanguage,
     onboarding: mode === AgentMode.Onboarding,
     dashboardTour: mode === AgentMode.DashboardTour,
     userName: user?.name ?? null,
@@ -61,6 +64,7 @@ const injectSystemPrompt = async (ctx: SystemPromptContext): Promise<void> => {
     mode,
     userName: user?.name ?? null,
     userNickname: user?.nickname ?? null,
+    outputLanguage,
   });
   ctx.upstream.send(JSON.stringify(openResponse));
 };
