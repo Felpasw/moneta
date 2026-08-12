@@ -1,11 +1,14 @@
 import { GetDashboardViewUseCase } from '~/dashboard/application/use-cases/get-dashboard-view.use-case';
 
+const emptyFlow = { rows: [], maxFlow: '0.00' };
+const emptyChart = { points: [], min: '0.00', max: '0.00' };
+
 const buildUseCase = () => {
   const listAccounts = { execute: jest.fn() };
   const listTransactions = { execute: jest.fn() };
   const getTopCategories = { execute: jest.fn().mockResolvedValue([]) };
-  const getMonthlyFlow = { execute: jest.fn().mockResolvedValue([]) };
-  const getBalanceChart = { execute: jest.fn().mockResolvedValue([]) };
+  const getMonthlyFlow = { execute: jest.fn().mockResolvedValue(emptyFlow) };
+  const getBalanceChart = { execute: jest.fn().mockResolvedValue(emptyChart) };
   const clock = { now: jest.fn() };
   const useCase = new GetDashboardViewUseCase(
     clock,
@@ -37,7 +40,7 @@ const emptyTransactionsResult = {
 };
 
 describe('GetDashboardViewUseCase', () => {
-  it('returns summary with totalBalance from accounts + month totals from transactions', async () => {
+  it('returns summary with monetary fields as strings from accounts + transactions', async () => {
     const { useCase, listAccounts, listTransactions, clock } = buildUseCase();
     clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
     listAccounts.execute.mockResolvedValue({
@@ -61,27 +64,32 @@ describe('GetDashboardViewUseCase', () => {
 
     expect(result).toEqual({
       summary: {
-        totalBalance: 5432.1,
-        monthIncome: 8000,
-        monthExpense: 3210.5,
-        monthNet: 4789.5,
+        totalBalance: '5432.10',
+        checkingCount: 3,
+        monthIncome: '8000.00',
+        monthExpense: '3210.50',
+        monthNet: '4789.50',
       },
       topCategories: [],
-      monthlyFlow: [],
-      balanceChart: [],
+      monthlyFlow: emptyFlow,
+      balanceChart: emptyChart,
     });
   });
 
-  it('returns balanceChart straight from the repo', async () => {
+  it('returns balanceChart straight from the repo (points+min+max)', async () => {
     const { useCase, listAccounts, listTransactions, getBalanceChart, clock } =
       buildUseCase();
     clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
     listAccounts.execute.mockResolvedValue(emptyAccountsResult);
     listTransactions.execute.mockResolvedValue(emptyTransactionsResult);
-    const chart = [
-      { date: '2026-07-17', balance: 4000 },
-      { date: '2026-07-18', balance: 3900 },
-    ];
+    const chart = {
+      points: [
+        { date: '2026-07-17', balance: '4000.00' },
+        { date: '2026-07-18', balance: '3900.55' },
+      ],
+      min: '3900.55',
+      max: '4000.00',
+    };
     getBalanceChart.execute.mockResolvedValue(chart);
 
     const result = await useCase.execute({ userId: 'user-1' });
@@ -106,16 +114,19 @@ describe('GetDashboardViewUseCase', () => {
     });
   });
 
-  it('returns monthlyFlow straight from the repo', async () => {
+  it('returns monthlyFlow straight from the repo (rows+maxFlow)', async () => {
     const { useCase, listAccounts, listTransactions, getMonthlyFlow, clock } =
       buildUseCase();
     clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
     listAccounts.execute.mockResolvedValue(emptyAccountsResult);
     listTransactions.execute.mockResolvedValue(emptyTransactionsResult);
-    const flow = [
-      { monthKey: '2026-03', income: 3000, expense: 1200 },
-      { monthKey: '2026-04', income: 3200, expense: 900 },
-    ];
+    const flow = {
+      rows: [
+        { monthKey: '2026-03', income: '3000.00', expense: '1200.00' },
+        { monthKey: '2026-04', income: '3200.55', expense: '900.10' },
+      ],
+      maxFlow: '3200.55',
+    };
     getMonthlyFlow.execute.mockResolvedValue(flow);
 
     const result = await useCase.execute({ userId: 'user-1' });
@@ -140,7 +151,7 @@ describe('GetDashboardViewUseCase', () => {
     });
   });
 
-  it('returns topCategories straight from the repo (share is precomputed in SQL)', async () => {
+  it('returns topCategories straight from the repo (share number, spent string precomputed in SQL)', async () => {
     const { useCase, listAccounts, listTransactions, getTopCategories, clock } =
       buildUseCase();
     clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
@@ -155,7 +166,7 @@ describe('GetDashboardViewUseCase', () => {
         name: 'Food',
         icon: '🍔',
         color: '#f00',
-        spent: 400,
+        spent: '400.00',
         share: 0.4,
       },
       {
@@ -163,7 +174,7 @@ describe('GetDashboardViewUseCase', () => {
         name: 'Rent',
         icon: null,
         color: null,
-        spent: 250,
+        spent: '250.00',
         share: 0.25,
       },
     ];
@@ -258,13 +269,13 @@ describe('GetDashboardViewUseCase', () => {
       order.push('flow-start');
       await new Promise((r) => setTimeout(r, 10));
       order.push('flow-end');
-      return [];
+      return emptyFlow;
     });
     getBalanceChart.execute.mockImplementation(async () => {
       order.push('chart-start');
       await new Promise((r) => setTimeout(r, 10));
       order.push('chart-end');
-      return [];
+      return emptyChart;
     });
 
     await useCase.execute({ userId: 'user-1' });

@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   TRANSACTIONS_REPOSITORY,
   type GetMonthlyFlowInput,
-  type MonthlyFlowRow,
+  type MonthlyFlowResult,
   type TransactionsRepository,
 } from '../../domain/ports/transactions-repository';
 
@@ -14,7 +14,7 @@ export class GetMonthlyFlowUseCase {
     private readonly transactions: TransactionsRepository,
   ) {}
 
-  async execute(input: GetMonthlyFlowInput): Promise<MonthlyFlowRow[]> {
+  async execute(input: GetMonthlyFlowInput): Promise<MonthlyFlowResult> {
     return this.transactions.getMonthlyFlow(input);
   }
 }

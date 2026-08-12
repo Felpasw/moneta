@@ -110,7 +110,7 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
   ): Promise<TopSpentCategory[]> {
     return this.prisma.$queryRaw<TopSpentCategory[]>`
       WITH month_total AS (
-        SELECT COALESCE(SUM(amount), 0)::float8 AS total
+        SELECT COALESCE(SUM(amount), 0) AS total
         FROM transactions
         WHERE user_id = ${input.userId}::uuid
           AND type = 'expense'::transaction_type
@@ -118,10 +118,10 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
           AND occurred_at < ${input.dateTo}
       )
       SELECT c.id, c.name, c.icon, c.color,
-             SUM(t.amount)::float8 AS spent,
+             ROUND(SUM(t.amount), 2)::text AS spent,
              CASE WHEN (SELECT total FROM month_total) > 0
-                  THEN SUM(t.amount)::float8 / (SELECT total FROM month_total)
-                  ELSE 0
+                  THEN (SUM(t.amount) / (SELECT total FROM month_total))::double precision
+                  ELSE 0::double precision
              END AS share
       FROM transactions t
       INNER JOIN categories c ON c.id = t.category_id

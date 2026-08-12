@@ -69,10 +69,11 @@ export class GetDashboardViewUseCase {
 
     return {
       summary: {
-        totalBalance: accountsResult.summary.totalBalance,
-        monthIncome: transactionsResult.summary.totalIncome,
-        monthExpense: transactionsResult.summary.totalExpense,
-        monthNet: transactionsResult.summary.net,
+        totalBalance: accountsResult.summary.totalBalance.toFixed(2),
+        checkingCount: accountsResult.summary.checkingCount,
+        monthIncome: transactionsResult.summary.totalIncome.toFixed(2),
+        monthExpense: transactionsResult.summary.totalExpense.toFixed(2),
+        monthNet: transactionsResult.summary.net.toFixed(2),
       },
       topCategories,
       monthlyFlow,

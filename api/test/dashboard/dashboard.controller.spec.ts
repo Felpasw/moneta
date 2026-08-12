@@ -78,10 +78,11 @@ describe('DashboardController', () => {
     it('returns 200 with the view payload and forwards userId from JWT', async () => {
       const view = {
         summary: {
-          totalBalance: 1200,
-          monthIncome: 3000,
-          monthExpense: 1800,
-          monthNet: 1200,
+          totalBalance: '1200.00',
+          checkingCount: 2,
+          monthIncome: '3000.00',
+          monthExpense: '1800.00',
+          monthNet: '1200.00',
         },
         topCategories: [
           {
@@ -89,12 +90,21 @@ describe('DashboardController', () => {
             name: 'Food',
             icon: null,
             color: null,
-            spent: 500,
+            spent: '500.00',
             share: 0.28,
           },
         ],
-        monthlyFlow: [{ monthKey: '2026-08', income: 3000, expense: 1800 }],
-        balanceChart: [{ date: '2026-08-15', balance: 4200 }],
+        monthlyFlow: {
+          rows: [
+            { monthKey: '2026-08', income: '3000.00', expense: '1800.00' },
+          ],
+          maxFlow: '3000.00',
+        },
+        balanceChart: {
+          points: [{ date: '2026-08-15', balance: '4200.00' }],
+          min: '4200.00',
+          max: '4200.00',
+        },
       };
       mocks.getView.execute.mockResolvedValue(view);
 

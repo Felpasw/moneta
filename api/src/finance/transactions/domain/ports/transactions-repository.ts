@@ -86,8 +86,13 @@ export interface ListTransactionsFilters {
 
 export interface MonthlyFlowRow {
   monthKey: string;
-  income: number;
-  expense: number;
+  income: string;
+  expense: string;
+}
+
+export interface MonthlyFlowResult {
+  rows: MonthlyFlowRow[];
+  maxFlow: string;
 }
 
 export interface GetMonthlyFlowInput {
@@ -105,5 +110,5 @@ export interface TransactionsRepository {
   findById(id: string, userId: string): Promise<Transaction | null>;
   list(filters: ListTransactionsFilters): Promise<TransactionWithEmbeds[]>;
   summarize(filters: ListTransactionsFilters): Promise<TransactionsSummary>;
-  getMonthlyFlow(input: GetMonthlyFlowInput): Promise<MonthlyFlowRow[]>;
+  getMonthlyFlow(input: GetMonthlyFlowInput): Promise<MonthlyFlowResult>;
 }

@@ -290,7 +290,7 @@ describe('PrismaCategoriesRepository', () => {
   });
 
   describe('getTopSpentInMonth', () => {
-    it('returns the raw rows straight from $queryRaw with SQL ordering, share and limit', async () => {
+    it('returns the raw rows straight from $queryRaw with SQL ordering, share and limit, spent as string', async () => {
       const { prisma, mock } = buildPrisma();
       const raw = [
         {
@@ -298,7 +298,7 @@ describe('PrismaCategoriesRepository', () => {
           name: 'Food',
           icon: '🍔',
           color: '#f00',
-          spent: 400,
+          spent: '400.00',
           share: 0.4,
         },
         {
@@ -306,7 +306,7 @@ describe('PrismaCategoriesRepository', () => {
           name: 'Rent',
           icon: null,
           color: null,
-          spent: 150.55,
+          spent: '150.55',
           share: 0.15,
         },
       ];
@@ -324,7 +324,7 @@ describe('PrismaCategoriesRepository', () => {
       expect(mock.$queryRaw).toHaveBeenCalledTimes(1);
     });
 
-    it('passes filters as parameterized args to $queryRaw (tagged template)', async () => {
+    it('emits SQL with numeric ROUND+text casts, no float8, and preserves share as ratio number', async () => {
       const { prisma, mock } = buildPrisma();
       mock.$queryRaw.mockResolvedValue([]);
       const repo = new PrismaCategoriesRepository(prisma);
@@ -356,6 +356,9 @@ describe('PrismaCategoriesRepository', () => {
       expect(fullSql).toContain('AS share');
       expect(fullSql).toContain('ORDER BY spent DESC');
       expect(fullSql).toContain('LIMIT');
+      expect(fullSql).toContain('ROUND(');
+      expect(fullSql).toContain('::text');
+      expect(fullSql).not.toContain('::float8');
     });
 
     it('returns empty list when SQL yields no rows', async () => {

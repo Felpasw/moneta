@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import {
   USER_BANK_ACCOUNTS_REPOSITORY,
-  type BalanceChartPoint,
+  type BalanceChartResult,
   type GetBalanceChartInput,
   type UserBankAccountsRepository,
 } from '../../domain/ports/user-bank-accounts-repository';
@@ -14,7 +14,7 @@ export class GetBalanceChartUseCase {
     private readonly accounts: UserBankAccountsRepository,
   ) {}
 
-  async execute(input: GetBalanceChartInput): Promise<BalanceChartPoint[]> {
+  async execute(input: GetBalanceChartInput): Promise<BalanceChartResult> {
     return this.accounts.getBalanceChart(input);
   }
 }

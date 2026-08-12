@@ -39,7 +39,13 @@ export interface AccountsSummary {
 
 export interface BalanceChartPoint {
   date: string;
-  balance: number;
+  balance: string;
+}
+
+export interface BalanceChartResult {
+  points: BalanceChartPoint[];
+  min: string;
+  max: string;
 }
 
 export interface GetBalanceChartInput {
@@ -86,5 +92,5 @@ export interface UserBankAccountsRepository {
     userId: string,
     amount: number,
   ): Promise<UserBankAccount | null>;
-  getBalanceChart(input: GetBalanceChartInput): Promise<BalanceChartPoint[]>;
+  getBalanceChart(input: GetBalanceChartInput): Promise<BalanceChartResult>;
 }

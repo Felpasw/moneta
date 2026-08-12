@@ -37,7 +37,7 @@ export interface TopSpentCategory {
   name: string;
   icon: string | null;
   color: string | null;
-  spent: number;
+  spent: string;
   share: number;
 }
 

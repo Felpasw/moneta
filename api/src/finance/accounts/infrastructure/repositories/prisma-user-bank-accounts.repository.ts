@@ -8,7 +8,7 @@ import { decimalToNumber } from '../../../@shared/utils/decimal-to-number';
 import type {
   AccountsSummary,
   AddUserBankAccountInput,
-  BalanceChartPoint,
+  BalanceChartResult,
   CurrentInvoice,
   GetBalanceChartInput,
   UpdateUserBankAccountInput,
@@ -173,8 +173,10 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
 
   async getBalanceChart(
     input: GetBalanceChartInput,
-  ): Promise<BalanceChartPoint[]> {
-    return this.prisma.$queryRaw<BalanceChartPoint[]>`
+  ): Promise<BalanceChartResult> {
+    const [{ result }] = await this.prisma.$queryRaw<
+      [{ result: BalanceChartResult }]
+    >`
       WITH day_series AS (
         SELECT ((${input.now}::timestamptz)::date - i * INTERVAL '1 day')::date AS day
         FROM generate_series(0, ${input.days}::int - 1) i
@@ -184,7 +186,7 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
                SUM(CASE WHEN t.type = 'income'::transaction_type
                         THEN t.amount
                         ELSE -t.amount
-                   END)::float8 AS delta
+                   END) AS delta
         FROM transactions t
         INNER JOIN user_bank_accounts a ON a.id = t.account_id
         WHERE t.user_id = ${input.userId}::uuid
@@ -193,26 +195,42 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
         GROUP BY day
       ),
       current_balance AS (
-        SELECT COALESCE(SUM(balance), 0)::float8 AS total
+        SELECT COALESCE(SUM(balance), 0) AS total
         FROM user_bank_accounts
         WHERE user_id = ${input.userId}::uuid AND credit_limit IS NULL
       ),
       combined AS (
-        SELECT s.day, COALESCE(dd.delta, 0)::float8 AS delta
+        SELECT s.day, COALESCE(dd.delta, 0) AS delta
         FROM day_series s
         LEFT JOIN day_deltas dd ON dd.day = s.day
+      ),
+      points AS (
+        SELECT to_char(c.day, 'YYYY-MM-DD') AS point_date,
+               c.day,
+               ROUND(cb.total - COALESCE(
+                  SUM(c.delta) OVER (
+                    ORDER BY c.day DESC
+                    ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+                  ),
+                  0
+               ), 2) AS balance
+        FROM combined c
+        CROSS JOIN current_balance cb
       )
-      SELECT to_char(c.day, 'YYYY-MM-DD') AS "date",
-             (cb.total - COALESCE(
-                SUM(c.delta) OVER (
-                  ORDER BY c.day DESC
-                  ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-                ),
-                0
-             ))::float8 AS balance
-      FROM combined c
-      CROSS JOIN current_balance cb
-      ORDER BY c.day ASC
+      SELECT json_build_object(
+        'points', COALESCE((
+          SELECT json_agg(
+            json_build_object(
+              'date', point_date,
+              'balance', balance::text
+            ) ORDER BY day ASC
+          )
+          FROM points
+        ), '[]'::json),
+        'min', COALESCE((SELECT ROUND(MIN(balance), 2)::text FROM points), '0.00'),
+        'max', COALESCE((SELECT ROUND(MAX(balance), 2)::text FROM points), '0.00')
+      ) AS result
     `;
+    return result;
   }
 }

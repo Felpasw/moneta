@@ -317,28 +317,34 @@ describe('PrismaUserBankAccountsRepository', () => {
       return { prisma, $queryRaw };
     };
 
-    it('returns the raw rows straight from $queryRaw', async () => {
+    it('unwraps the json_build_object result and returns points+min+max with string balances', async () => {
       const { prisma, $queryRaw } = buildQueryRawPrisma();
-      const raw = [
-        { date: '2026-07-17', balance: 4000 },
-        { date: '2026-07-18', balance: 3900 },
-      ];
-      $queryRaw.mockResolvedValue(raw);
+      const result = {
+        points: [
+          { date: '2026-07-17', balance: '4000.00' },
+          { date: '2026-07-18', balance: '3900.55' },
+        ],
+        min: '3900.55',
+        max: '4000.00',
+      };
+      $queryRaw.mockResolvedValue([{ result }]);
       const repo = new PrismaUserBankAccountsRepository(prisma);
 
-      const rows = await repo.getBalanceChart({
+      const chart = await repo.getBalanceChart({
         userId: 'user-1',
         now: new Date('2026-08-15T12:00:00Z'),
         days: 30,
       });
 
-      expect(rows).toBe(raw);
+      expect(chart).toBe(result);
       expect($queryRaw).toHaveBeenCalledTimes(1);
     });
 
-    it('passes parameterized args and SQL walks backwards over checking accounts only', async () => {
+    it('emits SQL with numeric ROUND+text casts, no float8, and MIN/MAX aggregates for the chart bounds', async () => {
       const { prisma, $queryRaw } = buildQueryRawPrisma();
-      $queryRaw.mockResolvedValue([]);
+      $queryRaw.mockResolvedValue([
+        { result: { points: [], min: '0.00', max: '0.00' } },
+      ]);
       const repo = new PrismaUserBankAccountsRepository(prisma);
       const now = new Date('2026-08-15T12:00:00Z');
 
@@ -355,20 +361,29 @@ describe('PrismaUserBankAccountsRepository', () => {
       expect(fullSql).toContain('credit_limit IS NULL');
       expect(fullSql).toContain('CASE WHEN');
       expect(fullSql).toMatch(/OVER \(\s*ORDER BY/);
+      expect(fullSql).toContain('json_build_object');
+      expect(fullSql).toContain('json_agg');
+      expect(fullSql).toContain('balance::text');
+      expect(fullSql).toContain('MIN(');
+      expect(fullSql).toContain('MAX(');
+      expect(fullSql).toContain('ROUND(');
+      expect(fullSql).not.toContain('::float8');
     });
 
-    it('returns empty list when SQL yields no rows', async () => {
+    it('returns empty points + zero min/max when SQL yields no rows', async () => {
       const { prisma, $queryRaw } = buildQueryRawPrisma();
-      $queryRaw.mockResolvedValue([]);
+      $queryRaw.mockResolvedValue([
+        { result: { points: [], min: '0.00', max: '0.00' } },
+      ]);
       const repo = new PrismaUserBankAccountsRepository(prisma);
 
-      const rows = await repo.getBalanceChart({
+      const chart = await repo.getBalanceChart({
         userId: 'user-1',
         now: new Date('2026-08-15T12:00:00Z'),
         days: 30,
       });
 
-      expect(rows).toEqual([]);
+      expect(chart).toEqual({ points: [], min: '0.00', max: '0.00' });
     });
   });
 });
