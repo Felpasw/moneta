@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.7.0](https://github.com/Felpasw/moneta/compare/web-v0.6.1...web-v0.7.0) (2026-08-12)
+
+
+### ✨ Features
+
+* **web/assistant:** Language tab in /settings/assistant [MNT-217] ([4bdc160](https://github.com/Felpasw/moneta/commit/4bdc1600df45eae563fa69165bc9dd03e58644d8))
+
 ## [0.6.1](https://github.com/Felpasw/moneta/compare/web-v0.6.0...web-v0.6.1) (2026-08-12)
 
 
