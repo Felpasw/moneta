@@ -75,6 +75,10 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
             dueDate: firstInvoice.dueDate,
             cycleStart: firstInvoice.cycleStart,
             cycleEnd: firstInvoice.cycleEnd,
+            available: Math.max(
+              0,
+              (account.creditLimit ?? 0) - firstInvoice.totalAmount,
+            ),
           }
         : null;
       return {

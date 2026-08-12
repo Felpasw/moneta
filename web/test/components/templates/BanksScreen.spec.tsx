@@ -129,6 +129,7 @@ describe("<BanksScreen />", () => {
         dueDate: "2026-09-12",
         cycleStart: "2026-08-05",
         cycleEnd: "2026-09-04",
+        available: 2500,
       },
       usagePct: 50,
     };

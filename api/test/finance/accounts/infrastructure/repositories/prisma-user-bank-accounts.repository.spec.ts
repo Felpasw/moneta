@@ -186,8 +186,46 @@ describe('PrismaUserBankAccountsRepository', () => {
         dueDate,
         cycleStart,
         cycleEnd,
+        available: 7500,
       });
       expect(card.usagePct).toBe(25);
+    });
+
+    it('caps available at 0 when totalAmount exceeds creditLimit', async () => {
+      const { prisma, mock } = buildPrisma();
+      mock.userBankAccount.findMany.mockResolvedValue([
+        {
+          id: 'acc-nu',
+          userId: 'user-1',
+          bankId: 'bank-nu',
+          nickname: 'Overspent',
+          balance: decimal(0),
+          creditLimit: decimal(1000),
+          overdraftLimit: null,
+          closeDay: 5,
+          dueDay: 12,
+          bank: {
+            id: 'bank-nu',
+            name: 'Nubank',
+            compeCode: '260',
+            logoUrl: null,
+          },
+          invoices: [
+            {
+              totalAmount: decimal(1500),
+              status: 'open',
+              dueDate: new Date('2026-09-12'),
+              cycleStart: new Date('2026-08-05'),
+              cycleEnd: new Date('2026-09-04'),
+            },
+          ],
+        },
+      ]);
+      const repo = new PrismaUserBankAccountsRepository(prisma);
+
+      const [card] = await repo.listByUserId('user-1');
+
+      expect(card.currentInvoice?.available).toBe(0);
     });
 
     it('caps usagePct at 100 when totalAmount exceeds creditLimit', async () => {

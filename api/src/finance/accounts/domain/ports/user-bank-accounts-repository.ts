@@ -23,6 +23,7 @@ export interface CurrentInvoice {
   dueDate: Date;
   cycleStart: Date;
   cycleEnd: Date;
+  available: number;
 }
 
 export interface UserBankAccountWithBank extends UserBankAccount {
