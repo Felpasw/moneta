@@ -6,11 +6,13 @@ import { toast } from "sonner";
 
 import { AssistantAvatar } from "@/components/atoms/AssistantAvatar";
 import { AssistantSettingsAvatar } from "@/components/organisms/AssistantSettingsAvatar";
+import { AssistantSettingsLanguage } from "@/components/organisms/AssistantSettingsLanguage";
 import { AssistantSettingsTreatmentStyle } from "@/components/organisms/AssistantSettingsTreatmentStyle";
 import { AssistantSettingsVoice } from "@/components/organisms/AssistantSettingsVoice";
 import { Tabs } from "@/components/ui/Tabs";
 import assistantProfileHooks from "@/hooks/useAssistantProfile";
 import type {
+  OutputLanguage,
   TreatmentStyle,
   UpdateProfilePatch,
 } from "@/services/interfaces/assistantProfile.interface";
@@ -25,6 +27,7 @@ const FALLBACK_SEED = "user";
 
 const TAB_ID = {
   TONE: "tone",
+  LANGUAGE: "language",
   VOICE: "voice",
   AVATAR: "avatar",
 } as const;
@@ -33,6 +36,7 @@ type TabId = (typeof TAB_ID)[keyof typeof TAB_ID];
 
 const TABS: { id: TabId; label: string }[] = [
   { id: TAB_ID.TONE, label: "Tone" },
+  { id: TAB_ID.LANGUAGE, label: "Language" },
   { id: TAB_ID.VOICE, label: "Voice" },
   { id: TAB_ID.AVATAR, label: "Avatar" },
 ];
@@ -98,6 +102,16 @@ export function AssistantSettingsScreen() {
               value={profile.data.treatmentStyle}
               onChange={(next: TreatmentStyle) =>
                 patch({ treatmentStyle: next })
+              }
+              disabled={updateProfile.isPending}
+            />
+          )}
+
+          {activeTab === TAB_ID.LANGUAGE && (
+            <AssistantSettingsLanguage
+              value={profile.data.outputLanguage}
+              onChange={(next: OutputLanguage) =>
+                patch({ outputLanguage: next })
               }
               disabled={updateProfile.isPending}
             />

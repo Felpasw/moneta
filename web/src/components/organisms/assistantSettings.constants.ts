@@ -1,5 +1,27 @@
 import { AssistantAvatarStyle } from "@/components/atoms/AssistantAvatar";
-import type { TreatmentStyle } from "@/services/interfaces/assistantProfile.interface";
+import type {
+  OutputLanguage,
+  TreatmentStyle,
+} from "@/services/interfaces/assistantProfile.interface";
+
+export interface OutputLanguageOption {
+  value: OutputLanguage;
+  label: string;
+  description: string;
+}
+
+export const OUTPUT_LANGUAGE_OPTIONS: readonly OutputLanguageOption[] = [
+  {
+    value: "pt_BR",
+    label: "Português (Brasil)",
+    description: "O assistente responde em português brasileiro.",
+  },
+  {
+    value: "en_US",
+    label: "English (US)",
+    description: "The assistant replies in American English.",
+  },
+];
 
 export interface TreatmentStyleOption {
   value: TreatmentStyle;
