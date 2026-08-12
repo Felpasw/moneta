@@ -49,4 +49,34 @@ describe('UpdateBankAccountTool', () => {
     expect(result.ok).toBe(false);
     expect(updateBankAccount.execute).not.toHaveBeenCalled();
   });
+
+  describe('playbook — omit vs null semantics', () => {
+    it('exposes name update_bank_account with non-empty playbook', () => {
+      const { tool } = buildTool();
+
+      expect(tool.name).toBe('update_bank_account');
+      expect(tool.playbook).toEqual(expect.any(String));
+      expect(tool.playbook.length).toBeGreaterThan(0);
+    });
+
+    it('teaches the LLM to OMIT unchanged fields instead of sending null', () => {
+      const { tool } = buildTool();
+
+      expect(tool.playbook.toLowerCase()).toMatch(/omit/i);
+    });
+
+    it('states that null means intentional removal, not "leave as is"', () => {
+      const { tool } = buildTool();
+
+      expect(tool.playbook).toMatch(/remo[çc]ão intencional/i);
+    });
+
+    it('warns against sending null by default for unchanged fields', () => {
+      const { tool } = buildTool();
+
+      expect(tool.playbook).toMatch(
+        /nunca envie null (por )?default|nunca.*null.*campo.*inalterado/i,
+      );
+    });
+  });
 });

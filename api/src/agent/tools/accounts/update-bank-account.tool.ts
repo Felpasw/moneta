@@ -31,7 +31,7 @@ export class UpdateBankAccountTool implements AssistantTool {
     additionalProperties: false,
   };
   readonly playbook =
-    'Atualiza campos de uma conta existente. Requer o id da conta (nunca invente — busque nas contas do user). Pode alterar nickname, creditLimit, closeDay, dueDay, overdraftLimit; passe null pra limpar campos opcionais. Balance NUNCA é alterado por aqui — pra ajustar saldo existe operação separada, oriente o user. Confirme mudanças com o user antes de invocar. Se a conta não existir ou não pertencer ao user, retorna erro.';
+    'Atualiza campos de uma conta existente. Requer o id da conta (nunca invente — busque nas contas do user). Pode alterar nickname, creditLimit, closeDay, dueDay, overdraftLimit. REGRA CRÍTICA — omitir vs null: envie APENAS os campos que o user pediu pra alterar; campos que devem ficar inalterados precisam ser OMITIDOS do payload por completo (não envie). null tem significado semântico específico: é REMOÇÃO INTENCIONAL do valor (ex: "tira meu cheque especial" → overdraftLimit: null). NUNCA envie null por default em campo que o user não pediu pra limpar — enviar null em campo inalterado ZERA o valor no DB e quebra o estado da conta (ex: closeDay=null num cartão quebra o cálculo de fatura). Balance NUNCA é alterado por aqui — pra ajustar saldo existe operação separada, oriente o user. Confirme mudanças com o user antes de invocar. Se a conta não existir ou não pertencer ao user, retorna erro.';
 
   constructor(private readonly updateBankAccount: UpdateBankAccountUseCase) {}
 
