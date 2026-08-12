@@ -47,17 +47,19 @@ export class PrismaInvoicesRepository implements InvoicesRepository {
 
   async create(input: CreateInvoiceInput): Promise<Invoice> {
     return this.prisma.$transaction(async (tx) => {
-      const existingOpen = await tx.creditCardInvoice.findFirst({
-        where: { accountId: input.accountId, status: InvoiceStatus.Open },
-        select: { id: true },
-      });
-      if (existingOpen) {
-        throw new MultipleOpenInvoicesError(input.accountId);
+      if (input.status === InvoiceStatus.Open) {
+        const existingOpen = await tx.creditCardInvoice.findFirst({
+          where: { accountId: input.accountId, status: InvoiceStatus.Open },
+          select: { id: true },
+        });
+        if (existingOpen) {
+          throw new MultipleOpenInvoicesError(input.accountId);
+        }
       }
       const row = await tx.creditCardInvoice.create({
         data: {
           accountId: input.accountId,
-          status: InvoiceStatus.Open,
+          status: input.status,
           cycleStart: input.cycleStart,
           cycleEnd: input.cycleEnd,
           dueDate: input.dueDate,

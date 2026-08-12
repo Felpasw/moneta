@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { CLOCK, type Clock } from '../../../../@common/domain/ports/clock';
+import { InvoiceStatus } from '../constants/invoice-status';
 import {
   INVOICES_REPOSITORY,
   type Invoice,
@@ -13,6 +15,8 @@ export class CreditCardCycleService {
   constructor(
     @Inject(INVOICES_REPOSITORY)
     private readonly invoices: InvoicesRepository,
+    @Inject(CLOCK)
+    private readonly clock: Clock,
   ) {}
 
   async resolveInvoiceForDate(
@@ -30,11 +34,17 @@ export class CreditCardCycleService {
     );
     if (existing) return existing;
 
+    const status =
+      cycleStart.getTime() > this.clock.now().getTime()
+        ? InvoiceStatus.Scheduled
+        : InvoiceStatus.Open;
+
     return this.invoices.create({
       accountId: input.accountId,
       cycleStart,
       cycleEnd,
       dueDate,
+      status,
     });
   }
 }

@@ -1,5 +1,3 @@
-import { Prisma } from '@prisma/client';
-
 import { InvoiceStatus } from '~/finance/card-billing/domain/constants/invoice-status';
 import { MultipleOpenInvoicesError } from '~/finance/card-billing/domain/errors/multiple-open-invoices.error';
 import { PrismaInvoicesRepository } from '~/finance/card-billing/infrastructure/repositories/prisma-invoices.repository';
@@ -76,6 +74,7 @@ describe('PrismaInvoicesRepository', () => {
         cycleStart: new Date('2026-07-01T00:00:00Z'),
         cycleEnd: new Date('2026-07-31T00:00:00Z'),
         dueDate: new Date('2026-08-10T00:00:00Z'),
+        status: InvoiceStatus.Open,
       });
 
       expect(tx.creditCardInvoice.findFirst).toHaveBeenCalledWith({
@@ -96,7 +95,7 @@ describe('PrismaInvoicesRepository', () => {
       expect(result.totalAmount).toBe(0);
     });
 
-    it('throws MultipleOpenInvoicesError when the account already has an open invoice', async () => {
+    it('throws MultipleOpenInvoicesError only when creating a new OPEN invoice while another is already open', async () => {
       const { prisma, tx } = buildPrisma();
       tx.creditCardInvoice.findFirst.mockResolvedValue({ id: 'other-open' });
       const repo = new PrismaInvoicesRepository(prisma);
@@ -107,9 +106,30 @@ describe('PrismaInvoicesRepository', () => {
           cycleStart: new Date('2026-08-01T00:00:00Z'),
           cycleEnd: new Date('2026-08-31T00:00:00Z'),
           dueDate: new Date('2026-09-10T00:00:00Z'),
+          status: InvoiceStatus.Open,
         }),
       ).rejects.toBeInstanceOf(MultipleOpenInvoicesError);
       expect(tx.creditCardInvoice.create).not.toHaveBeenCalled();
+    });
+
+    it('allows creating a SCHEDULED invoice even when another invoice is already open', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.creditCardInvoice.findFirst.mockResolvedValue({ id: 'other-open' });
+      tx.creditCardInvoice.create.mockResolvedValue(
+        invoiceRow({ status: InvoiceStatus.Scheduled }),
+      );
+      const repo = new PrismaInvoicesRepository(prisma);
+
+      const result = await repo.create({
+        accountId: ACCOUNT_ID,
+        cycleStart: new Date('2026-09-01T00:00:00Z'),
+        cycleEnd: new Date('2026-09-30T00:00:00Z'),
+        dueDate: new Date('2026-10-10T00:00:00Z'),
+        status: InvoiceStatus.Scheduled,
+      });
+
+      expect(result.status).toBe(InvoiceStatus.Scheduled);
+      expect(tx.creditCardInvoice.create).toHaveBeenCalledTimes(1);
     });
   });
 

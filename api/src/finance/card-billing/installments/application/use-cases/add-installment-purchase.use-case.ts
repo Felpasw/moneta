@@ -54,38 +54,36 @@ export class AddInstallmentPurchaseUseCase {
     }
 
     const purchase = dayjs.utc(input.occurredAt);
-    const indexes = Array.from(
-      { length: input.installmentsCount },
-      (_, idx) => idx + 1,
-    );
-    const installments: InstallmentTransactionInput[] = await Promise.all(
-      indexes.map(async (i) => {
-        const date = purchase.add(i - 1, 'month').toDate();
-        const invoice = await this.cycle.resolveInvoiceForDate({
-          accountId: input.accountId,
-          date,
-          closeDay: account.closeDay!,
-          dueDay: account.dueDay!,
-        });
-        const amount = this.amountForInstallment({
-          index: i,
-          installmentsCount: input.installmentsCount,
-          installmentAmount,
-          totalAmount,
-        });
-        return {
-          userId: input.userId,
-          accountId: input.accountId,
-          categoryId: input.categoryId,
-          type: TransactionType.Expense,
-          amount,
-          description: `${input.description} (${i}/${input.installmentsCount})`,
-          occurredAt: date,
-          invoiceId: invoice.id,
-          installmentNumber: i,
-        };
-      }),
-    );
+    const installments: InstallmentTransactionInput[] = [];
+    // Sequential (not Promise.all): resolveInvoiceForDate can trigger an
+    // invoices.create, and concurrent creates race past MultipleOpenInvoicesError
+    // because each transaction can't see the others' inserts until commit.
+    for (let i = 1; i <= input.installmentsCount; i += 1) {
+      const date = purchase.add(i - 1, 'month').toDate();
+      const invoice = await this.cycle.resolveInvoiceForDate({
+        accountId: input.accountId,
+        date,
+        closeDay: account.closeDay,
+        dueDay: account.dueDay,
+      });
+      const amount = this.amountForInstallment({
+        index: i,
+        installmentsCount: input.installmentsCount,
+        installmentAmount,
+        totalAmount,
+      });
+      installments.push({
+        userId: input.userId,
+        accountId: input.accountId,
+        categoryId: input.categoryId,
+        type: TransactionType.Expense,
+        amount,
+        description: `${input.description} (${i}/${input.installmentsCount})`,
+        occurredAt: date,
+        invoiceId: invoice.id,
+        installmentNumber: i,
+      });
+    }
 
     return this.groups.createGroupWithInstallments({
       group: {

@@ -227,4 +227,36 @@ describe('AddInstallmentPurchaseUseCase', () => {
     ).rejects.toBeInstanceOf(AccountNotFoundError);
     expect(groups.createGroupWithInstallments).not.toHaveBeenCalled();
   });
+
+  it('resolves invoices SEQUENTIALLY, one after the other (no Promise.all) — MNT-226 race guard', async () => {
+    const { useCase, groups, getAccount, cycle } = buildUseCase();
+    getAccount.execute.mockResolvedValue(cardAccount);
+    groups.createGroupWithInstallments.mockResolvedValue({
+      group: {},
+      transactions: [],
+    });
+
+    const eventLog: string[] = [];
+    let callIndex = 0;
+    cycle.resolveInvoiceForDate.mockImplementation(async () => {
+      const n = ++callIndex;
+      eventLog.push(`start-${n}`);
+      await new Promise((r) => setImmediate(r));
+      eventLog.push(`end-${n}`);
+      return { id: `inv-${n}` };
+    });
+
+    await useCase.execute({ ...BASE_INPUT, installmentsCount: 3 });
+
+    // Sequential: start N, end N, start N+1, end N+1, ...
+    // Parallel (Promise.all): all starts THEN all ends.
+    expect(eventLog).toEqual([
+      'start-1',
+      'end-1',
+      'start-2',
+      'end-2',
+      'start-3',
+      'end-3',
+    ]);
+  });
 });

@@ -3,14 +3,15 @@ import { CreditCardCycleService } from '~/finance/card-billing/domain/services/c
 
 const ACCOUNT_ID = 'acc-1';
 
-const buildService = () => {
+const buildService = (nowIso = '2026-07-15T12:00:00Z') => {
   const invoices = {
     create: jest.fn(),
     findOpenForAccount: jest.fn(),
     findByAccountAndCycle: jest.fn(),
   };
-  const service = new CreditCardCycleService(invoices);
-  return { service, invoices };
+  const clock = { now: () => new Date(nowIso) };
+  const service = new CreditCardCycleService(invoices, clock);
+  return { service, invoices, clock };
 };
 
 const invoiceFixture = (overrides: Record<string, unknown> = {}) => ({
@@ -67,7 +68,45 @@ describe('CreditCardCycleService.resolveInvoiceForDate', () => {
       cycleStart: new Date(Date.UTC(2026, 6, 11)),
       cycleEnd: new Date(Date.UTC(2026, 7, 10)),
       dueDate: new Date(Date.UTC(2026, 7, 20)),
+      status: InvoiceStatus.Open,
     });
+  });
+
+  it('creates the invoice as OPEN when the cycle has already started (cycleStart <= now)', async () => {
+    const { service, invoices } = buildService('2026-07-25T12:00:00Z');
+    invoices.findByAccountAndCycle.mockResolvedValue(null);
+    invoices.create.mockResolvedValue(invoiceFixture());
+
+    await service.resolveInvoiceForDate({
+      accountId: ACCOUNT_ID,
+      date: new Date(Date.UTC(2026, 6, 25)),
+      closeDay: 10,
+      dueDay: 20,
+    });
+
+    expect(invoices.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: InvoiceStatus.Open }),
+    );
+  });
+
+  it('creates the invoice as SCHEDULED when the cycle is entirely in the future (cycleStart > now)', async () => {
+    // now = mid-July; installment date = Oct 13 → cycle Oct 11 → Nov 10 (future)
+    const { service, invoices } = buildService('2026-07-15T12:00:00Z');
+    invoices.findByAccountAndCycle.mockResolvedValue(null);
+    invoices.create.mockResolvedValue(
+      invoiceFixture({ status: InvoiceStatus.Scheduled }),
+    );
+
+    await service.resolveInvoiceForDate({
+      accountId: ACCOUNT_ID,
+      date: new Date(Date.UTC(2026, 9, 13)),
+      closeDay: 10,
+      dueDay: 20,
+    });
+
+    expect(invoices.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: InvoiceStatus.Scheduled }),
+    );
   });
 
   it('respects the closeDay fallback when the month is short (Feb + closeDay=31)', async () => {
@@ -84,11 +123,13 @@ describe('CreditCardCycleService.resolveInvoiceForDate', () => {
 
     // closeDay=31 in Feb → Feb 28 (fallback). Previous close was Jan 31 (Jan has 31).
     // So cycleStart = Feb 1, cycleEnd = Feb 28, dueDate = Mar 10 (dueDay<closeDay → next month)
-    expect(invoices.create).toHaveBeenCalledWith({
-      accountId: ACCOUNT_ID,
-      cycleStart: new Date(Date.UTC(2026, 1, 1)),
-      cycleEnd: new Date(Date.UTC(2026, 1, 28)),
-      dueDate: new Date(Date.UTC(2026, 2, 10)),
-    });
+    expect(invoices.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accountId: ACCOUNT_ID,
+        cycleStart: new Date(Date.UTC(2026, 1, 1)),
+        cycleEnd: new Date(Date.UTC(2026, 1, 28)),
+        dueDate: new Date(Date.UTC(2026, 2, 10)),
+      }),
+    );
   });
 });
