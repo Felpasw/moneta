@@ -216,6 +216,24 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
                ), 2) AS balance
         FROM combined c
         CROSS JOIN current_balance cb
+      ),
+      with_bounds AS (
+        SELECT point_date, day, balance,
+               MIN(balance) OVER () AS min_balance,
+               MAX(balance) OVER () AS max_balance,
+               ROW_NUMBER() OVER (ORDER BY day ASC) AS rn,
+               COUNT(*) OVER () AS n
+        FROM points
+      ),
+      svg_points AS (
+        SELECT point_date, day, balance, rn, n,
+               CASE WHEN n > 1
+                    THEN ROUND(((rn - 1)::numeric * 100 / (n - 1)::numeric), 4)::double precision
+                    ELSE 0::double precision END AS x,
+               CASE WHEN (max_balance - min_balance) > 0
+                    THEN ROUND(40 - ((balance - min_balance) / (max_balance - min_balance)) * 40, 4)::double precision
+                    ELSE 40::double precision END AS y
+        FROM with_bounds
       )
       SELECT json_build_object(
         'points', COALESCE((
@@ -225,10 +243,36 @@ export class PrismaUserBankAccountsRepository implements UserBankAccountsReposit
               'balance', balance::text
             ) ORDER BY day ASC
           )
-          FROM points
+          FROM svg_points
         ), '[]'::json),
         'min', COALESCE((SELECT ROUND(MIN(balance), 2)::text FROM points), '0.00'),
-        'max', COALESCE((SELECT ROUND(MAX(balance), 2)::text FROM points), '0.00')
+        'max', COALESCE((SELECT ROUND(MAX(balance), 2)::text FROM points), '0.00'),
+        'linePath', COALESCE((
+          SELECT string_agg(
+            (CASE WHEN rn = 1 THEN 'M' ELSE 'L' END) || ' ' || x::text || ' ' || y::text,
+            ' ' ORDER BY day ASC
+          )
+          FROM svg_points
+        ), ''),
+        'areaPath', (
+          SELECT CASE WHEN COUNT(*) = 0 THEN ''
+                      ELSE (
+                        SELECT string_agg(
+                          (CASE WHEN rn = 1 THEN 'M' ELSE 'L' END) || ' ' || x::text || ' ' || y::text,
+                          ' ' ORDER BY day ASC
+                        )
+                        FROM svg_points
+                      )
+                      || ' L ' || (SELECT x::text FROM svg_points WHERE rn = (SELECT MAX(rn) FROM svg_points))
+                      || ' 40 L ' || (SELECT x::text FROM svg_points WHERE rn = 1)
+                      || ' 40 Z' END
+          FROM svg_points
+        ),
+        'lastPoint', (
+          SELECT json_build_object('x', x, 'y', y)
+          FROM svg_points
+          WHERE rn = (SELECT MAX(rn) FROM svg_points)
+        )
       ) AS result
     `;
     return result;

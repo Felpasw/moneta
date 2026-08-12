@@ -17,15 +17,22 @@ const mockedService = vi.mocked(dashboardService);
 
 const VIEW: DashboardView = {
   summary: {
-    totalBalance: 0,
+    totalBalance: "0.00",
     checkingCount: 0,
-    monthIncome: 0,
-    monthExpense: 0,
-    monthNet: 0,
+    monthIncome: "0.00",
+    monthExpense: "0.00",
+    monthNet: "0.00",
   },
   topCategories: [],
-  monthlyFlow: [],
-  balanceChart: [],
+  monthlyFlow: { rows: [], maxFlow: "0.00" },
+  balanceChart: {
+    points: [],
+    min: "0.00",
+    max: "0.00",
+    linePath: "",
+    areaPath: "",
+    lastPoint: null,
+  },
 };
 
 const createWrapper = () => {

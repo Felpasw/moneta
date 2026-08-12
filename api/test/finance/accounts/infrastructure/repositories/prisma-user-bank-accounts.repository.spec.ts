@@ -317,7 +317,7 @@ describe('PrismaUserBankAccountsRepository', () => {
       return { prisma, $queryRaw };
     };
 
-    it('unwraps the json_build_object result and returns points+min+max with string balances', async () => {
+    it('unwraps the json_build_object result and returns SVG paths + lastPoint precomputed by SQL', async () => {
       const { prisma, $queryRaw } = buildQueryRawPrisma();
       const result = {
         points: [
@@ -326,6 +326,9 @@ describe('PrismaUserBankAccountsRepository', () => {
         ],
         min: '3900.55',
         max: '4000.00',
+        linePath: 'M 0 0 L 100 40',
+        areaPath: 'M 0 0 L 100 40 L 100 40 L 0 40 Z',
+        lastPoint: { x: 100, y: 40 },
       };
       $queryRaw.mockResolvedValue([{ result }]);
       const repo = new PrismaUserBankAccountsRepository(prisma);
@@ -340,10 +343,19 @@ describe('PrismaUserBankAccountsRepository', () => {
       expect($queryRaw).toHaveBeenCalledTimes(1);
     });
 
-    it('emits SQL with numeric ROUND+text casts, no float8, and MIN/MAX aggregates for the chart bounds', async () => {
+    it('emits SQL that precomputes SVG paths via string_agg, no float8', async () => {
       const { prisma, $queryRaw } = buildQueryRawPrisma();
       $queryRaw.mockResolvedValue([
-        { result: { points: [], min: '0.00', max: '0.00' } },
+        {
+          result: {
+            points: [],
+            min: '0.00',
+            max: '0.00',
+            linePath: '',
+            areaPath: '',
+            lastPoint: null,
+          },
+        },
       ]);
       const repo = new PrismaUserBankAccountsRepository(prisma);
       const now = new Date('2026-08-15T12:00:00Z');
@@ -366,14 +378,29 @@ describe('PrismaUserBankAccountsRepository', () => {
       expect(fullSql).toContain('balance::text');
       expect(fullSql).toContain('MIN(');
       expect(fullSql).toContain('MAX(');
+      expect(fullSql).toContain('OVER ()');
+      expect(fullSql).toContain('ROW_NUMBER()');
+      expect(fullSql).toContain('string_agg');
+      expect(fullSql).toContain("'linePath'");
+      expect(fullSql).toContain("'areaPath'");
+      expect(fullSql).toContain("'lastPoint'");
       expect(fullSql).toContain('ROUND(');
       expect(fullSql).not.toContain('::float8');
     });
 
-    it('returns empty points + zero min/max when SQL yields no rows', async () => {
+    it('returns empty points + zero min/max + empty paths when SQL yields no rows', async () => {
       const { prisma, $queryRaw } = buildQueryRawPrisma();
       $queryRaw.mockResolvedValue([
-        { result: { points: [], min: '0.00', max: '0.00' } },
+        {
+          result: {
+            points: [],
+            min: '0.00',
+            max: '0.00',
+            linePath: '',
+            areaPath: '',
+            lastPoint: null,
+          },
+        },
       ]);
       const repo = new PrismaUserBankAccountsRepository(prisma);
 
@@ -383,7 +410,14 @@ describe('PrismaUserBankAccountsRepository', () => {
         days: 30,
       });
 
-      expect(chart).toEqual({ points: [], min: '0.00', max: '0.00' });
+      expect(chart).toEqual({
+        points: [],
+        min: '0.00',
+        max: '0.00',
+        linePath: '',
+        areaPath: '',
+        lastPoint: null,
+      });
     });
   });
 });

@@ -91,12 +91,18 @@ describe('DashboardController', () => {
             icon: null,
             color: null,
             spent: '500.00',
-            share: 0.28,
+            sharePct: 28,
           },
         ],
         monthlyFlow: {
           rows: [
-            { monthKey: '2026-08', income: '3000.00', expense: '1800.00' },
+            {
+              monthKey: '2026-08',
+              income: '3000.00',
+              expense: '1800.00',
+              incomePct: 100,
+              expensePct: 60,
+            },
           ],
           maxFlow: '3000.00',
         },
@@ -104,6 +110,9 @@ describe('DashboardController', () => {
           points: [{ date: '2026-08-15', balance: '4200.00' }],
           min: '4200.00',
           max: '4200.00',
+          linePath: 'M 0 40',
+          areaPath: 'M 0 40 L 0 40 L 0 40 Z',
+          lastPoint: { x: 0, y: 40 },
         },
       };
       mocks.getView.execute.mockResolvedValue(view);

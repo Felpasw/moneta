@@ -1,5 +1,5 @@
-import type { MonthlyFlowPoint } from "@/mocks/finance";
+import type { DashboardMonthlyFlow } from "@/services/interfaces/dashboard.interface";
 
 export interface MonthlyFlowChartProps {
-  data: MonthlyFlowPoint[];
+  data: DashboardMonthlyFlow;
 }

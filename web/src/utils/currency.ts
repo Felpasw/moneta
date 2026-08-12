@@ -20,10 +20,14 @@ const RELATIVE_FORMATTER = new Intl.RelativeTimeFormat("en-US", {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-export const formatBRL = (value: number): string => BRL_FORMATTER.format(value);
+const toNumber = (value: number | string): number =>
+  typeof value === "string" ? parseFloat(value) : value;
 
-export const formatBRLSigned = (value: number): string =>
-  BRL_SIGNED_FORMATTER.format(value);
+export const formatBRL = (value: number | string): string =>
+  BRL_FORMATTER.format(toNumber(value));
+
+export const formatBRLSigned = (value: number | string): string =>
+  BRL_SIGNED_FORMATTER.format(toNumber(value));
 
 export const formatDayMonth = (date: Date): string =>
   DAY_MONTH_FORMATTER.format(date);

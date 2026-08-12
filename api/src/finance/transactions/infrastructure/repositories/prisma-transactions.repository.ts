@@ -376,6 +376,11 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
                ROUND(COALESCE(ms.expense, 0), 2) AS expense
         FROM month_series s
         LEFT JOIN month_sums ms ON ms.month_start = s.month_start
+      ),
+      with_max AS (
+        SELECT month_key, month_start, income, expense,
+               MAX(GREATEST(income, expense)) OVER () AS max_flow
+        FROM series
       )
       SELECT json_build_object(
         'rows', COALESCE((
@@ -383,13 +388,19 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
             json_build_object(
               'monthKey', month_key,
               'income', income::text,
-              'expense', expense::text
+              'expense', expense::text,
+              'incomePct', CASE WHEN max_flow > 0
+                                THEN ROUND((income / max_flow) * 100, 2)::double precision
+                                ELSE 0::double precision END,
+              'expensePct', CASE WHEN max_flow > 0
+                                 THEN ROUND((expense / max_flow) * 100, 2)::double precision
+                                 ELSE 0::double precision END
             ) ORDER BY month_start ASC
           )
-          FROM series
+          FROM with_max
         ), '[]'::json),
         'maxFlow', COALESCE(
-          (SELECT ROUND(MAX(GREATEST(income, expense)), 2)::text FROM series),
+          (SELECT ROUND(MAX(max_flow), 2)::text FROM with_max),
           '0.00'
         )
       ) AS result

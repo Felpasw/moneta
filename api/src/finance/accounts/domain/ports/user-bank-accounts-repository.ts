@@ -42,10 +42,18 @@ export interface BalanceChartPoint {
   balance: string;
 }
 
+export interface BalanceChartLastPoint {
+  x: number;
+  y: number;
+}
+
 export interface BalanceChartResult {
   points: BalanceChartPoint[];
   min: string;
   max: string;
+  linePath: string;
+  areaPath: string;
+  lastPoint: BalanceChartLastPoint | null;
 }
 
 export interface GetBalanceChartInput {

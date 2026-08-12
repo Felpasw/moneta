@@ -1,7 +1,14 @@
 import { GetDashboardViewUseCase } from '~/dashboard/application/use-cases/get-dashboard-view.use-case';
 
 const emptyFlow = { rows: [], maxFlow: '0.00' };
-const emptyChart = { points: [], min: '0.00', max: '0.00' };
+const emptyChart = {
+  points: [],
+  min: '0.00',
+  max: '0.00',
+  linePath: '',
+  areaPath: '',
+  lastPoint: null,
+};
 
 const buildUseCase = () => {
   const listAccounts = { execute: jest.fn() };
@@ -76,7 +83,7 @@ describe('GetDashboardViewUseCase', () => {
     });
   });
 
-  it('returns balanceChart straight from the repo (points+min+max)', async () => {
+  it('returns balanceChart straight from the repo (points with precomputed y + min/max)', async () => {
     const { useCase, listAccounts, listTransactions, getBalanceChart, clock } =
       buildUseCase();
     clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
@@ -89,6 +96,9 @@ describe('GetDashboardViewUseCase', () => {
       ],
       min: '3900.55',
       max: '4000.00',
+      linePath: 'M 0 0 L 100 40',
+      areaPath: 'M 0 0 L 100 40 L 100 40 L 0 40 Z',
+      lastPoint: { x: 100, y: 40 },
     };
     getBalanceChart.execute.mockResolvedValue(chart);
 
@@ -122,8 +132,20 @@ describe('GetDashboardViewUseCase', () => {
     listTransactions.execute.mockResolvedValue(emptyTransactionsResult);
     const flow = {
       rows: [
-        { monthKey: '2026-03', income: '3000.00', expense: '1200.00' },
-        { monthKey: '2026-04', income: '3200.55', expense: '900.10' },
+        {
+          monthKey: '2026-03',
+          income: '3000.00',
+          expense: '1200.00',
+          incomePct: 93.73,
+          expensePct: 37.49,
+        },
+        {
+          monthKey: '2026-04',
+          income: '3200.55',
+          expense: '900.10',
+          incomePct: 100,
+          expensePct: 28.12,
+        },
       ],
       maxFlow: '3200.55',
     };
@@ -151,7 +173,7 @@ describe('GetDashboardViewUseCase', () => {
     });
   });
 
-  it('returns topCategories straight from the repo (share number, spent string precomputed in SQL)', async () => {
+  it('returns topCategories straight from the repo (sharePct 0..100, spent string precomputed in SQL)', async () => {
     const { useCase, listAccounts, listTransactions, getTopCategories, clock } =
       buildUseCase();
     clock.now.mockReturnValue(new Date('2026-08-15T12:00:00Z'));
@@ -167,7 +189,7 @@ describe('GetDashboardViewUseCase', () => {
         icon: '🍔',
         color: '#f00',
         spent: '400.00',
-        share: 0.4,
+        sharePct: 40,
       },
       {
         id: 'c-2',
@@ -175,7 +197,7 @@ describe('GetDashboardViewUseCase', () => {
         icon: null,
         color: null,
         spent: '250.00',
-        share: 0.25,
+        sharePct: 25,
       },
     ];
     getTopCategories.execute.mockResolvedValue(topRows);

@@ -38,7 +38,7 @@ export interface TopSpentCategory {
   icon: string | null;
   color: string | null;
   spent: string;
-  share: number;
+  sharePct: number;
 }
 
 export interface GetTopSpentInMonthInput {

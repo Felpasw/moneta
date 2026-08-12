@@ -965,12 +965,24 @@ describe('PrismaTransactionsRepository', () => {
       return { prisma, $queryRaw };
     };
 
-    it('unwraps the json_build_object result from $queryRaw and returns rows+maxFlow with string amounts', async () => {
+    it('unwraps the json_build_object result and returns rows with incomePct/expensePct precomputed by SQL', async () => {
       const { prisma, $queryRaw } = buildQueryRawPrisma();
       const result = {
         rows: [
-          { monthKey: '2026-03', income: '3000.00', expense: '1200.55' },
-          { monthKey: '2026-04', income: '3200.10', expense: '900.00' },
+          {
+            monthKey: '2026-03',
+            income: '3000.00',
+            expense: '1200.55',
+            incomePct: 93.75,
+            expensePct: 37.52,
+          },
+          {
+            monthKey: '2026-04',
+            income: '3200.10',
+            expense: '900.00',
+            incomePct: 100,
+            expensePct: 28.12,
+          },
         ],
         maxFlow: '3200.10',
       };
@@ -987,7 +999,7 @@ describe('PrismaTransactionsRepository', () => {
       expect($queryRaw).toHaveBeenCalledTimes(1);
     });
 
-    it('emits SQL with numeric ROUND+text casts, no float8, and window MAX(GREATEST) for maxFlow', async () => {
+    it('emits SQL that precomputes incomePct/expensePct via window MAX(GREATEST), no float8, text casts on monetary fields', async () => {
       const { prisma, $queryRaw } = buildQueryRawPrisma();
       $queryRaw.mockResolvedValue([{ result: { rows: [], maxFlow: '0.00' } }]);
       const repo = new PrismaTransactionsRepository(prisma);
@@ -1011,6 +1023,9 @@ describe('PrismaTransactionsRepository', () => {
       expect(fullSql).toContain('income::text');
       expect(fullSql).toContain('expense::text');
       expect(fullSql).toContain('MAX(GREATEST(');
+      expect(fullSql).toContain('OVER ()');
+      expect(fullSql).toContain('incomePct');
+      expect(fullSql).toContain('expensePct');
       expect(fullSql).toContain('ROUND(');
       expect(fullSql).not.toContain('::float8');
     });

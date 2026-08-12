@@ -1,9 +1,9 @@
 export interface DashboardSummary {
-  totalBalance: number;
+  totalBalance: string;
   checkingCount: number;
-  monthIncome: number;
-  monthExpense: number;
-  monthNet: number;
+  monthIncome: string;
+  monthExpense: string;
+  monthNet: string;
 }
 
 export interface DashboardTopCategory {
@@ -11,26 +11,47 @@ export interface DashboardTopCategory {
   name: string;
   icon: string | null;
   color: string | null;
-  spent: number;
-  share: number;
+  spent: string;
+  sharePct: number;
 }
 
 export interface DashboardMonthlyFlowRow {
   monthKey: string;
-  income: number;
-  expense: number;
+  income: string;
+  expense: string;
+  incomePct: number;
+  expensePct: number;
+}
+
+export interface DashboardMonthlyFlow {
+  rows: DashboardMonthlyFlowRow[];
+  maxFlow: string;
 }
 
 export interface DashboardBalancePoint {
   date: string;
-  balance: number;
+  balance: string;
+}
+
+export interface DashboardBalanceChartLastPoint {
+  x: number;
+  y: number;
+}
+
+export interface DashboardBalanceChart {
+  points: DashboardBalancePoint[];
+  min: string;
+  max: string;
+  linePath: string;
+  areaPath: string;
+  lastPoint: DashboardBalanceChartLastPoint | null;
 }
 
 export interface DashboardView {
   summary: DashboardSummary;
   topCategories: DashboardTopCategory[];
-  monthlyFlow: DashboardMonthlyFlowRow[];
-  balanceChart: DashboardBalancePoint[];
+  monthlyFlow: DashboardMonthlyFlow;
+  balanceChart: DashboardBalanceChart;
 }
 
 export interface IDashboardService {

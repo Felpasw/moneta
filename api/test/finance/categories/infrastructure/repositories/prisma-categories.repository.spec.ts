@@ -290,7 +290,7 @@ describe('PrismaCategoriesRepository', () => {
   });
 
   describe('getTopSpentInMonth', () => {
-    it('returns the raw rows straight from $queryRaw with SQL ordering, share and limit, spent as string', async () => {
+    it('returns the raw rows with sharePct (0..100) precomputed in SQL and spent as string', async () => {
       const { prisma, mock } = buildPrisma();
       const raw = [
         {
@@ -299,7 +299,7 @@ describe('PrismaCategoriesRepository', () => {
           icon: '🍔',
           color: '#f00',
           spent: '400.00',
-          share: 0.4,
+          sharePct: 40,
         },
         {
           id: 'c-2',
@@ -307,7 +307,7 @@ describe('PrismaCategoriesRepository', () => {
           icon: null,
           color: null,
           spent: '150.55',
-          share: 0.15,
+          sharePct: 15,
         },
       ];
       mock.$queryRaw.mockResolvedValue(raw);
@@ -324,7 +324,7 @@ describe('PrismaCategoriesRepository', () => {
       expect(mock.$queryRaw).toHaveBeenCalledTimes(1);
     });
 
-    it('emits SQL with numeric ROUND+text casts, no float8, and preserves share as ratio number', async () => {
+    it('emits SQL that precomputes sharePct (0..100) with ROUND+text on spent, no float8', async () => {
       const { prisma, mock } = buildPrisma();
       mock.$queryRaw.mockResolvedValue([]);
       const repo = new PrismaCategoriesRepository(prisma);
@@ -353,12 +353,13 @@ describe('PrismaCategoriesRepository', () => {
       expect(fullSql).toContain('WITH month_total AS');
       expect(fullSql).toContain('FROM transactions t');
       expect(fullSql).toContain('INNER JOIN categories c');
-      expect(fullSql).toContain('AS share');
+      expect(fullSql).toContain('sharePct');
       expect(fullSql).toContain('ORDER BY spent DESC');
       expect(fullSql).toContain('LIMIT');
       expect(fullSql).toContain('ROUND(');
       expect(fullSql).toContain('::text');
       expect(fullSql).not.toContain('::float8');
+      expect(fullSql).not.toContain('AS share ');
     });
 
     it('returns empty list when SQL yields no rows', async () => {

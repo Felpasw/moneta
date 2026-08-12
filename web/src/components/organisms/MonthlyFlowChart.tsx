@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 
 import type { MonthlyFlowChartProps } from "@/components/organisms/interfaces/MonthlyFlowChart.interface";
+import { formatMonthLabel } from "@/utils/monthLabel";
 
 const BAR_EASE = [0.16, 1, 0.3, 1] as const;
 const BAR_DURATION = 0.6;
@@ -12,9 +13,9 @@ export function MonthlyFlowChart({ data }: MonthlyFlowChartProps) {
   return (
     <div>
       <div className="flex h-40 items-end gap-3">
-        {data.map((d, i) => (
+        {data.rows.map((d, i) => (
           <div
-            key={d.id}
+            key={d.monthKey}
             className="flex flex-1 flex-col items-center gap-2"
           >
             <div className="flex w-full flex-1 items-end justify-center gap-1">
@@ -40,7 +41,7 @@ export function MonthlyFlowChart({ data }: MonthlyFlowChartProps) {
               />
             </div>
             <p className="text-[10px] font-medium uppercase tracking-wide opacity-60">
-              {d.monthLabel}
+              {formatMonthLabel(d.monthKey)}
             </p>
           </div>
         ))}

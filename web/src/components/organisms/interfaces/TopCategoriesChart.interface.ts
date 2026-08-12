@@ -1,5 +1,5 @@
-import type { TopCategoryShare } from "@/mocks/finance";
+import type { DashboardTopCategory } from "@/services/interfaces/dashboard.interface";
 
 export interface TopCategoriesChartProps {
-  data: TopCategoryShare[];
+  data: DashboardTopCategory[];
 }

@@ -88,6 +88,8 @@ export interface MonthlyFlowRow {
   monthKey: string;
   income: string;
   expense: string;
+  incomePct: number;
+  expensePct: number;
 }
 
 export interface MonthlyFlowResult {

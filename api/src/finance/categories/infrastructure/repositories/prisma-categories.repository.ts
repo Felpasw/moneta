@@ -120,9 +120,9 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
       SELECT c.id, c.name, c.icon, c.color,
              ROUND(SUM(t.amount), 2)::text AS spent,
              CASE WHEN (SELECT total FROM month_total) > 0
-                  THEN (SUM(t.amount) / (SELECT total FROM month_total))::double precision
+                  THEN ROUND((SUM(t.amount) / (SELECT total FROM month_total)) * 100, 2)::double precision
                   ELSE 0::double precision
-             END AS share
+             END AS "sharePct"
       FROM transactions t
       INNER JOIN categories c ON c.id = t.category_id
       WHERE t.user_id = ${input.userId}::uuid
