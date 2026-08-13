@@ -34,10 +34,15 @@ export class CreditCardCycleService {
     );
     if (existing) return existing;
 
-    const status =
-      cycleStart.getTime() > this.clock.now().getTime()
-        ? InvoiceStatus.Scheduled
-        : InvoiceStatus.Open;
+    const nowMs = this.clock.now().getTime();
+    let status: InvoiceStatus;
+    if (cycleEnd.getTime() < nowMs) {
+      status = InvoiceStatus.Closed;
+    } else if (cycleStart.getTime() > nowMs) {
+      status = InvoiceStatus.Scheduled;
+    } else {
+      status = InvoiceStatus.Open;
+    }
 
     return this.invoices.create({
       accountId: input.accountId,
