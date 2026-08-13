@@ -1,11 +1,9 @@
 import {
   AgentSessionStatus,
+  AgentSocketEvent,
   MIC_PROCESSOR_BUFFER_SIZE,
   REALTIME_TARGET_SAMPLE_RATE,
-  SYSTEM_EVENT,
-  TOOL_EVENT,
   ToolEventKind,
-  TTS_EVENT,
 } from "@/hooks/constants/useAgentSession.constants";
 import type {
   InitialSessionState,
@@ -53,12 +51,12 @@ export function makeTtsDispatcher(
   handlers: TtsHandlers,
 ): (raw: unknown) => void {
   const routes: Record<string, (env: TtsEnvelope) => void> = {
-    [TTS_EVENT.delta]: (env) => {
+    [AgentSocketEvent.TtsAudioDelta]: (env) => {
       if (env.audio) handlers.onDelta(base64ToUint8Array(env.audio));
     },
-    [TTS_EVENT.done]: () => handlers.onDone(),
-    [TTS_EVENT.canceled]: () => handlers.onCanceled(),
-    [TTS_EVENT.error]: () => handlers.onError(),
+    [AgentSocketEvent.TtsAudioDone]: () => handlers.onDone(),
+    [AgentSocketEvent.TtsAudioCanceled]: () => handlers.onCanceled(),
+    [AgentSocketEvent.TtsAudioError]: () => handlers.onError(),
   };
   return (raw: unknown) => {
     if (typeof raw !== "string") return;
@@ -77,9 +75,9 @@ export function makeTtsDispatcher(
 // -----------------------------------------------------------------------------
 
 const TOOL_KIND_BY_TYPE: Record<string, ToolEventKind> = {
-  [TOOL_EVENT.pending]: ToolEventKind.Pending,
-  [TOOL_EVENT.result]: ToolEventKind.Result,
-  [TOOL_EVENT.error]: ToolEventKind.Error,
+  [AgentSocketEvent.ToolPending]: ToolEventKind.Pending,
+  [AgentSocketEvent.ToolResult]: ToolEventKind.Result,
+  [AgentSocketEvent.ToolError]: ToolEventKind.Error,
 };
 
 export function makeToolDispatcher(
@@ -102,6 +100,7 @@ export function makeToolDispatcher(
       args: envelope.args,
       result: envelope.result,
       message: envelope.message,
+      caption: envelope.caption,
     });
   };
 }
@@ -114,7 +113,7 @@ export function makeSystemDispatcher(
   handlers: SystemHandlers,
 ): (raw: unknown) => void {
   const routes: Record<string, (env: SystemEnvelope) => void> = {
-    [SYSTEM_EVENT.redirect]: (env) => {
+    [AgentSocketEvent.SystemRedirect]: (env) => {
       if (env.target) handlers.onRedirect(env.target);
     },
   };

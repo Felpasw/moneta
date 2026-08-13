@@ -1,11 +1,17 @@
 import type {
   AgentSessionStatus,
   MicState,
+  ToolCaptionKey,
   ToolEventKind,
 } from "@/hooks/constants/useAgentSession.constants";
 
 export interface UseAgentSessionOptions {
   enabled: boolean;
+}
+
+export interface ToolCaption {
+  key: ToolCaptionKey;
+  params: Record<string, unknown>;
 }
 
 export interface ToolEvent {
@@ -15,6 +21,7 @@ export interface ToolEvent {
   args?: Record<string, unknown>;
   result?: unknown;
   message?: string;
+  caption?: ToolCaption;
 }
 
 export interface ToolEnvelope {
@@ -24,6 +31,7 @@ export interface ToolEnvelope {
   args?: Record<string, unknown>;
   result?: unknown;
   message?: string;
+  caption?: ToolCaption;
 }
 
 export interface UseAgentSessionResult {

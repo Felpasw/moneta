@@ -14,22 +14,28 @@ export enum MicState {
   Error = "error",
 }
 
-export const TTS_EVENT = {
-  delta: "tts.audio.delta",
-  done: "tts.audio.done",
-  canceled: "tts.audio.canceled",
-  error: "tts.audio.error",
-} as const;
+export enum AgentSocketEvent {
+  ToolPending = "tool.pending",
+  ToolResult = "tool.result",
+  ToolError = "tool.error",
+  SystemRedirect = "system.redirect",
+  TtsAudioDelta = "tts.audio.delta",
+  TtsAudioDone = "tts.audio.done",
+  TtsAudioCanceled = "tts.audio.canceled",
+  TtsAudioError = "tts.audio.error",
+}
 
-export const TOOL_EVENT = {
-  pending: "tool.pending",
-  result: "tool.result",
-  error: "tool.error",
-} as const;
-
-export const SYSTEM_EVENT = {
-  redirect: "system.redirect",
-} as const;
+export enum ToolCaptionKey {
+  InstallmentPurchaseRegistering = "installment_purchase.registering",
+  TransactionRegistering = "transaction.registering",
+  TransactionsRegistering = "transactions.registering",
+  CreditPurchaseRegistering = "credit_purchase.registering",
+  CreditPurchasesRegistering = "credit_purchases.registering",
+  TransferRegistering = "transfer.registering",
+  InvoicePaying = "invoice.paying",
+  InvoiceMarkingPaid = "invoice.marking_paid",
+  InstallmentPurchaseCanceling = "installment_purchase.canceling",
+}
 
 export enum ToolEventKind {
   Pending = "pending",
