@@ -6,6 +6,23 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.11.1](https://github.com/Felpasw/moneta/compare/api-v0.11.0...api-v0.11.1) (2026-08-13)
+
+
+### 🐛 Correções
+
+* **agent/tools:** forbid parcelamento/credit routing into debit tools [MNT-233] ([705eb3c](https://github.com/Felpasw/moneta/commit/705eb3c8a7740efb4073043b4db76bcf06e30591))
+* **agent/tools:** update_bank_account playbook forbids null-by-default [MNT-223] ([534c13b](https://github.com/Felpasw/moneta/commit/534c13b3d16a8c5c8fcabff146207bf4762ac51e))
+* **card-billing:** create retroactive invoices as CLOSED not OPEN [MNT-232] ([6e8b699](https://github.com/Felpasw/moneta/commit/6e8b69958f7bd89fb552122499fc5fb9db954cce))
+* **card-billing:** sequential installment invoice resolution + scheduled status [MNT-226] ([1b838c3](https://github.com/Felpasw/moneta/commit/1b838c3d58e04ac38e2d77fe3f230f81bf70bd91))
+* **finance/accounts:** totalBalance sums all accounts (including credit cards) [MNT-225] ([7c934d7](https://github.com/Felpasw/moneta/commit/7c934d7e77df84dc546176e6ff3528cb1f741286))
+* **finance/transactions:** reject income on credit card accounts [MNT-227] ([cabb86b](https://github.com/Felpasw/moneta/commit/cabb86be975c378b18f05e2fa993411e732d66eb))
+
+
+### 🔨 Refactoring
+
+* **finance/transactions:** split debit vs credit purchases into dedicated tools [MNT-230] ([1cd78d0](https://github.com/Felpasw/moneta/commit/1cd78d033c434a36caa157879872aad112de3358))
+
 ## [0.11.0](https://github.com/Felpasw/moneta/compare/api-v0.10.0...api-v0.11.0) (2026-08-12)
 
 

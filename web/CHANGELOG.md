@@ -6,6 +6,19 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.8.0](https://github.com/Felpasw/moneta/compare/web-v0.7.0...web-v0.8.0) (2026-08-13)
+
+
+### ✨ Features
+
+* **web/banks:** show cash balance on CreditAccountCard [MNT-224] ([aa09ef1](https://github.com/Felpasw/moneta/commit/aa09ef16a0d9deb7f9f12bdcd96a94c08f1fa637))
+* **web/transactions:** show bank icon badge on transaction rows [MNT-231] ([906ac61](https://github.com/Felpasw/moneta/commit/906ac61f7d3fe17db14645c6829e2210ac3f2e34))
+
+
+### 🐛 Correções
+
+* **finance/accounts:** totalBalance sums all accounts (including credit cards) [MNT-225] ([7c934d7](https://github.com/Felpasw/moneta/commit/7c934d7e77df84dc546176e6ff3528cb1f741286))
+
 ## [0.7.0](https://github.com/Felpasw/moneta/compare/web-v0.6.1...web-v0.7.0) (2026-08-12)
 
 
