@@ -4,6 +4,7 @@ import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { motion } from "motion/react";
 import { Fragment } from "react";
 
+import { BankIcon } from "@/components/atoms/BankIcon";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import transactionsHooks from "@/hooks/useTransactions";
 import type { TransactionWithEmbeds } from "@/services/interfaces/transactions.interface";
@@ -105,8 +106,15 @@ function TransactionRow({ tx, index }: TransactionRowProps) {
       transition={{ ...ROW_TRANSITION, delay: index * 0.02 }}
       className="flex items-center gap-3 rounded-2xl bg-neutral-900 px-4 py-3 text-neutral-50"
     >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
+      <div className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
         <DirectionIcon aria-hidden className="h-4 w-4" />
+        <div className="absolute -bottom-1 -right-1 rounded-full bg-neutral-900 p-0.5 ring-1 ring-white/10">
+          <BankIcon
+            bankName={tx.account.bankName}
+            size={14}
+            className="rounded-full"
+          />
+        </div>
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">

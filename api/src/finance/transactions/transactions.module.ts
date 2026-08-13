@@ -3,6 +3,8 @@ import { Module } from '@nestjs/common';
 import { AccountsModule } from '../accounts/accounts.module';
 import { AuthModule } from '../../auth/auth.module';
 import { CardBillingModule } from '../card-billing/card-billing.module';
+import { AddCreditPurchaseUseCase } from './application/use-cases/add-credit-purchase.use-case';
+import { AddManyCreditPurchasesUseCase } from './application/use-cases/add-many-credit-purchases.use-case';
 import { AddManyTransactionsUseCase } from './application/use-cases/add-many-transactions.use-case';
 import { AddTransactionUseCase } from './application/use-cases/add-transaction.use-case';
 import { DeleteTransactionUseCase } from './application/use-cases/delete-transaction.use-case';
@@ -25,6 +27,8 @@ import { TransactionsController } from './transactions.controller';
     ListTransactionsUseCase,
     AddTransactionUseCase,
     AddManyTransactionsUseCase,
+    AddCreditPurchaseUseCase,
+    AddManyCreditPurchasesUseCase,
     EditTransactionUseCase,
     EditManyTransactionsUseCase,
     DeleteTransactionUseCase,
@@ -34,6 +38,8 @@ import { TransactionsController } from './transactions.controller';
     ListTransactionsUseCase,
     AddTransactionUseCase,
     AddManyTransactionsUseCase,
+    AddCreditPurchaseUseCase,
+    AddManyCreditPurchasesUseCase,
     EditTransactionUseCase,
     EditManyTransactionsUseCase,
     DeleteTransactionUseCase,

@@ -3,12 +3,12 @@ import { AddManyTransactionsUseCase } from '~/finance/transactions/application/u
 import { TransactionType } from '~/finance/transactions/domain/constants/transaction-type';
 
 const USER_ID = 'user-1';
-const CARD_ID = 'card-1';
+const HYBRID_ID = 'hybrid-1';
 const DEBIT_ID = 'debit-1';
 const OCCURRED = new Date('2026-07-15T12:00:00Z');
 
-const cardAccount = {
-  id: CARD_ID,
+const hybridAccount = {
+  id: HYBRID_ID,
   userId: USER_ID,
   bankId: 'b-1',
   nickname: 'Nubank',
@@ -34,28 +34,25 @@ const debitAccount = {
 const buildUseCase = () => {
   const transactions = { addMany: jest.fn() };
   const getAccount = { execute: jest.fn() };
-  const cycle = { resolveInvoiceForDate: jest.fn() };
   const useCase = new AddManyTransactionsUseCase(
     transactions as never,
     getAccount as never,
-    cycle as never,
   );
-  return { useCase, transactions, getAccount, cycle };
+  return { useCase, transactions, getAccount };
 };
 
-describe('AddManyTransactionsUseCase', () => {
-  it('resolves invoice per-item and forwards the enriched batch to the repo', async () => {
-    const { useCase, transactions, getAccount, cycle } = buildUseCase();
+describe('AddManyTransactionsUseCase (debit-only)', () => {
+  it('validates every referenced account exists and forwards the batch as-is', async () => {
+    const { useCase, transactions, getAccount } = buildUseCase();
     getAccount.execute.mockImplementation(({ id }: { id: string }) =>
-      Promise.resolve(id === CARD_ID ? cardAccount : debitAccount),
+      Promise.resolve(id === HYBRID_ID ? hybridAccount : debitAccount),
     );
-    cycle.resolveInvoiceForDate.mockResolvedValue({ id: 'inv-1' });
     transactions.addMany.mockResolvedValue([{ id: 't-1' }, { id: 't-2' }]);
 
     const inputs = [
       {
         userId: USER_ID,
-        accountId: CARD_ID,
+        accountId: HYBRID_ID,
         type: TransactionType.Expense,
         amount: 50,
         occurredAt: OCCURRED,
@@ -71,11 +68,33 @@ describe('AddManyTransactionsUseCase', () => {
 
     await useCase.execute(inputs);
 
-    expect(cycle.resolveInvoiceForDate).toHaveBeenCalledTimes(1);
-    expect(transactions.addMany).toHaveBeenCalledWith([
-      { ...inputs[0], invoiceId: 'inv-1' },
-      inputs[1],
+    // MNT-230: no invoice resolution, no invoiceId enrichment; batch forwarded as-is.
+    expect(transactions.addMany).toHaveBeenCalledWith(inputs);
+  });
+
+  it('caches account lookups by accountId across the batch', async () => {
+    const { useCase, transactions, getAccount } = buildUseCase();
+    getAccount.execute.mockResolvedValue(debitAccount);
+    transactions.addMany.mockResolvedValue([]);
+
+    await useCase.execute([
+      {
+        userId: USER_ID,
+        accountId: DEBIT_ID,
+        type: TransactionType.Expense,
+        amount: 10,
+        occurredAt: OCCURRED,
+      },
+      {
+        userId: USER_ID,
+        accountId: DEBIT_ID,
+        type: TransactionType.Expense,
+        amount: 20,
+        occurredAt: OCCURRED,
+      },
     ]);
+
+    expect(getAccount.execute).toHaveBeenCalledTimes(1);
   });
 
   it('throws AccountNotFoundError as soon as any item points to a missing account', async () => {

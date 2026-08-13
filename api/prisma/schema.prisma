@@ -170,6 +170,7 @@ enum TransactionType {
 }
 
 enum InvoiceStatus {
+  scheduled
   open
   closed
   paid

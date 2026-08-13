@@ -20,6 +20,7 @@ export interface CreateInvoiceInput {
   cycleStart: Date;
   cycleEnd: Date;
   dueDate: Date;
+  status: InvoiceStatus;
 }
 
 export interface InvoicesRepository {

@@ -14,6 +14,7 @@ interface MockTx {
     delete: jest.Mock;
   };
   userBankAccount: {
+    findFirst: jest.Mock;
     updateMany: jest.Mock;
   };
   creditCardInvoice: {
@@ -30,6 +31,7 @@ const buildPrisma = (): { prisma: PrismaService; tx: MockTx } => {
       delete: jest.fn(),
     },
     userBankAccount: {
+      findFirst: jest.fn(),
       updateMany: jest.fn(),
     },
     creditCardInvoice: {
@@ -113,9 +115,9 @@ describe('PrismaTransactionsRepository', () => {
       });
     });
 
-    it('sets invoice_id and increments invoice.total_amount when invoiceId is provided (card expense)', async () => {
+    it('credit path (invoiceId set): increments invoice.total_amount and DOES NOT touch balance', async () => {
       const { prisma, tx } = buildPrisma();
-      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+      tx.userBankAccount.findFirst.mockResolvedValue({ id: ACCOUNT_A });
       tx.creditCardInvoice.updateMany.mockResolvedValue({ count: 1 });
       tx.transaction.create.mockResolvedValue({
         id: TRANSACTION_ID,
@@ -143,11 +145,30 @@ describe('PrismaTransactionsRepository', () => {
         { data: Record<string, unknown> },
       ];
       expect(createArg.data.invoiceId).toBe('inv-1');
-      // expense of 100 → invoice.total_amount increments by +100 (what user owes)
       expect(tx.creditCardInvoice.updateMany).toHaveBeenCalledWith({
         where: { id: 'inv-1' },
         data: { totalAmount: { increment: 100 } },
       });
+      expect(tx.userBankAccount.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('credit path: throws AccountNotFoundError when the account is not owned', async () => {
+      const { prisma, tx } = buildPrisma();
+      tx.userBankAccount.findFirst.mockResolvedValue(null);
+      const repo = new PrismaTransactionsRepository(prisma);
+
+      await expect(
+        repo.add({
+          userId: CURRENT_USER,
+          accountId: 'foreign-account',
+          type: TransactionType.Expense,
+          amount: 100,
+          occurredAt: new Date(),
+          invoiceId: 'inv-1',
+        }),
+      ).rejects.toBeInstanceOf(AccountNotFoundError);
+      expect(tx.transaction.create).not.toHaveBeenCalled();
+      expect(tx.creditCardInvoice.updateMany).not.toHaveBeenCalled();
     });
 
     it('does not touch invoices when invoiceId is absent (debit expense)', async () => {
@@ -203,6 +224,7 @@ describe('PrismaTransactionsRepository', () => {
         accountId: ACCOUNT_A,
         type: TransactionType.Expense,
         amount: decimal(40),
+        invoiceId: null,
       });
       tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
       tx.transaction.update.mockResolvedValue({
@@ -237,6 +259,7 @@ describe('PrismaTransactionsRepository', () => {
         accountId: ACCOUNT_A,
         type: TransactionType.Expense,
         amount: decimal(40),
+        invoiceId: null,
       });
       tx.transaction.update.mockResolvedValue({
         id: TRANSACTION_ID,
@@ -266,6 +289,7 @@ describe('PrismaTransactionsRepository', () => {
         accountId: ACCOUNT_A,
         type: TransactionType.Expense,
         amount: decimal(30),
+        invoiceId: null,
       });
       tx.userBankAccount.updateMany
         .mockResolvedValueOnce({ count: 1 })
@@ -317,6 +341,7 @@ describe('PrismaTransactionsRepository', () => {
         accountId: ACCOUNT_A,
         type: TransactionType.Expense,
         amount: decimal(30),
+        invoiceId: null,
       });
       tx.userBankAccount.updateMany
         .mockResolvedValueOnce({ count: 1 })
@@ -459,9 +484,8 @@ describe('PrismaTransactionsRepository', () => {
           amount: decimal(35),
           invoiceId: null,
         });
-        tx.userBankAccount.updateMany
-          .mockResolvedValueOnce({ count: 1 })
-          .mockResolvedValueOnce({ count: 1 });
+        tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
+        tx.userBankAccount.findFirst.mockResolvedValue({ id: ACCOUNT_B });
         tx.creditCardInvoice.updateMany.mockResolvedValue({ count: 1 });
         tx.transaction.update.mockResolvedValue({
           id: TRANSACTION_ID,
@@ -525,12 +549,13 @@ describe('PrismaTransactionsRepository', () => {
   });
 
   describe('delete', () => {
-    it('reverses the balance effect and deletes the transaction', async () => {
+    it('debit path (no invoiceId): reverses the balance effect and deletes the transaction', async () => {
       const { prisma, tx } = buildPrisma();
       tx.transaction.findFirst.mockResolvedValue({
         accountId: ACCOUNT_A,
         type: TransactionType.Income,
         amount: decimal(75),
+        invoiceId: null,
       });
       tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
       const repo = new PrismaTransactionsRepository(prisma);
@@ -545,6 +570,7 @@ describe('PrismaTransactionsRepository', () => {
       expect(tx.transaction.delete).toHaveBeenCalledWith({
         where: { id: TRANSACTION_ID },
       });
+      expect(tx.creditCardInvoice.updateMany).not.toHaveBeenCalled();
     });
 
     it('throws TransactionNotFoundError when the transaction is missing', async () => {
@@ -557,7 +583,7 @@ describe('PrismaTransactionsRepository', () => {
       );
     });
 
-    it('reverses invoice.total_amount when the transaction had an invoice_id', async () => {
+    it('credit path: reverses invoice.total_amount and DOES NOT touch balance', async () => {
       const { prisma, tx } = buildPrisma();
       tx.transaction.findFirst.mockResolvedValue({
         accountId: ACCOUNT_A,
@@ -565,17 +591,16 @@ describe('PrismaTransactionsRepository', () => {
         amount: decimal(120),
         invoiceId: 'inv-1',
       });
-      tx.userBankAccount.updateMany.mockResolvedValue({ count: 1 });
       tx.creditCardInvoice.updateMany.mockResolvedValue({ count: 1 });
       const repo = new PrismaTransactionsRepository(prisma);
 
       await repo.delete(TRANSACTION_ID, CURRENT_USER);
 
-      // expense of 120 had added +120 to invoice; delete subtracts -120
       expect(tx.creditCardInvoice.updateMany).toHaveBeenCalledWith({
         where: { id: 'inv-1' },
         data: { totalAmount: { increment: -120 } },
       });
+      expect(tx.userBankAccount.updateMany).not.toHaveBeenCalled();
     });
 
     it('does not touch invoices when the transaction had no invoice_id (debit)', async () => {

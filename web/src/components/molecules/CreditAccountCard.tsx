@@ -18,6 +18,7 @@ const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {
 const USAGE_EASE = [0.16, 1, 0.3, 1] as const;
 
 export function CreditAccountCard({ account }: CreditAccountCardProps) {
+  const hasCashBalance = Number(account.balance) > 0;
   return (
     <motion.article
       variants={SETTINGS_STAGGER_ITEM}
@@ -41,17 +42,31 @@ export function CreditAccountCard({ account }: CreditAccountCardProps) {
           )}
         </div>
 
-        <div className="mt-6">
-          <p className="text-xs uppercase tracking-wide opacity-60">
-            {account.currentInvoice !== null
-              ? "Current statement"
-              : "Credit limit"}
-          </p>
-          <p className="mt-1 font-heading text-2xl font-semibold">
-            {formatBRL(
-              account.currentInvoice?.totalAmount ?? account.creditLimit ?? 0,
-            )}
-          </p>
+        <div
+          className={`mt-6 grid gap-4 ${hasCashBalance ? "grid-cols-2" : "grid-cols-1"}`}
+        >
+          <div>
+            <p className="text-xs uppercase tracking-wide opacity-60">
+              {account.currentInvoice !== null
+                ? "Current statement"
+                : "Credit limit"}
+            </p>
+            <p className="mt-1 font-heading text-2xl font-semibold">
+              {formatBRL(
+                account.currentInvoice?.totalAmount ?? account.creditLimit ?? 0,
+              )}
+            </p>
+          </div>
+          {hasCashBalance && (
+            <div>
+              <p className="text-xs uppercase tracking-wide opacity-60">
+                Cash balance
+              </p>
+              <p className="mt-1 font-heading text-2xl font-semibold">
+                {formatBRL(account.balance)}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

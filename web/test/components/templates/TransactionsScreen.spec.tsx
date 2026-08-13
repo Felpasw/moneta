@@ -102,6 +102,18 @@ describe("<TransactionsScreen />", () => {
     expect(screen.getByText(/uncategorized.*main/i)).toBeInTheDocument();
   });
 
+  it("renderiza o BankIcon (aria-label do banco) ao lado do ícone de direção de cada transação", async () => {
+    renderScreen(POPULATED);
+
+    await waitFor(() =>
+      expect(screen.getByText("Weekly groceries")).toBeInTheDocument(),
+    );
+
+    // Duas transações do Nubank ⇒ 2 ícones do banco identificados por aria-label
+    const bankIcons = screen.getAllByRole("img", { name: /nubank/i });
+    expect(bankIcons.length).toBeGreaterThanOrEqual(2);
+  });
+
   it("renderiza summary vindo direto do backend (sem soma no cliente)", async () => {
     renderScreen(POPULATED);
 

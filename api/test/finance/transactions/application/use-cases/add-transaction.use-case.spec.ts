@@ -18,14 +18,10 @@ const debitAccount = {
   dueDay: null,
 };
 
-const cardAccount = {
-  id: ACCOUNT_ID,
-  userId: USER_ID,
-  bankId: 'b-1',
+const hybridAccount = {
+  ...debitAccount,
   nickname: 'Nubank',
-  balance: 0,
   creditLimit: 5000,
-  overdraftLimit: null,
   closeDay: 10,
   dueDay: 20,
 };
@@ -33,13 +29,11 @@ const cardAccount = {
 const buildUseCase = () => {
   const transactions = { add: jest.fn() };
   const getAccount = { execute: jest.fn() };
-  const cycle = { resolveInvoiceForDate: jest.fn() };
   const useCase = new AddTransactionUseCase(
     transactions as never,
     getAccount as never,
-    cycle as never,
   );
-  return { useCase, transactions, getAccount, cycle };
+  return { useCase, transactions, getAccount };
 };
 
 const BASE_INPUT = {
@@ -50,9 +44,9 @@ const BASE_INPUT = {
   occurredAt: OCCURRED_AT,
 };
 
-describe('AddTransactionUseCase', () => {
-  it('creates a transaction on a debit account without touching invoices', async () => {
-    const { useCase, transactions, getAccount, cycle } = buildUseCase();
+describe('AddTransactionUseCase (debit-only)', () => {
+  it('creates a transaction on a debit account and forwards it as-is (no invoiceId)', async () => {
+    const { useCase, transactions, getAccount } = buildUseCase();
     getAccount.execute.mockResolvedValue(debitAccount);
     const created = { id: 't-1', ...BASE_INPUT, invoiceId: null };
     transactions.add.mockResolvedValue(created);
@@ -60,29 +54,36 @@ describe('AddTransactionUseCase', () => {
     const result = await useCase.execute(BASE_INPUT);
 
     expect(result).toEqual(created);
-    expect(cycle.resolveInvoiceForDate).not.toHaveBeenCalled();
     expect(transactions.add).toHaveBeenCalledWith(BASE_INPUT);
   });
 
-  it('resolves the invoice and passes invoiceId when the account is a card', async () => {
-    const { useCase, transactions, getAccount, cycle } = buildUseCase();
-    getAccount.execute.mockResolvedValue(cardAccount);
-    cycle.resolveInvoiceForDate.mockResolvedValue({ id: 'inv-1' });
-    const created = { id: 't-1', ...BASE_INPUT, invoiceId: 'inv-1' };
-    transactions.add.mockResolvedValue(created);
+  it('creates a transaction on a hybrid account without touching any invoice (debit path)', async () => {
+    const { useCase, transactions, getAccount } = buildUseCase();
+    getAccount.execute.mockResolvedValue(hybridAccount);
+    transactions.add.mockResolvedValue({ id: 't-2', ...BASE_INPUT });
 
     await useCase.execute(BASE_INPUT);
 
-    expect(cycle.resolveInvoiceForDate).toHaveBeenCalledWith({
-      accountId: ACCOUNT_ID,
-      date: OCCURRED_AT,
-      closeDay: 10,
-      dueDay: 20,
-    });
-    expect(transactions.add).toHaveBeenCalledWith({
+    expect(transactions.add).toHaveBeenCalledWith(BASE_INPUT);
+    // MNT-230: this tool is always debit — no invoice resolution here.
+    const [passed] = transactions.add.mock.calls[0] as unknown as [
+      { invoiceId?: string },
+    ];
+    expect(passed.invoiceId).toBeUndefined();
+  });
+
+  it('accepts income on any account (no more MNT-227 block)', async () => {
+    const { useCase, transactions, getAccount } = buildUseCase();
+    getAccount.execute.mockResolvedValue(hybridAccount);
+    transactions.add.mockResolvedValue({
+      id: 't-3',
       ...BASE_INPUT,
-      invoiceId: 'inv-1',
+      type: TransactionType.Income,
     });
+
+    await useCase.execute({ ...BASE_INPUT, type: TransactionType.Income });
+
+    expect(transactions.add).toHaveBeenCalled();
   });
 
   it('throws AccountNotFoundError when the account is missing or not owned', async () => {
