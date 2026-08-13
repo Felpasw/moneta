@@ -3,6 +3,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AccountNotFoundError } from '../../../accounts/domain/errors/account-not-found.error';
 import { GetAccountByIdUseCase } from '../../../accounts/application/use-cases/get-account-by-id.use-case';
 import { CreditCardCycleService } from '../../../card-billing/domain/services/credit-card-cycle.service';
+import { TransactionType } from '../../domain/constants/transaction-type';
+import { IncomeOnCreditCardNotAllowedError } from '../../domain/errors/income-on-credit-card-not-allowed.error';
 import {
   TRANSACTIONS_REPOSITORY,
   type AddTransactionInput,
@@ -26,6 +28,10 @@ export class AddTransactionUseCase {
     });
     if (!account) {
       throw new AccountNotFoundError(input.accountId);
+    }
+
+    if (input.type === TransactionType.Income && account.creditLimit !== null) {
+      throw new IncomeOnCreditCardNotAllowedError(input.accountId);
     }
 
     let invoiceId = input.invoiceId;

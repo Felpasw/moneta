@@ -4,6 +4,8 @@ import { AccountNotFoundError } from '../../../accounts/domain/errors/account-no
 import { GetAccountByIdUseCase } from '../../../accounts/application/use-cases/get-account-by-id.use-case';
 import type { UserBankAccount } from '../../../accounts/domain/ports/user-bank-accounts-repository';
 import { CreditCardCycleService } from '../../../card-billing/domain/services/credit-card-cycle.service';
+import { TransactionType } from '../../domain/constants/transaction-type';
+import { IncomeOnCreditCardNotAllowedError } from '../../domain/errors/income-on-credit-card-not-allowed.error';
 import {
   TRANSACTIONS_REPOSITORY,
   type AddTransactionInput,
@@ -34,6 +36,13 @@ export class AddManyTransactionsUseCase {
         if (!fetched) throw new AccountNotFoundError(input.accountId);
         account = fetched;
         accountCache.set(input.accountId, account);
+      }
+
+      if (
+        input.type === TransactionType.Income &&
+        account.creditLimit !== null
+      ) {
+        throw new IncomeOnCreditCardNotAllowedError(input.accountId);
       }
 
       let invoiceId = input.invoiceId;

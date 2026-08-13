@@ -6,6 +6,7 @@ import type {
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
 import { AddTransactionUseCase } from '../../../finance/transactions/application/use-cases/add-transaction.use-case';
+import { IncomeOnCreditCardNotAllowedError } from '../../../finance/transactions/domain/errors/income-on-credit-card-not-allowed.error';
 import { addTransactionSchema } from '../../../finance/transactions/dto/add-transaction.dto';
 
 @RegisterAssistantTool()
@@ -27,7 +28,7 @@ export class AddTransactionTool implements AssistantTool {
     additionalProperties: false,
   };
   readonly playbook =
-    'Registra uma transação (gasto ou receita). Regras críticas: amount SEMPRE positivo — quem indica entrada ou saída é o campo type (expense ou income). Nunca invente data (occurredAt) — pergunte ao user. Confirme antes de invocar: conta, tipo, valor, descrição, data. Sugira categoria mas confirme — a categoria precisa existir nas visíveis do user. Se a conta for cartão de crédito, avise que a transação entra na próxima fatura. Se a conta não pertencer ao user, retorna erro.';
+    'Registra uma transação (gasto ou receita). Regras críticas: amount SEMPRE positivo — quem indica entrada ou saída é o campo type (expense ou income). Nunca invente data (occurredAt) — pergunte ao user. Confirme antes de invocar: conta, tipo, valor, descrição, data. Sugira categoria mas confirme — a categoria precisa existir nas visíveis do user. REGRA DE INCOME EM CARTÃO: income (receita/entrada, ex: "Pix da Giovana", "salário", "reembolso do trabalho") NUNCA cai em cartão de crédito — sempre em checking (BTG, Nubank, etc). O back rejeita com IncomeOnCreditCardNotAllowedError. Se o user pedir income sem especificar conta, escolha uma checking; se ele especificar cartão explicitamente, pergunte "Você quer registrar em qual conta corrente? Cartão de crédito não recebe entradas". Se a conta for cartão de crédito, avise que a transação entra na próxima fatura. Se a conta não pertencer ao user, retorna erro.';
 
   constructor(private readonly addTransaction: AddTransactionUseCase) {}
 
@@ -49,7 +50,10 @@ export class AddTransactionTool implements AssistantTool {
       });
       return { ok: true, data: transaction };
     } catch (e) {
-      if (e instanceof AccountNotFoundError) {
+      if (
+        e instanceof AccountNotFoundError ||
+        e instanceof IncomeOnCreditCardNotAllowedError
+      ) {
         return { ok: false, error: e.message };
       }
       throw e;

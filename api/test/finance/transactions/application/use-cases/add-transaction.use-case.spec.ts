@@ -1,6 +1,7 @@
 import { AccountNotFoundError } from '~/finance/accounts/domain/errors/account-not-found.error';
 import { AddTransactionUseCase } from '~/finance/transactions/application/use-cases/add-transaction.use-case';
 import { TransactionType } from '~/finance/transactions/domain/constants/transaction-type';
+import { IncomeOnCreditCardNotAllowedError } from '~/finance/transactions/domain/errors/income-on-credit-card-not-allowed.error';
 
 const ACCOUNT_ID = 'acc-1';
 const USER_ID = 'user-1';
@@ -93,5 +94,33 @@ describe('AddTransactionUseCase', () => {
       AccountNotFoundError,
     );
     expect(transactions.add).not.toHaveBeenCalled();
+  });
+
+  it('throws IncomeOnCreditCardNotAllowedError when type=income on a credit card account', async () => {
+    const { useCase, transactions, getAccount, cycle } = buildUseCase();
+    getAccount.execute.mockResolvedValue(cardAccount);
+
+    await expect(
+      useCase.execute({ ...BASE_INPUT, type: TransactionType.Income }),
+    ).rejects.toBeInstanceOf(IncomeOnCreditCardNotAllowedError);
+    expect(cycle.resolveInvoiceForDate).not.toHaveBeenCalled();
+    expect(transactions.add).not.toHaveBeenCalled();
+  });
+
+  it('allows income on a debit/checking account (no invoice touched)', async () => {
+    const { useCase, transactions, getAccount, cycle } = buildUseCase();
+    getAccount.execute.mockResolvedValue(debitAccount);
+    const created = {
+      id: 't-2',
+      ...BASE_INPUT,
+      type: TransactionType.Income,
+      invoiceId: null,
+    };
+    transactions.add.mockResolvedValue(created);
+
+    await useCase.execute({ ...BASE_INPUT, type: TransactionType.Income });
+
+    expect(cycle.resolveInvoiceForDate).not.toHaveBeenCalled();
+    expect(transactions.add).toHaveBeenCalled();
   });
 });

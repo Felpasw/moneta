@@ -1,6 +1,7 @@
 import { AccountNotFoundError } from '~/finance/accounts/domain/errors/account-not-found.error';
 import { AddManyTransactionsUseCase } from '~/finance/transactions/application/use-cases/add-many-transactions.use-case';
 import { TransactionType } from '~/finance/transactions/domain/constants/transaction-type';
+import { IncomeOnCreditCardNotAllowedError } from '~/finance/transactions/domain/errors/income-on-credit-card-not-allowed.error';
 
 const USER_ID = 'user-1';
 const CARD_ID = 'card-1';
@@ -76,6 +77,24 @@ describe('AddManyTransactionsUseCase', () => {
       { ...inputs[0], invoiceId: 'inv-1' },
       inputs[1],
     ]);
+  });
+
+  it('throws IncomeOnCreditCardNotAllowedError when any batch item is income on a card', async () => {
+    const { useCase, transactions, getAccount } = buildUseCase();
+    getAccount.execute.mockResolvedValue(cardAccount);
+
+    await expect(
+      useCase.execute([
+        {
+          userId: USER_ID,
+          accountId: CARD_ID,
+          type: TransactionType.Income,
+          amount: 20,
+          occurredAt: OCCURRED,
+        },
+      ]),
+    ).rejects.toBeInstanceOf(IncomeOnCreditCardNotAllowedError);
+    expect(transactions.addMany).not.toHaveBeenCalled();
   });
 
   it('throws AccountNotFoundError as soon as any item points to a missing account', async () => {

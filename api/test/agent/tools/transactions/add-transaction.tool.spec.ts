@@ -1,5 +1,6 @@
 import { AccountNotFoundError } from '~/finance/accounts/domain/errors/account-not-found.error';
 import { TransactionType } from '~/finance/transactions/domain/constants/transaction-type';
+import { IncomeOnCreditCardNotAllowedError } from '~/finance/transactions/domain/errors/income-on-credit-card-not-allowed.error';
 import { AddTransactionTool } from '~/agent/tools/transactions/add-transaction.tool';
 
 const CTX = { userId: 'user-1', requestId: 'req-1' };
@@ -61,6 +62,26 @@ describe('AddTransactionTool', () => {
     );
 
     expect(result.ok).toBe(false);
+  });
+
+  it('returns ok:false with a helpful message when use-case rejects income on credit card', async () => {
+    const { tool, addTransaction } = buildTool();
+    addTransaction.execute.mockRejectedValue(
+      new IncomeOnCreditCardNotAllowedError(ACCOUNT_ID),
+    );
+
+    const result = await tool.execute(
+      {
+        accountId: ACCOUNT_ID,
+        type: 'income',
+        amount: 20,
+        occurredAt: OCCURRED_AT,
+      },
+      CTX,
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('credit card');
   });
 
   it('returns ok:false when input fails validation (negative amount)', async () => {
