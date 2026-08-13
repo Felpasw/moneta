@@ -6,14 +6,14 @@ import type { RealtimeUpstream } from '~/agent/domain/ports/realtime-upstream';
 import type { ToolDispatchResult } from '~/agent/tools/domain/types/tool-dispatch-result';
 import type { ToolSideEffect } from '~/agent/tools/domain/types/tool-side-effect';
 
+import { AgentSocketEvent } from '../constants/agent-socket-events';
 import { REALTIME_EVENT_TYPE } from '../constants/realtime-event-types';
-import { SYSTEM_EVENT_TYPE } from '../constants/system-event-types';
-import { TOOL_EVENT_TYPE } from '../constants/tool-event-types';
 import type { ParsedToolCall } from '../types/parsed-tool-call';
 import type { RealtimeFunctionCallEvent } from '../types/realtime-function-call-event';
 import type { ToolDispatcherContext } from '../types/tool-dispatcher-context';
 import { parseRealtimeEvent } from './parse-realtime-event';
 import { sendClientEvent } from './send-client-event';
+import { resolveToolCaption } from './tool-captions';
 
 const SIDE_EFFECT_EMITTERS: Record<
   ToolSideEffect['kind'],
@@ -21,7 +21,7 @@ const SIDE_EFFECT_EMITTERS: Record<
 > = {
   redirect: (client, effect) => {
     sendClientEvent(client, {
-      type: SYSTEM_EVENT_TYPE.redirect,
+      type: AgentSocketEvent.SystemRedirect,
       target: effect.target,
     });
   },
@@ -61,7 +61,7 @@ const handleResult = (
 ): void => {
   if (result.ok) {
     sendClientEvent(ctx.client, {
-      type: TOOL_EVENT_TYPE.result,
+      type: AgentSocketEvent.ToolResult,
       callId: result.callId,
       result: result.data,
     });
@@ -74,7 +74,7 @@ const handleResult = (
   }
   const message = result.error?.message ?? 'tool dispatch failed';
   sendClientEvent(ctx.client, {
-    type: TOOL_EVENT_TYPE.error,
+    type: AgentSocketEvent.ToolError,
     callId: result.callId,
     message,
   });
@@ -94,11 +94,13 @@ const handleToolCall = async (
       callId: event.call_id,
       args: JSON.parse(event.arguments) as Record<string, unknown>,
     };
+    const caption = resolveToolCaption(call.toolName, call.args);
     sendClientEvent(ctx.client, {
-      type: TOOL_EVENT_TYPE.pending,
+      type: AgentSocketEvent.ToolPending,
       toolName: call.toolName,
       args: call.args,
       callId: call.callId,
+      ...(caption !== undefined ? { caption } : {}),
     });
     const result = await ctx.dispatcher.dispatch(
       {
