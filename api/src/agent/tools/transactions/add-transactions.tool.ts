@@ -8,7 +8,6 @@ import type {
 } from '../domain/assistant-tool';
 import { RegisterAssistantTool } from '../infrastructure/register-assistant-tool.decorator';
 import { AddManyTransactionsUseCase } from '../../../finance/transactions/application/use-cases/add-many-transactions.use-case';
-import { IncomeOnCreditCardNotAllowedError } from '../../../finance/transactions/domain/errors/income-on-credit-card-not-allowed.error';
 import { addTransactionSchema } from '../../../finance/transactions/dto/add-transaction.dto';
 
 const inputSchema = z.object({
@@ -46,7 +45,7 @@ export class AddTransactionsTool implements AssistantTool {
     additionalProperties: false,
   };
   readonly playbook =
-    'Registra várias transações de uma vez, atomicamente — ou TODAS entram ou NENHUMA. Use quando o user reporta múltiplos gastos ou receitas no mesmo turno (ex: "semana passada gastei 10 no café, 25 no uber, 150 no mercado"). Cada item tem os mesmos campos que a versão single (amount positivo, type diferencia expense/income, occurredAt obrigatório). Confirme com o user TODOS os itens antes — mostre um resumo. Máximo 50 itens por batch. REGRA DE INCOME EM CARTÃO: nenhum item pode ter type=income em conta de cartão de crédito — o back rejeita o batch inteiro com IncomeOnCreditCardNotAllowedError e nada é gravado. Direcione income sempre pra checking (BTG, Nubank, etc); se o user pedir uma receita em cartão, pergunte qual conta corrente usar. Se qualquer item tiver conta inválida ou dado ruim, o batch inteiro é revertido — nenhum saldo é alterado. Ordem de recebimento é preservada no retorno.';
+    'Registra várias transações de DÉBITO de uma vez, atomicamente — ou TODAS entram ou NENHUMA. Afeta balance das contas, NÃO entra em fatura de cartão. Use quando o user reporta múltiplos gastos no débito/Pix/dinheiro ou várias receitas no mesmo turno (ex: "semana passada gastei 10 no café, 25 no uber, 150 no mercado"). Cada item tem os mesmos campos que a versão single (amount positivo, type diferencia expense/income, occurredAt obrigatório). Confirme com o user TODOS os itens antes — mostre um resumo. Máximo 50 itens por batch. Compras no cartão de crédito (fatura) NÃO entram aqui — separe e use o tool específico de credit purchases. Se qualquer item tiver conta inválida ou dado ruim, o batch inteiro é revertido — nenhum saldo é alterado. Ordem de recebimento é preservada no retorno.';
 
   constructor(private readonly addMany: AddManyTransactionsUseCase) {}
 
@@ -67,10 +66,7 @@ export class AddTransactionsTool implements AssistantTool {
       );
       return { ok: true, data: results };
     } catch (e) {
-      if (
-        e instanceof AccountNotFoundError ||
-        e instanceof IncomeOnCreditCardNotAllowedError
-      ) {
+      if (e instanceof AccountNotFoundError) {
         return { ok: false, error: e.message };
       }
       throw e;

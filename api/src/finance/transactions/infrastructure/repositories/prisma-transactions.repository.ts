@@ -159,15 +159,17 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
         current.type as TransactionType,
         current.amount,
       );
-      await tx.userBankAccount.updateMany({
-        where: { id: current.accountId, userId },
-        data: { balance: { increment: 0 - oldEffect } },
-      });
+      // Credit tx (invoice_id set): reverse only invoice; balance was never touched on add.
+      // Debit tx (no invoice_id): reverse only balance.
       if (current.invoiceId !== null) {
-        // reverse the invoice.total_amount contribution (opposite of Add)
         await tx.creditCardInvoice.updateMany({
           where: { id: current.invoiceId },
           data: { totalAmount: { increment: oldEffect } },
+        });
+      } else {
+        await tx.userBankAccount.updateMany({
+          where: { id: current.accountId, userId },
+          data: { balance: { increment: 0 - oldEffect } },
         });
       }
       await tx.transaction.delete({ where: { id } });
@@ -226,12 +228,24 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
     input: AddTransactionInput,
   ): Promise<Transaction> {
     const delta = signedAmount(input.type, input.amount);
-    const balanceUpdate = await tx.userBankAccount.updateMany({
-      where: { id: input.accountId, userId: input.userId },
-      data: { balance: { increment: delta } },
-    });
-    if (balanceUpdate.count === 0) {
-      throw new AccountNotFoundError(input.accountId);
+    // Credit path: invoice_id set. Only invoice moves; balance untouched.
+    // Debit path: no invoice_id. Only balance moves; invoice untouched.
+    if (input.invoiceId !== undefined) {
+      const account = await tx.userBankAccount.findFirst({
+        where: { id: input.accountId, userId: input.userId },
+        select: { id: true },
+      });
+      if (!account) {
+        throw new AccountNotFoundError(input.accountId);
+      }
+    } else {
+      const balanceUpdate = await tx.userBankAccount.updateMany({
+        where: { id: input.accountId, userId: input.userId },
+        data: { balance: { increment: delta } },
+      });
+      if (balanceUpdate.count === 0) {
+        throw new AccountNotFoundError(input.accountId);
+      }
     }
     const row = await tx.transaction.create({
       data: {
@@ -247,8 +261,6 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       select: TRANSACTION_SELECT,
     });
     if (input.invoiceId !== undefined) {
-      // invoice.total_amount tracks what the user owes:
-      // expense increases the invoice, income (refund) decreases it — opposite sign of balance delta
       await tx.creditCardInvoice.updateMany({
         where: { id: input.invoiceId },
         data: { totalAmount: { increment: -delta } },
@@ -274,16 +286,24 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
       throw new TransactionNotFoundError(input.id);
     }
 
-    const currentAmount = current.amount;
-    const currentType = current.type as TransactionType;
-    const newType = input.type ?? currentType;
-    const newAmount = input.amount ?? currentAmount;
     const newAccountId = input.accountId ?? current.accountId;
-    const oldEffect = signedAmount(currentType, currentAmount);
-    const newEffect = signedAmount(newType, newAmount);
+    const oldEffect = signedAmount(
+      current.type as TransactionType,
+      current.amount,
+    );
+    const newEffect = signedAmount(
+      input.type ?? (current.type as TransactionType),
+      input.amount ?? current.amount,
+    );
+    const willBeCredit =
+      input.newInvoiceId === undefined
+        ? current.invoiceId !== null
+        : input.newInvoiceId !== null;
+    const oldEffectOnBalance = current.invoiceId !== null ? 0 : oldEffect;
+    const newEffectOnBalance = willBeCredit ? 0 : newEffect;
 
     if (newAccountId === current.accountId) {
-      const delta = newEffect - oldEffect;
+      const delta = newEffectOnBalance - oldEffectOnBalance;
       if (delta !== 0) {
         await tx.userBankAccount.updateMany({
           where: { id: current.accountId, userId: input.userId },
@@ -291,16 +311,26 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
         });
       }
     } else {
-      await tx.userBankAccount.updateMany({
-        where: { id: current.accountId, userId: input.userId },
-        data: { balance: { increment: 0 - oldEffect } },
-      });
-      const newAccountUpdate = await tx.userBankAccount.updateMany({
-        where: { id: newAccountId, userId: input.userId },
-        data: { balance: { increment: newEffect } },
-      });
-      if (newAccountUpdate.count === 0) {
-        throw new AccountNotFoundError(newAccountId);
+      if (oldEffectOnBalance !== 0) {
+        await tx.userBankAccount.updateMany({
+          where: { id: current.accountId, userId: input.userId },
+          data: { balance: { increment: 0 - oldEffectOnBalance } },
+        });
+      }
+      if (newEffectOnBalance !== 0) {
+        const newAccountUpdate = await tx.userBankAccount.updateMany({
+          where: { id: newAccountId, userId: input.userId },
+          data: { balance: { increment: newEffectOnBalance } },
+        });
+        if (newAccountUpdate.count === 0) {
+          throw new AccountNotFoundError(newAccountId);
+        }
+      } else {
+        const exists = await tx.userBankAccount.findFirst({
+          where: { id: newAccountId, userId: input.userId },
+          select: { id: true },
+        });
+        if (!exists) throw new AccountNotFoundError(newAccountId);
       }
     }
 
