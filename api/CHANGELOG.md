@@ -6,6 +6,14 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.12.0](https://github.com/Felpasw/moneta/compare/api-v0.11.1...api-v0.12.0) (2026-08-17)
+
+
+### ✨ Features
+
+* **agent/socket:** AgentSocketEvent enum + caption i18n-ready ([553e679](https://github.com/Felpasw/moneta/commit/553e6794628ddab9d53ef92ebff2eed0b8a78ea0))
+* **agent:** read-tool captions + shimmer indicator [MNT-228] ([bbbdf9c](https://github.com/Felpasw/moneta/commit/bbbdf9cc776792c62f0dbc28815271afba64fb4f))
+
 ## [0.11.1](https://github.com/Felpasw/moneta/compare/api-v0.11.0...api-v0.11.1) (2026-08-13)
 
 
