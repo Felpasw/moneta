@@ -103,6 +103,7 @@ export function useAgentSession({
             onStopped: () => {
               actions.setAudioElement(null);
               actions.setStatus(AgentSessionStatus.Listening);
+              actions.bumpInterruptionPulse();
             },
           });
         },

@@ -16,6 +16,7 @@ interface AgentSessionState {
   micState: MicState;
   toolEvents: ToolEvent[];
   redirectTarget: string | null;
+  interruptionPulse: number;
 }
 
 const INITIAL_STATE: AgentSessionState = {
@@ -28,6 +29,7 @@ const INITIAL_STATE: AgentSessionState = {
   micState: MicState.Off,
   toolEvents: [],
   redirectTarget: null,
+  interruptionPulse: 0,
 };
 
 export const useAgentSessionStore = create<AgentSessionState>(() => INITIAL_STATE);
@@ -55,6 +57,10 @@ export const agentSessionActions = {
     })),
   setRedirectTarget: (redirectTarget: string | null) =>
     useAgentSessionStore.setState({ redirectTarget }),
+  bumpInterruptionPulse: () =>
+    useAgentSessionStore.setState((s) => ({
+      interruptionPulse: s.interruptionPulse + 1,
+    })),
   hydrateInitial: (
     initial: Pick<AgentSessionState, "status" | "error" | "isWarming">,
   ) => useAgentSessionStore.setState(initial),

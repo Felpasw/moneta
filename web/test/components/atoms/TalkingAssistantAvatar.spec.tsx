@@ -9,6 +9,7 @@ vi.mock("@dicebear/core", () => {
   return { createAvatar };
 });
 
+
 interface FakeAnalyser {
   fftSize: number;
   smoothingTimeConstant: number;
@@ -120,5 +121,63 @@ describe("<TalkingAssistantAvatar />", () => {
 
     expect(container.querySelector(".custom-class")).not.toBeNull();
     expect(screen.getByRole("img")).toBeInTheDocument();
+  });
+
+  it("wrapper do pulso reflete interruptSignal via data-pulse-key", () => {
+    const { container, rerender } = render(
+      <TalkingAssistantAvatar
+        avatarUrl={null}
+        fallbackSeed="felipe"
+        audioElement={null}
+        interruptSignal={0}
+      />,
+    );
+
+    expect(
+      container.querySelector('[data-pulse-key="0"]'),
+    ).toBeInTheDocument();
+
+    rerender(
+      <TalkingAssistantAvatar
+        avatarUrl={null}
+        fallbackSeed="felipe"
+        audioElement={null}
+        interruptSignal={1}
+      />,
+    );
+
+    expect(
+      container.querySelector('[data-pulse-key="1"]'),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-pulse-key="0"]'),
+    ).not.toBeInTheDocument();
+  });
+
+  it("wrapper do pulso é remontado a cada bump (barge-in múltiplo)", () => {
+    const { container, rerender } = render(
+      <TalkingAssistantAvatar
+        avatarUrl={null}
+        fallbackSeed="felipe"
+        audioElement={null}
+        interruptSignal={1}
+      />,
+    );
+
+    const first = container.querySelector('[data-pulse-key="1"]');
+    expect(first).toBeInTheDocument();
+
+    rerender(
+      <TalkingAssistantAvatar
+        avatarUrl={null}
+        fallbackSeed="felipe"
+        audioElement={null}
+        interruptSignal={2}
+      />,
+    );
+
+    const second = container.querySelector('[data-pulse-key="2"]');
+    expect(second).toBeInTheDocument();
+    expect(second).not.toBe(first);
   });
 });
