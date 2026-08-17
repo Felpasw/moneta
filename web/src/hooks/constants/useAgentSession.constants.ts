@@ -35,6 +35,13 @@ export enum ToolCaptionKey {
   InvoicePaying = "invoice.paying",
   InvoiceMarkingPaid = "invoice.marking_paid",
   InstallmentPurchaseCanceling = "installment_purchase.canceling",
+  AccountsFetching = "accounts.fetching",
+  BanksFetching = "banks.fetching",
+  CurrentInvoiceFetching = "current_invoice.fetching",
+  InvoicesFetching = "invoices.fetching",
+  CategoriesFetching = "categories.fetching",
+  TransactionsFetching = "transactions.fetching",
+  TransfersFetching = "transfers.fetching",
 }
 
 export enum ToolEventKind {

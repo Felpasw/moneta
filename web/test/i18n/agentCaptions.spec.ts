@@ -109,6 +109,24 @@ describe("translateCaption()", () => {
         ),
       ).toBe("Registrando 5 compras no cartão…");
     });
+
+    it("captions de leitura (fetching)", () => {
+      const cases: [ToolCaptionKey, string][] = [
+        [ToolCaptionKey.AccountsFetching, "Consultando contas…"],
+        [ToolCaptionKey.BanksFetching, "Consultando bancos…"],
+        [
+          ToolCaptionKey.CurrentInvoiceFetching,
+          "Consultando fatura atual…",
+        ],
+        [ToolCaptionKey.InvoicesFetching, "Consultando faturas…"],
+        [ToolCaptionKey.CategoriesFetching, "Consultando categorias…"],
+        [ToolCaptionKey.TransactionsFetching, "Consultando transações…"],
+        [ToolCaptionKey.TransfersFetching, "Consultando transferências…"],
+      ];
+      for (const [key, expected] of cases) {
+        expect(translateCaption({ key, params: {} }, "pt_BR")).toBe(expected);
+      }
+    });
   });
 
   describe("en_US", () => {
@@ -215,6 +233,24 @@ describe("translateCaption()", () => {
           "en_US",
         ),
       ).toBe("Recording 5 card purchases…");
+    });
+
+    it("captions de leitura (fetching)", () => {
+      const cases: [ToolCaptionKey, string][] = [
+        [ToolCaptionKey.AccountsFetching, "Fetching accounts…"],
+        [ToolCaptionKey.BanksFetching, "Fetching banks…"],
+        [
+          ToolCaptionKey.CurrentInvoiceFetching,
+          "Fetching current invoice…",
+        ],
+        [ToolCaptionKey.InvoicesFetching, "Fetching invoices…"],
+        [ToolCaptionKey.CategoriesFetching, "Fetching categories…"],
+        [ToolCaptionKey.TransactionsFetching, "Fetching transactions…"],
+        [ToolCaptionKey.TransfersFetching, "Fetching transfers…"],
+      ];
+      for (const [key, expected] of cases) {
+        expect(translateCaption({ key, params: {} }, "en_US")).toBe(expected);
+      }
     });
   });
 });

@@ -86,11 +86,7 @@ export function GlobalAssistant() {
             sensitivity={6}
             className="relative h-14 w-14"
           />
-          <div className="pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap">
-            <AgentActionIndicator
-              outputLanguage={profile.data.outputLanguage}
-            />
-          </div>
+          <AgentActionIndicator outputLanguage={profile.data.outputLanguage} />
         </motion.button>
 
         <AnimatePresence initial={false}>

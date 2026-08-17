@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 
+import { AITextLoading } from "@/components/atoms/AITextLoading";
 import { useAgentActionState } from "@/hooks/useAgentActionState";
 import { translateCaption } from "@/i18n/agentCaptions";
 import type { OutputLanguage } from "@/services/interfaces/assistantProfile.interface";
@@ -20,16 +21,15 @@ export function AgentActionIndicator({
     <AnimatePresence initial={false}>
       {text ? (
         <motion.div
-          key={text}
           role="status"
           aria-live="polite"
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 4 }}
-          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-          className="pointer-events-none rounded-full bg-background/70 px-3 py-1 text-xs font-medium text-foreground/80 shadow-sm ring-1 ring-foreground/10 backdrop-blur-md"
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 12 }}
+          transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+          className="pointer-events-none absolute right-full top-1/2 mr-4 -translate-y-1/2"
         >
-          {text}
+          <AITextLoading text={text} className="text-base" />
         </motion.div>
       ) : null}
     </AnimatePresence>

@@ -432,7 +432,7 @@ describe('wireToolDispatcher', () => {
       JSON.stringify({
         type: 'response.function_call_arguments.done',
         call_id: 'call_nc',
-        name: 'list_transactions',
+        name: 'set_nickname',
         arguments: JSON.stringify({}),
       }),
     );

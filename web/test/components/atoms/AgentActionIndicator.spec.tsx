@@ -23,7 +23,7 @@ describe("AgentActionIndicator", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renderiza caption traduzida em pt_BR", () => {
+  it("renderiza texto traduzido em pt_BR quando há Pending com caption", () => {
     useAgentSessionStore.setState({
       toolEvents: [
         {
@@ -41,7 +41,7 @@ describe("AgentActionIndicator", () => {
     expect(screen.getByText("Registrando compra em 4x…")).toBeInTheDocument();
   });
 
-  it("renderiza caption traduzida em en_US", () => {
+  it("renderiza texto traduzido em en_US", () => {
     useAgentSessionStore.setState({
       toolEvents: [
         {

@@ -10,6 +10,13 @@ export enum ToolName {
   PayInvoice = 'pay_invoice',
   MarkInvoicePaid = 'mark_invoice_paid',
   CancelInstallmentPurchase = 'cancel_installment_purchase',
+  ListMyAccounts = 'list_my_accounts',
+  ListBanks = 'list_banks',
+  GetCurrentInvoice = 'get_current_invoice',
+  ListInvoices = 'list_invoices',
+  ListCategories = 'list_categories',
+  ListTransactions = 'list_transactions',
+  ListTransfers = 'list_transfers',
 }
 
 export enum ToolCaptionKey {
@@ -22,6 +29,13 @@ export enum ToolCaptionKey {
   InvoicePaying = 'invoice.paying',
   InvoiceMarkingPaid = 'invoice.marking_paid',
   InstallmentPurchaseCanceling = 'installment_purchase.canceling',
+  AccountsFetching = 'accounts.fetching',
+  BanksFetching = 'banks.fetching',
+  CurrentInvoiceFetching = 'current_invoice.fetching',
+  InvoicesFetching = 'invoices.fetching',
+  CategoriesFetching = 'categories.fetching',
+  TransactionsFetching = 'transactions.fetching',
+  TransfersFetching = 'transfers.fetching',
 }
 
 export interface ToolCaption<P = Record<string, unknown>> {
@@ -75,6 +89,34 @@ type ToolCaptionMap = {
     args: unknown;
     caption: ToolCaption<EmptyParams>;
   };
+  [ToolName.ListMyAccounts]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.ListBanks]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.GetCurrentInvoice]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.ListInvoices]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.ListCategories]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.ListTransactions]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.ListTransfers]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
 };
 
 type Resolvers = {
@@ -122,6 +164,34 @@ const RESOLVERS: Resolvers = {
     key: ToolCaptionKey.InstallmentPurchaseCanceling,
     params: {},
   }),
+  [ToolName.ListMyAccounts]: () => ({
+    key: ToolCaptionKey.AccountsFetching,
+    params: {},
+  }),
+  [ToolName.ListBanks]: () => ({
+    key: ToolCaptionKey.BanksFetching,
+    params: {},
+  }),
+  [ToolName.GetCurrentInvoice]: () => ({
+    key: ToolCaptionKey.CurrentInvoiceFetching,
+    params: {},
+  }),
+  [ToolName.ListInvoices]: () => ({
+    key: ToolCaptionKey.InvoicesFetching,
+    params: {},
+  }),
+  [ToolName.ListCategories]: () => ({
+    key: ToolCaptionKey.CategoriesFetching,
+    params: {},
+  }),
+  [ToolName.ListTransactions]: () => ({
+    key: ToolCaptionKey.TransactionsFetching,
+    params: {},
+  }),
+  [ToolName.ListTransfers]: () => ({
+    key: ToolCaptionKey.TransfersFetching,
+    params: {},
+  }),
 };
 
 export const resolveToolCaption = (
@@ -129,7 +199,6 @@ export const resolveToolCaption = (
   args: unknown,
 ): ToolCaption | undefined => {
   const resolver = RESOLVERS[toolName as ToolName] as
-    | ((a: unknown) => ToolCaption)
-    | undefined;
+    ((a: unknown) => ToolCaption) | undefined;
   return resolver?.(args);
 };

@@ -15,6 +15,13 @@ type ParamsOf<K extends ToolCaptionKey> = {
   [ToolCaptionKey.InvoicePaying]: Record<string, never>;
   [ToolCaptionKey.InvoiceMarkingPaid]: Record<string, never>;
   [ToolCaptionKey.InstallmentPurchaseCanceling]: Record<string, never>;
+  [ToolCaptionKey.AccountsFetching]: Record<string, never>;
+  [ToolCaptionKey.BanksFetching]: Record<string, never>;
+  [ToolCaptionKey.CurrentInvoiceFetching]: Record<string, never>;
+  [ToolCaptionKey.InvoicesFetching]: Record<string, never>;
+  [ToolCaptionKey.CategoriesFetching]: Record<string, never>;
+  [ToolCaptionKey.TransactionsFetching]: Record<string, never>;
+  [ToolCaptionKey.TransfersFetching]: Record<string, never>;
 }[K];
 
 type Locale = {
@@ -39,6 +46,13 @@ const PT_BR: Locale = {
   [ToolCaptionKey.InvoiceMarkingPaid]: () => "Marcando fatura como paga…",
   [ToolCaptionKey.InstallmentPurchaseCanceling]: () =>
     "Cancelando compra parcelada…",
+  [ToolCaptionKey.AccountsFetching]: () => "Consultando contas…",
+  [ToolCaptionKey.BanksFetching]: () => "Consultando bancos…",
+  [ToolCaptionKey.CurrentInvoiceFetching]: () => "Consultando fatura atual…",
+  [ToolCaptionKey.InvoicesFetching]: () => "Consultando faturas…",
+  [ToolCaptionKey.CategoriesFetching]: () => "Consultando categorias…",
+  [ToolCaptionKey.TransactionsFetching]: () => "Consultando transações…",
+  [ToolCaptionKey.TransfersFetching]: () => "Consultando transferências…",
 };
 
 const EN_US: Locale = {
@@ -58,6 +72,13 @@ const EN_US: Locale = {
   [ToolCaptionKey.InvoiceMarkingPaid]: () => "Marking invoice as paid…",
   [ToolCaptionKey.InstallmentPurchaseCanceling]: () =>
     "Canceling installment purchase…",
+  [ToolCaptionKey.AccountsFetching]: () => "Fetching accounts…",
+  [ToolCaptionKey.BanksFetching]: () => "Fetching banks…",
+  [ToolCaptionKey.CurrentInvoiceFetching]: () => "Fetching current invoice…",
+  [ToolCaptionKey.InvoicesFetching]: () => "Fetching invoices…",
+  [ToolCaptionKey.CategoriesFetching]: () => "Fetching categories…",
+  [ToolCaptionKey.TransactionsFetching]: () => "Fetching transactions…",
+  [ToolCaptionKey.TransfersFetching]: () => "Fetching transfers…",
 };
 
 const LOCALES: Record<OutputLanguage, Locale> = {

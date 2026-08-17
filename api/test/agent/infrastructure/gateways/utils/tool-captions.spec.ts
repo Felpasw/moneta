@@ -102,10 +102,57 @@ describe('resolveToolCaption', () => {
   });
 
   it('cancel_installment_purchase: retorna caption', () => {
-    expect(
-      resolveToolCaption(ToolName.CancelInstallmentPurchase, {}),
-    ).toEqual({
+    expect(resolveToolCaption(ToolName.CancelInstallmentPurchase, {})).toEqual({
       key: ToolCaptionKey.InstallmentPurchaseCanceling,
+      params: {},
+    });
+  });
+
+  it('list_my_accounts: retorna caption de leitura', () => {
+    expect(resolveToolCaption(ToolName.ListMyAccounts, {})).toEqual({
+      key: ToolCaptionKey.AccountsFetching,
+      params: {},
+    });
+  });
+
+  it('list_banks: retorna caption de leitura', () => {
+    expect(resolveToolCaption(ToolName.ListBanks, {})).toEqual({
+      key: ToolCaptionKey.BanksFetching,
+      params: {},
+    });
+  });
+
+  it('get_current_invoice: retorna caption de leitura', () => {
+    expect(resolveToolCaption(ToolName.GetCurrentInvoice, {})).toEqual({
+      key: ToolCaptionKey.CurrentInvoiceFetching,
+      params: {},
+    });
+  });
+
+  it('list_invoices: retorna caption de leitura', () => {
+    expect(resolveToolCaption(ToolName.ListInvoices, {})).toEqual({
+      key: ToolCaptionKey.InvoicesFetching,
+      params: {},
+    });
+  });
+
+  it('list_categories: retorna caption de leitura', () => {
+    expect(resolveToolCaption(ToolName.ListCategories, {})).toEqual({
+      key: ToolCaptionKey.CategoriesFetching,
+      params: {},
+    });
+  });
+
+  it('list_transactions: retorna caption de leitura', () => {
+    expect(resolveToolCaption(ToolName.ListTransactions, {})).toEqual({
+      key: ToolCaptionKey.TransactionsFetching,
+      params: {},
+    });
+  });
+
+  it('list_transfers: retorna caption de leitura', () => {
+    expect(resolveToolCaption(ToolName.ListTransfers, {})).toEqual({
+      key: ToolCaptionKey.TransfersFetching,
       params: {},
     });
   });
