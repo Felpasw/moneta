@@ -6,6 +6,14 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.13.0](https://github.com/Felpasw/moneta/compare/api-v0.12.0...api-v0.13.0) (2026-08-17)
+
+
+### ✨ Features
+
+* **agent:** cover remaining 17 tools with captions [MNT-228] ([a9b2b3b](https://github.com/Felpasw/moneta/commit/a9b2b3b87d75c22320545be2a1642fc65fb91aff))
+* **agent:** cover remaining 17 tools with captions [MNT-228] ([608f944](https://github.com/Felpasw/moneta/commit/608f94482da37c349cbe3d77150ae7728c943b06))
+
 ## [0.12.0](https://github.com/Felpasw/moneta/compare/api-v0.11.1...api-v0.12.0) (2026-08-17)
 
 
