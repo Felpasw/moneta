@@ -6,6 +6,14 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.11.0](https://github.com/Felpasw/moneta/compare/web-v0.10.0...web-v0.11.0) (2026-08-17)
+
+
+### ✨ Features
+
+* **web/agent:** stop TTS playback on barge-in cancel [MNT-234] ([093ba0f](https://github.com/Felpasw/moneta/commit/093ba0f0b9aebeb7f85806cab0548aa4c6b700ca))
+* **web/avatar:** pulse animation on barge-in interrupt [MNT-236] ([9903750](https://github.com/Felpasw/moneta/commit/990375069e1f05d02ba7ded866d2e9e9db8c66a4))
+
 ## [0.10.0](https://github.com/Felpasw/moneta/compare/web-v0.9.0...web-v0.10.0) (2026-08-17)
 
 
