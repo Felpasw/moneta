@@ -1,5 +1,6 @@
 export const REALTIME_EVENT_TYPE = {
   responseTextDone: 'response.output_text.done',
+  responseDone: 'response.done',
   inputAudioBufferSpeechStarted: 'input_audio_buffer.speech_started',
   sessionUpdate: 'session.update',
   responseCreate: 'response.create',

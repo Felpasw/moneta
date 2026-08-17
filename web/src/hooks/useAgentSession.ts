@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
 import { API_URL } from "@/globals";
@@ -18,6 +19,7 @@ import type {
 import {
   attachMicGraph,
   buildAgentWsUrl,
+  makeStateInvalidateDispatcher,
   makeSystemDispatcher,
   makeToolDispatcher,
   makeTtsDispatcher,
@@ -41,6 +43,7 @@ export function useAgentSession({
 }: UseAgentSessionOptions): UseAgentSessionResult {
   const state = useAgentSessionStore();
   const micEnabled = state.micEnabled;
+  const queryClient = useQueryClient();
 
   const wsRef = useRef<WebSocket | null>(null);
   const chunksRef = useRef<Uint8Array[]>([]);
@@ -119,6 +122,14 @@ export function useAgentSession({
         onRedirect: actions.setRedirectTarget,
       });
 
+      const dispatchStateInvalidate = makeStateInvalidateDispatcher({
+        onInvalidate: (resources) => {
+          for (const resource of resources) {
+            void queryClient.invalidateQueries({ queryKey: [resource] });
+          }
+        },
+      });
+
       ws.onopen = () => actions.setStatus(AgentSessionStatus.Listening);
       ws.onerror = () => {
         actions.setStatus(AgentSessionStatus.Error);
@@ -127,6 +138,7 @@ export function useAgentSession({
       ws.onmessage = (ev: MessageEvent<unknown>) => {
         dispatchTts(ev.data);
         dispatchTool(ev.data);
+        dispatchStateInvalidate(ev.data);
         dispatchSystem(ev.data);
       };
     }, 0);
@@ -143,7 +155,7 @@ export function useAgentSession({
         onStopped: () => actions.resetSession(),
       });
     };
-  }, [enabled]);
+  }, [enabled, queryClient]);
 
   // Transmit side — mic capture + PCM16 upload
   useEffect(() => {

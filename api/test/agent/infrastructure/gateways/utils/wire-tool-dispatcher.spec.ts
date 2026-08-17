@@ -443,4 +443,164 @@ describe('wireToolDispatcher', () => {
     expect(pending).toBeDefined();
     expect(pending).not.toHaveProperty('caption');
   });
+
+  describe('state.invalidate — refetch broadcast por turn', () => {
+    const bootstrap = (
+      dispatchImpl: DispatchImpl,
+    ): { upstream: FakeUpstream; client: FakeClient } => {
+      const upstream = new FakeUpstream();
+      const client = makeClient();
+      const dispatcher = makeDispatcher(dispatchImpl);
+      wireToolDispatcher({
+        client: client as unknown as Parameters<
+          typeof wireToolDispatcher
+        >[0]['client'],
+        upstream,
+        dispatcher: dispatcher.asPort,
+        userId: 'user-1',
+        logger: noopLogger,
+      });
+      return { upstream, client };
+    };
+
+    const fireTool = (
+      upstream: FakeUpstream,
+      name: string,
+      callId: string,
+      args: unknown = {},
+    ): void => {
+      upstream.emitMessage(
+        JSON.stringify({
+          type: 'response.function_call_arguments.done',
+          call_id: callId,
+          name,
+          arguments: JSON.stringify(args),
+        }),
+      );
+    };
+
+    const fireResponseDone = (upstream: FakeUpstream): void => {
+      upstream.emitMessage(JSON.stringify({ type: 'response.done' }));
+    };
+
+    it('emite state.invalidate no response.done com recursos acumulados de tool de escrita', async () => {
+      const { upstream, client } = bootstrap(({ callId }) =>
+        Promise.resolve(okResult(callId, {})),
+      );
+
+      fireTool(upstream, 'add_transaction', 'call_1', { type: 'expense' });
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      fireResponseDone(upstream);
+
+      const invalidate = findClientEvent(client, 'state.invalidate');
+      expect(invalidate).toEqual({
+        type: 'state.invalidate',
+        resources: ['accounts', 'transactions', 'dashboard'],
+      });
+    });
+
+    it('coalesce: 2 tools de escrita no mesmo turn viram 1 invalidate com união dos recursos', async () => {
+      const { upstream, client } = bootstrap(({ callId }) =>
+        Promise.resolve(okResult(callId, {})),
+      );
+
+      fireTool(upstream, 'add_transaction', 'call_1', { type: 'expense' });
+      fireTool(upstream, 'set_nickname', 'call_2', { nickname: 'X' });
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      fireResponseDone(upstream);
+
+      const invalidates = clientPayloads(client).filter(
+        (e) => e.type === 'state.invalidate',
+      );
+      expect(invalidates).toHaveLength(1);
+      const [invalidate] = invalidates;
+      expect(invalidate).toBeDefined();
+      const resources = invalidate?.resources as string[];
+      expect(new Set(resources)).toEqual(
+        new Set(['accounts', 'transactions', 'dashboard', 'agent']),
+      );
+    });
+
+    it('turn com só tool de leitura NÃO emite state.invalidate', async () => {
+      const { upstream, client } = bootstrap(({ callId }) =>
+        Promise.resolve(okResult(callId, {})),
+      );
+
+      fireTool(upstream, 'list_transactions', 'call_1');
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      fireResponseDone(upstream);
+
+      expect(findClientEvent(client, 'state.invalidate')).toBeUndefined();
+    });
+
+    it('turn sem tool nenhum (Q&A puro) NÃO emite state.invalidate', () => {
+      const { upstream, client } = bootstrap(({ callId }) =>
+        Promise.resolve(okResult(callId, {})),
+      );
+
+      fireResponseDone(upstream);
+
+      expect(findClientEvent(client, 'state.invalidate')).toBeUndefined();
+    });
+
+    it('turn com tool falhando (ok=false) NÃO conta pra invalidate', async () => {
+      const { upstream, client } = bootstrap(({ callId }) =>
+        Promise.resolve({
+          ok: false as const,
+          callId,
+          error: { code: 'tool_error', message: 'boom' } as never,
+        }),
+      );
+
+      fireTool(upstream, 'add_transaction', 'call_1', { type: 'expense' });
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      fireResponseDone(upstream);
+
+      expect(findClientEvent(client, 'state.invalidate')).toBeUndefined();
+    });
+
+    it('set é limpo entre turns: segundo turn com só read não replica invalidate do primeiro', async () => {
+      const { upstream, client } = bootstrap(({ callId }) =>
+        Promise.resolve(okResult(callId, {})),
+      );
+
+      // turn 1: escrita → dispara invalidate
+      fireTool(upstream, 'add_transaction', 'call_1', { type: 'expense' });
+      await flushMicrotasks();
+      await flushMicrotasks();
+      fireResponseDone(upstream);
+
+      // turn 2: só leitura → não deve disparar
+      fireTool(upstream, 'list_transactions', 'call_2');
+      await flushMicrotasks();
+      await flushMicrotasks();
+      fireResponseDone(upstream);
+
+      const invalidates = clientPayloads(client).filter(
+        (e) => e.type === 'state.invalidate',
+      );
+      expect(invalidates).toHaveLength(1);
+    });
+
+    it('tool desconhecida (sem entrada em tool-resources) é ignorada sem crash', async () => {
+      const { upstream, client } = bootstrap(({ callId }) =>
+        Promise.resolve(okResult(callId, {})),
+      );
+
+      fireTool(upstream, 'unregistered_fake_tool', 'call_1');
+      await flushMicrotasks();
+      await flushMicrotasks();
+      fireResponseDone(upstream);
+
+      expect(findClientEvent(client, 'state.invalidate')).toBeUndefined();
+    });
+  });
 });
