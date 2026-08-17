@@ -14,6 +14,7 @@ import type { ToolDispatcherContext } from '../types/tool-dispatcher-context';
 import { parseRealtimeEvent } from './parse-realtime-event';
 import { sendClientEvent } from './send-client-event';
 import { resolveToolCaption } from './tool-captions';
+import { resolveToolResources } from './tool-resources';
 
 const SIDE_EFFECT_EMITTERS: Record<
   ToolSideEffect['kind'],
@@ -58,6 +59,8 @@ const sendFunctionCallOutput = (
 const handleResult = (
   ctx: ToolDispatcherContext,
   result: ToolDispatchResult,
+  toolName: string,
+  pendingResources: Set<string>,
 ): void => {
   if (result.ok) {
     sendClientEvent(ctx.client, {
@@ -70,6 +73,8 @@ const handleResult = (
       ok: true,
       data: result.data,
     });
+    const resources = resolveToolResources(toolName);
+    if (resources) for (const r of resources) pendingResources.add(r);
     return;
   }
   const message = result.error?.message ?? 'tool dispatch failed';
@@ -87,6 +92,7 @@ const handleResult = (
 const handleToolCall = async (
   ctx: ToolDispatcherContext,
   event: RealtimeFunctionCallEvent,
+  pendingResources: Set<string>,
 ): Promise<void> => {
   try {
     const call: ParsedToolCall = {
@@ -110,7 +116,7 @@ const handleToolCall = async (
       },
       { userId: ctx.userId, requestId: randomUUID() },
     );
-    handleResult(ctx, result);
+    handleResult(ctx, result, call.toolName, pendingResources);
   } catch (err) {
     ctx.logger.error(
       `tool dispatch crashed for ${event.name}: ${(err as Error).message}`,
@@ -118,13 +124,33 @@ const handleToolCall = async (
   }
 };
 
+const flushInvalidate = (
+  ctx: ToolDispatcherContext,
+  pendingResources: Set<string>,
+): void => {
+  if (pendingResources.size === 0) return;
+  sendClientEvent(ctx.client, {
+    type: AgentSocketEvent.StateInvalidate,
+    resources: [...pendingResources],
+  });
+  pendingResources.clear();
+};
+
 export const wireToolDispatcher = (ctx: ToolDispatcherContext): void => {
+  const pendingResources = new Set<string>();
   ctx.upstream.onMessage((data) => {
     const event = parseRealtimeEvent(data);
     if (!event) return;
-    if (event.type !== REALTIME_EVENT_TYPE.responseFunctionCallArgumentsDone) {
+    if (event.type === REALTIME_EVENT_TYPE.responseFunctionCallArgumentsDone) {
+      void handleToolCall(
+        ctx,
+        event as unknown as RealtimeFunctionCallEvent,
+        pendingResources,
+      );
       return;
     }
-    void handleToolCall(ctx, event as unknown as RealtimeFunctionCallEvent);
+    if (event.type === REALTIME_EVENT_TYPE.responseDone) {
+      flushInvalidate(ctx, pendingResources);
+    }
   });
 };

@@ -8,6 +8,8 @@ import {
 import type {
   InitialSessionState,
   MicGraph,
+  StateInvalidateEnvelope,
+  StateInvalidateHandlers,
   SystemEnvelope,
   SystemHandlers,
   ToolEnvelope,
@@ -126,6 +128,27 @@ export function makeSystemDispatcher(
       return;
     }
     routes[envelope.type]?.(envelope);
+  };
+}
+
+// -----------------------------------------------------------------------------
+// State invalidate dispatcher (refetch broadcast por turn do agente)
+// -----------------------------------------------------------------------------
+
+export function makeStateInvalidateDispatcher(
+  handlers: StateInvalidateHandlers,
+): (raw: unknown) => void {
+  return (raw: unknown) => {
+    if (typeof raw !== "string") return;
+    let envelope: StateInvalidateEnvelope;
+    try {
+      envelope = JSON.parse(raw) as StateInvalidateEnvelope;
+    } catch {
+      return;
+    }
+    if (envelope.type !== AgentSocketEvent.StateInvalidate) return;
+    if (!envelope.resources || envelope.resources.length === 0) return;
+    handlers.onInvalidate(envelope.resources);
   };
 }
 

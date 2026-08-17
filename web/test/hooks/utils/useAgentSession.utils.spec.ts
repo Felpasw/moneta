@@ -5,6 +5,7 @@ import {
   ToolEventKind,
 } from "@/hooks/constants/useAgentSession.constants";
 import {
+  makeStateInvalidateDispatcher,
   makeSystemDispatcher,
   makeToolDispatcher,
   stopPlayback,
@@ -153,6 +154,57 @@ describe("makeToolDispatcher()", () => {
     dispatch(JSON.stringify({ type: "tool.pending" }));
 
     expect(onEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("makeStateInvalidateDispatcher()", () => {
+  it("chama onInvalidate com resources quando envelope state.invalidate chega", () => {
+    const onInvalidate = vi.fn();
+    const dispatch = makeStateInvalidateDispatcher({ onInvalidate });
+
+    dispatch(
+      JSON.stringify({
+        type: "state.invalidate",
+        resources: ["accounts", "transactions", "dashboard"],
+      }),
+    );
+
+    expect(onInvalidate).toHaveBeenCalledWith([
+      "accounts",
+      "transactions",
+      "dashboard",
+    ]);
+  });
+
+  it("ignora envelope de outro tipo", () => {
+    const onInvalidate = vi.fn();
+    const dispatch = makeStateInvalidateDispatcher({ onInvalidate });
+
+    dispatch(JSON.stringify({ type: "tool.result", callId: "x" }));
+    dispatch(JSON.stringify({ type: "tts.audio.done" }));
+
+    expect(onInvalidate).not.toHaveBeenCalled();
+  });
+
+  it("ignora state.invalidate sem resources ou com resources vazio", () => {
+    const onInvalidate = vi.fn();
+    const dispatch = makeStateInvalidateDispatcher({ onInvalidate });
+
+    dispatch(JSON.stringify({ type: "state.invalidate" }));
+    dispatch(JSON.stringify({ type: "state.invalidate", resources: [] }));
+
+    expect(onInvalidate).not.toHaveBeenCalled();
+  });
+
+  it("ignora payloads não-string e JSON inválido", () => {
+    const onInvalidate = vi.fn();
+    const dispatch = makeStateInvalidateDispatcher({ onInvalidate });
+
+    dispatch(new ArrayBuffer(8));
+    dispatch(null);
+    dispatch("not json {{{");
+
+    expect(onInvalidate).not.toHaveBeenCalled();
   });
 });
 

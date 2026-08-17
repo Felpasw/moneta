@@ -54,6 +54,15 @@ export interface SystemHandlers {
   onRedirect: (target: string) => void;
 }
 
+export interface StateInvalidateEnvelope {
+  type: string;
+  resources?: string[];
+}
+
+export interface StateInvalidateHandlers {
+  onInvalidate: (resources: readonly string[]) => void;
+}
+
 export interface WebkitAudioWindow extends Window {
   webkitAudioContext?: typeof AudioContext;
 }
