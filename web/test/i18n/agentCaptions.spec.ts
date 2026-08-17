@@ -127,6 +127,61 @@ describe("translateCaption()", () => {
         expect(translateCaption({ key, params: {} }, "pt_BR")).toBe(expected);
       }
     });
+
+    it("captions de escrita sem params", () => {
+      const cases: [ToolCaptionKey, string][] = [
+        [ToolCaptionKey.BankAccountAdding, "Adicionando conta…"],
+        [ToolCaptionKey.BankAccountUpdating, "Atualizando conta…"],
+        [ToolCaptionKey.BankAccountDeleting, "Removendo conta…"],
+        [ToolCaptionKey.BalanceSetting, "Ajustando saldo…"],
+        [ToolCaptionKey.CategoryAdding, "Adicionando categoria…"],
+        [ToolCaptionKey.CategoryUpdating, "Atualizando categoria…"],
+        [ToolCaptionKey.CategoryDeleting, "Removendo categoria…"],
+        [ToolCaptionKey.TransactionEditing, "Editando transação…"],
+        [ToolCaptionKey.TransactionDeleting, "Removendo transação…"],
+        [ToolCaptionKey.TransferDeleting, "Removendo transferência…"],
+        [ToolCaptionKey.NicknameSetting, "Salvando apelido…"],
+        [
+          ToolCaptionKey.AccountDetailsConfiguring,
+          "Configurando conta…",
+        ],
+        [ToolCaptionKey.SetupFinishing, "Finalizando configuração…"],
+        [ToolCaptionKey.OnboardingCompleting, "Concluindo onboarding…"],
+      ];
+      for (const [key, expected] of cases) {
+        expect(translateCaption({ key, params: {} }, "pt_BR")).toBe(expected);
+      }
+    });
+
+    it("captions de escrita com count", () => {
+      expect(
+        translateCaption(
+          {
+            key: ToolCaptionKey.AccountBalancesSetting,
+            params: { count: 3 },
+          },
+          "pt_BR",
+        ),
+      ).toBe("Ajustando saldo de 3 contas…");
+      expect(
+        translateCaption(
+          {
+            key: ToolCaptionKey.TransactionsEditing,
+            params: { count: 2 },
+          },
+          "pt_BR",
+        ),
+      ).toBe("Editando 2 transações…");
+      expect(
+        translateCaption(
+          {
+            key: ToolCaptionKey.UserBanksAdding,
+            params: { count: 4 },
+          },
+          "pt_BR",
+        ),
+      ).toBe("Adicionando 4 bancos…");
+    });
   });
 
   describe("en_US", () => {
@@ -251,6 +306,61 @@ describe("translateCaption()", () => {
       for (const [key, expected] of cases) {
         expect(translateCaption({ key, params: {} }, "en_US")).toBe(expected);
       }
+    });
+
+    it("captions de escrita sem params", () => {
+      const cases: [ToolCaptionKey, string][] = [
+        [ToolCaptionKey.BankAccountAdding, "Adding account…"],
+        [ToolCaptionKey.BankAccountUpdating, "Updating account…"],
+        [ToolCaptionKey.BankAccountDeleting, "Removing account…"],
+        [ToolCaptionKey.BalanceSetting, "Setting balance…"],
+        [ToolCaptionKey.CategoryAdding, "Adding category…"],
+        [ToolCaptionKey.CategoryUpdating, "Updating category…"],
+        [ToolCaptionKey.CategoryDeleting, "Removing category…"],
+        [ToolCaptionKey.TransactionEditing, "Editing transaction…"],
+        [ToolCaptionKey.TransactionDeleting, "Removing transaction…"],
+        [ToolCaptionKey.TransferDeleting, "Removing transfer…"],
+        [ToolCaptionKey.NicknameSetting, "Saving nickname…"],
+        [
+          ToolCaptionKey.AccountDetailsConfiguring,
+          "Configuring account…",
+        ],
+        [ToolCaptionKey.SetupFinishing, "Finalizing setup…"],
+        [ToolCaptionKey.OnboardingCompleting, "Completing onboarding…"],
+      ];
+      for (const [key, expected] of cases) {
+        expect(translateCaption({ key, params: {} }, "en_US")).toBe(expected);
+      }
+    });
+
+    it("captions de escrita com count", () => {
+      expect(
+        translateCaption(
+          {
+            key: ToolCaptionKey.AccountBalancesSetting,
+            params: { count: 3 },
+          },
+          "en_US",
+        ),
+      ).toBe("Setting balance of 3 accounts…");
+      expect(
+        translateCaption(
+          {
+            key: ToolCaptionKey.TransactionsEditing,
+            params: { count: 2 },
+          },
+          "en_US",
+        ),
+      ).toBe("Editing 2 transactions…");
+      expect(
+        translateCaption(
+          {
+            key: ToolCaptionKey.UserBanksAdding,
+            params: { count: 4 },
+          },
+          "en_US",
+        ),
+      ).toBe("Adding 4 banks…");
     });
   });
 });

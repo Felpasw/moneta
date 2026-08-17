@@ -42,6 +42,23 @@ export enum ToolCaptionKey {
   CategoriesFetching = "categories.fetching",
   TransactionsFetching = "transactions.fetching",
   TransfersFetching = "transfers.fetching",
+  BankAccountAdding = "bank_account.adding",
+  BankAccountUpdating = "bank_account.updating",
+  BankAccountDeleting = "bank_account.deleting",
+  BalanceSetting = "balance.setting",
+  AccountBalancesSetting = "account_balances.setting",
+  CategoryAdding = "category.adding",
+  CategoryUpdating = "category.updating",
+  CategoryDeleting = "category.deleting",
+  TransactionEditing = "transaction.editing",
+  TransactionsEditing = "transactions.editing",
+  TransactionDeleting = "transaction.deleting",
+  TransferDeleting = "transfer.deleting",
+  NicknameSetting = "nickname.setting",
+  UserBanksAdding = "user_banks.adding",
+  AccountDetailsConfiguring = "account_details.configuring",
+  SetupFinishing = "setup.finishing",
+  OnboardingCompleting = "onboarding.completing",
 }
 
 export enum ToolEventKind {

@@ -157,6 +157,137 @@ describe('resolveToolCaption', () => {
     });
   });
 
+  it('add_bank_account: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.AddBankAccount, {})).toEqual({
+      key: ToolCaptionKey.BankAccountAdding,
+      params: {},
+    });
+  });
+
+  it('update_bank_account: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.UpdateBankAccount, {})).toEqual({
+      key: ToolCaptionKey.BankAccountUpdating,
+      params: {},
+    });
+  });
+
+  it('delete_bank_account: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.DeleteBankAccount, {})).toEqual({
+      key: ToolCaptionKey.BankAccountDeleting,
+      params: {},
+    });
+  });
+
+  it('set_balance: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.SetBalance, {})).toEqual({
+      key: ToolCaptionKey.BalanceSetting,
+      params: {},
+    });
+  });
+
+  it('set_account_balances: retorna count do batch', () => {
+    expect(
+      resolveToolCaption(ToolName.SetAccountBalances, {
+        balances: [{}, {}, {}],
+      }),
+    ).toEqual({
+      key: ToolCaptionKey.AccountBalancesSetting,
+      params: { count: 3 },
+    });
+  });
+
+  it('add_category: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.AddCategory, {})).toEqual({
+      key: ToolCaptionKey.CategoryAdding,
+      params: {},
+    });
+  });
+
+  it('update_category: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.UpdateCategory, {})).toEqual({
+      key: ToolCaptionKey.CategoryUpdating,
+      params: {},
+    });
+  });
+
+  it('delete_category: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.DeleteCategory, {})).toEqual({
+      key: ToolCaptionKey.CategoryDeleting,
+      params: {},
+    });
+  });
+
+  it('edit_transaction: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.EditTransaction, {})).toEqual({
+      key: ToolCaptionKey.TransactionEditing,
+      params: {},
+    });
+  });
+
+  it('edit_transactions: retorna count do batch', () => {
+    expect(
+      resolveToolCaption(ToolName.EditTransactions, {
+        edits: [{}, {}],
+      }),
+    ).toEqual({
+      key: ToolCaptionKey.TransactionsEditing,
+      params: { count: 2 },
+    });
+  });
+
+  it('delete_transaction: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.DeleteTransaction, {})).toEqual({
+      key: ToolCaptionKey.TransactionDeleting,
+      params: {},
+    });
+  });
+
+  it('delete_transfer: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.DeleteTransfer, {})).toEqual({
+      key: ToolCaptionKey.TransferDeleting,
+      params: {},
+    });
+  });
+
+  it('set_nickname: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.SetNickname, {})).toEqual({
+      key: ToolCaptionKey.NicknameSetting,
+      params: {},
+    });
+  });
+
+  it('add_user_banks: retorna count do batch', () => {
+    expect(
+      resolveToolCaption(ToolName.AddUserBanks, {
+        bankIds: ['a', 'b', 'c', 'd'],
+      }),
+    ).toEqual({
+      key: ToolCaptionKey.UserBanksAdding,
+      params: { count: 4 },
+    });
+  });
+
+  it('configure_account_details: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.ConfigureAccountDetails, {})).toEqual({
+      key: ToolCaptionKey.AccountDetailsConfiguring,
+      params: {},
+    });
+  });
+
+  it('finish_setup: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.FinishSetup, {})).toEqual({
+      key: ToolCaptionKey.SetupFinishing,
+      params: {},
+    });
+  });
+
+  it('complete_onboarding: retorna caption', () => {
+    expect(resolveToolCaption(ToolName.CompleteOnboarding, {})).toEqual({
+      key: ToolCaptionKey.OnboardingCompleting,
+      params: {},
+    });
+  });
+
   it('tool desconhecida: retorna undefined', () => {
     expect(resolveToolCaption('unknown_tool', {})).toBeUndefined();
   });

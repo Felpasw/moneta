@@ -146,6 +146,7 @@ describe('wireToolDispatcher', () => {
       toolName: 'set_nickname',
       args: { nickname: 'Felipe' },
       callId: 'call_abc',
+      caption: { key: 'nickname.setting', params: {} },
     });
 
     expect(dispatcher.dispatch).toHaveBeenCalledWith(
@@ -221,7 +222,7 @@ describe('wireToolDispatcher', () => {
         type: 'response.function_call_arguments.done',
         call_id: 'call_x',
         name: 'add_user_banks',
-        arguments: JSON.stringify({ banks: ['nubankxpto'] }),
+        arguments: JSON.stringify({ bankIds: ['nubankxpto'] }),
       }),
     );
     await flushMicrotasks();
@@ -432,7 +433,7 @@ describe('wireToolDispatcher', () => {
       JSON.stringify({
         type: 'response.function_call_arguments.done',
         call_id: 'call_nc',
-        name: 'set_nickname',
+        name: 'unregistered_fake_tool',
         arguments: JSON.stringify({}),
       }),
     );
