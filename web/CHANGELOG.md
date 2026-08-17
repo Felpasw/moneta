@@ -6,6 +6,14 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.9.0](https://github.com/Felpasw/moneta/compare/web-v0.8.0...web-v0.9.0) (2026-08-17)
+
+
+### ✨ Features
+
+* **agent:** read-tool captions + shimmer indicator [MNT-228] ([bbbdf9c](https://github.com/Felpasw/moneta/commit/bbbdf9cc776792c62f0dbc28815271afba64fb4f))
+* **web/agent:** AgentActionIndicator + i18n captions ([efe160c](https://github.com/Felpasw/moneta/commit/efe160c7aa526c0b57059ab8de65cd5f05cc696d))
+
 ## [0.8.0](https://github.com/Felpasw/moneta/compare/web-v0.7.0...web-v0.8.0) (2026-08-13)
 
 
