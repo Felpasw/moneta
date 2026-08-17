@@ -374,4 +374,72 @@ describe('wireToolDispatcher', () => {
 
     expect(dispatcher.dispatch).not.toHaveBeenCalled();
   });
+
+  it('inclui caption estruturada { key, params } no envelope tool.pending quando a tool é reconhecida', async () => {
+    const upstream = new FakeUpstream();
+    const client = makeClient();
+    const dispatcher = makeDispatcher(({ callId }) =>
+      Promise.resolve(okResult(callId, {})),
+    );
+    wireToolDispatcher({
+      client: client as unknown as Parameters<
+        typeof wireToolDispatcher
+      >[0]['client'],
+      upstream,
+      dispatcher: dispatcher.asPort,
+      userId: 'user-1',
+      logger: noopLogger,
+    });
+
+    upstream.emitMessage(
+      JSON.stringify({
+        type: 'response.function_call_arguments.done',
+        call_id: 'call_cap',
+        name: 'add_installment_purchase',
+        arguments: JSON.stringify({ installmentsCount: 4 }),
+      }),
+    );
+    await flushMicrotasks();
+
+    const pending = findClientEvent(client, 'tool.pending');
+    expect(pending).toMatchObject({
+      type: 'tool.pending',
+      callId: 'call_cap',
+      caption: {
+        key: 'installment_purchase.registering',
+        params: { count: 4 },
+      },
+    });
+  });
+
+  it('omite caption no envelope tool.pending quando a tool não está registrada em tool-captions', async () => {
+    const upstream = new FakeUpstream();
+    const client = makeClient();
+    const dispatcher = makeDispatcher(({ callId }) =>
+      Promise.resolve(okResult(callId, {})),
+    );
+    wireToolDispatcher({
+      client: client as unknown as Parameters<
+        typeof wireToolDispatcher
+      >[0]['client'],
+      upstream,
+      dispatcher: dispatcher.asPort,
+      userId: 'user-1',
+      logger: noopLogger,
+    });
+
+    upstream.emitMessage(
+      JSON.stringify({
+        type: 'response.function_call_arguments.done',
+        call_id: 'call_nc',
+        name: 'set_nickname',
+        arguments: JSON.stringify({}),
+      }),
+    );
+    await flushMicrotasks();
+
+    const pending = findClientEvent(client, 'tool.pending');
+    expect(pending).toBeDefined();
+    expect(pending).not.toHaveProperty('caption');
+  });
 });

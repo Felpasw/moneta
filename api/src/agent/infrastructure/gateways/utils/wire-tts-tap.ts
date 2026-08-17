@@ -5,8 +5,8 @@ import { TtsPipeline } from '~/agent/application/tts-pipeline';
 import type { RealtimeUpstream } from '~/agent/domain/ports/realtime-upstream';
 import type { TtsService } from '~/agent/domain/ports/tts-service';
 
+import { AgentSocketEvent } from '../constants/agent-socket-events';
 import { REALTIME_EVENT_TYPE } from '../constants/realtime-event-types';
-import { TTS_EVENT_TYPE } from '../constants/tts-event-types';
 import { parseRealtimeEvent } from './parse-realtime-event';
 import { sendClientEvent } from './send-client-event';
 
@@ -23,19 +23,21 @@ export const wireTtsTap = (ctx: TtsTapContext): void => {
   const pipeline = new TtsPipeline(ctx.tts, {
     onAudio: (chunk) => {
       sendClientEvent(ctx.client, {
-        type: TTS_EVENT_TYPE.audioDelta,
+        type: AgentSocketEvent.TtsAudioDelta,
         audio: chunk.toString('base64'),
       });
     },
     onDone: () => {
-      sendClientEvent(ctx.client, { type: TTS_EVENT_TYPE.audioDone });
+      sendClientEvent(ctx.client, { type: AgentSocketEvent.TtsAudioDone });
     },
     onCanceled: () => {
-      sendClientEvent(ctx.client, { type: TTS_EVENT_TYPE.audioCanceled });
+      sendClientEvent(ctx.client, {
+        type: AgentSocketEvent.TtsAudioCanceled,
+      });
     },
     onError: (err) => {
       sendClientEvent(ctx.client, {
-        type: TTS_EVENT_TYPE.audioError,
+        type: AgentSocketEvent.TtsAudioError,
         message: err.message,
       });
     },
@@ -55,7 +57,9 @@ export const wireTtsTap = (ctx: TtsTapContext): void => {
       event.text.length > 0
     ) {
       const text = event.text;
-      void ctx.getVoiceId().then((voiceId) => pipeline.speak({ text, voiceId }));
+      void ctx
+        .getVoiceId()
+        .then((voiceId) => pipeline.speak({ text, voiceId }));
       return;
     }
     if (event.type === REALTIME_EVENT_TYPE.inputAudioBufferSpeechStarted) {

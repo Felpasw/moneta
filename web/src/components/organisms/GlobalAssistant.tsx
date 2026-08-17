@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { AgentActionIndicator } from "@/components/atoms/AgentActionIndicator";
 import { BarLoader } from "@/components/atoms/BarLoader";
 import { MicButton } from "@/components/atoms/MicButton";
 import { TalkingAssistantAvatar } from "@/components/atoms/TalkingAssistantAvatar";
@@ -85,6 +86,7 @@ export function GlobalAssistant() {
             sensitivity={6}
             className="relative h-14 w-14"
           />
+          <AgentActionIndicator outputLanguage={profile.data.outputLanguage} />
         </motion.button>
 
         <AnimatePresence initial={false}>
