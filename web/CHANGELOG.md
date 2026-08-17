@@ -6,6 +6,14 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.12.0](https://github.com/Felpasw/moneta/compare/web-v0.11.0...web-v0.12.0) (2026-08-17)
+
+
+### ✨ Features
+
+* **agent/socket:** state.invalidate refetch broadcast per turn [MNT-… ([dd8e70c](https://github.com/Felpasw/moneta/commit/dd8e70c8321d8a47214a5ad9a3c11da8d460c912))
+* **agent/socket:** state.invalidate refetch broadcast per turn [MNT-229] ([12f1d70](https://github.com/Felpasw/moneta/commit/12f1d70b7f5263d66240c6b38f069ec5548f78de))
+
 ## [0.11.0](https://github.com/Felpasw/moneta/compare/web-v0.10.0...web-v0.11.0) (2026-08-17)
 
 
