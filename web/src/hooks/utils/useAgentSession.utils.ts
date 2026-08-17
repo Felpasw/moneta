@@ -130,6 +130,26 @@ export function makeSystemDispatcher(
 }
 
 // -----------------------------------------------------------------------------
+// Playback teardown (usado em barge-in e em cleanup do hook)
+// -----------------------------------------------------------------------------
+
+export function stopPlayback(params: {
+  audioRef: { current: HTMLAudioElement | null };
+  objectUrlRef: { current: string | null };
+  chunksRef: { current: Uint8Array[] };
+  onStopped: () => void;
+}): void {
+  params.audioRef.current?.pause();
+  params.audioRef.current = null;
+  if (params.objectUrlRef.current) {
+    URL.revokeObjectURL(params.objectUrlRef.current);
+    params.objectUrlRef.current = null;
+  }
+  params.chunksRef.current = [];
+  params.onStopped();
+}
+
+// -----------------------------------------------------------------------------
 // Mic audio graph
 // -----------------------------------------------------------------------------
 
