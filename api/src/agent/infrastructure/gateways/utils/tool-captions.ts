@@ -17,6 +17,23 @@ export enum ToolName {
   ListCategories = 'list_categories',
   ListTransactions = 'list_transactions',
   ListTransfers = 'list_transfers',
+  AddBankAccount = 'add_bank_account',
+  UpdateBankAccount = 'update_bank_account',
+  DeleteBankAccount = 'delete_bank_account',
+  SetBalance = 'set_balance',
+  SetAccountBalances = 'set_account_balances',
+  AddCategory = 'add_category',
+  UpdateCategory = 'update_category',
+  DeleteCategory = 'delete_category',
+  EditTransaction = 'edit_transaction',
+  EditTransactions = 'edit_transactions',
+  DeleteTransaction = 'delete_transaction',
+  DeleteTransfer = 'delete_transfer',
+  SetNickname = 'set_nickname',
+  AddUserBanks = 'add_user_banks',
+  ConfigureAccountDetails = 'configure_account_details',
+  FinishSetup = 'finish_setup',
+  CompleteOnboarding = 'complete_onboarding',
 }
 
 export enum ToolCaptionKey {
@@ -36,6 +53,23 @@ export enum ToolCaptionKey {
   CategoriesFetching = 'categories.fetching',
   TransactionsFetching = 'transactions.fetching',
   TransfersFetching = 'transfers.fetching',
+  BankAccountAdding = 'bank_account.adding',
+  BankAccountUpdating = 'bank_account.updating',
+  BankAccountDeleting = 'bank_account.deleting',
+  BalanceSetting = 'balance.setting',
+  AccountBalancesSetting = 'account_balances.setting',
+  CategoryAdding = 'category.adding',
+  CategoryUpdating = 'category.updating',
+  CategoryDeleting = 'category.deleting',
+  TransactionEditing = 'transaction.editing',
+  TransactionsEditing = 'transactions.editing',
+  TransactionDeleting = 'transaction.deleting',
+  TransferDeleting = 'transfer.deleting',
+  NicknameSetting = 'nickname.setting',
+  UserBanksAdding = 'user_banks.adding',
+  AccountDetailsConfiguring = 'account_details.configuring',
+  SetupFinishing = 'setup.finishing',
+  OnboardingCompleting = 'onboarding.completing',
 }
 
 export interface ToolCaption<P = Record<string, unknown>> {
@@ -50,6 +84,9 @@ type InstallmentPurchaseArgs = {
 type TransactionArgs = { type: TransactionType };
 type BatchTxArgs = { transactions: unknown[] };
 type BatchPurchaseArgs = { purchases: unknown[] };
+type EditBatchArgs = { edits: unknown[] };
+type BalancesBatchArgs = { balances: unknown[] };
+type UserBanksArgs = { bankIds: unknown[] };
 type EmptyParams = Record<string, never>;
 
 type ToolCaptionMap = {
@@ -114,6 +151,74 @@ type ToolCaptionMap = {
     caption: ToolCaption<EmptyParams>;
   };
   [ToolName.ListTransfers]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.AddBankAccount]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.UpdateBankAccount]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.DeleteBankAccount]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.SetBalance]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.SetAccountBalances]: {
+    args: BalancesBatchArgs;
+    caption: ToolCaption<{ count: number }>;
+  };
+  [ToolName.AddCategory]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.UpdateCategory]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.DeleteCategory]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.EditTransaction]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.EditTransactions]: {
+    args: EditBatchArgs;
+    caption: ToolCaption<{ count: number }>;
+  };
+  [ToolName.DeleteTransaction]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.DeleteTransfer]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.SetNickname]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.AddUserBanks]: {
+    args: UserBanksArgs;
+    caption: ToolCaption<{ count: number }>;
+  };
+  [ToolName.ConfigureAccountDetails]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.FinishSetup]: {
+    args: unknown;
+    caption: ToolCaption<EmptyParams>;
+  };
+  [ToolName.CompleteOnboarding]: {
     args: unknown;
     caption: ToolCaption<EmptyParams>;
   };
@@ -190,6 +295,74 @@ const RESOLVERS: Resolvers = {
   }),
   [ToolName.ListTransfers]: () => ({
     key: ToolCaptionKey.TransfersFetching,
+    params: {},
+  }),
+  [ToolName.AddBankAccount]: () => ({
+    key: ToolCaptionKey.BankAccountAdding,
+    params: {},
+  }),
+  [ToolName.UpdateBankAccount]: () => ({
+    key: ToolCaptionKey.BankAccountUpdating,
+    params: {},
+  }),
+  [ToolName.DeleteBankAccount]: () => ({
+    key: ToolCaptionKey.BankAccountDeleting,
+    params: {},
+  }),
+  [ToolName.SetBalance]: () => ({
+    key: ToolCaptionKey.BalanceSetting,
+    params: {},
+  }),
+  [ToolName.SetAccountBalances]: (a) => ({
+    key: ToolCaptionKey.AccountBalancesSetting,
+    params: { count: a.balances.length },
+  }),
+  [ToolName.AddCategory]: () => ({
+    key: ToolCaptionKey.CategoryAdding,
+    params: {},
+  }),
+  [ToolName.UpdateCategory]: () => ({
+    key: ToolCaptionKey.CategoryUpdating,
+    params: {},
+  }),
+  [ToolName.DeleteCategory]: () => ({
+    key: ToolCaptionKey.CategoryDeleting,
+    params: {},
+  }),
+  [ToolName.EditTransaction]: () => ({
+    key: ToolCaptionKey.TransactionEditing,
+    params: {},
+  }),
+  [ToolName.EditTransactions]: (a) => ({
+    key: ToolCaptionKey.TransactionsEditing,
+    params: { count: a.edits.length },
+  }),
+  [ToolName.DeleteTransaction]: () => ({
+    key: ToolCaptionKey.TransactionDeleting,
+    params: {},
+  }),
+  [ToolName.DeleteTransfer]: () => ({
+    key: ToolCaptionKey.TransferDeleting,
+    params: {},
+  }),
+  [ToolName.SetNickname]: () => ({
+    key: ToolCaptionKey.NicknameSetting,
+    params: {},
+  }),
+  [ToolName.AddUserBanks]: (a) => ({
+    key: ToolCaptionKey.UserBanksAdding,
+    params: { count: a.bankIds.length },
+  }),
+  [ToolName.ConfigureAccountDetails]: () => ({
+    key: ToolCaptionKey.AccountDetailsConfiguring,
+    params: {},
+  }),
+  [ToolName.FinishSetup]: () => ({
+    key: ToolCaptionKey.SetupFinishing,
+    params: {},
+  }),
+  [ToolName.CompleteOnboarding]: () => ({
+    key: ToolCaptionKey.OnboardingCompleting,
     params: {},
   }),
 };
