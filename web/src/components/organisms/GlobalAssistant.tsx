@@ -30,6 +30,7 @@ export function GlobalAssistant() {
   const audioElement = useAgentSessionStore((s) => s.audioElement);
   const isWarming = useAgentSessionStore((s) => s.isWarming);
   const micState = useAgentSessionStore((s) => s.micState);
+  const interruptionPulse = useAgentSessionStore((s) => s.interruptionPulse);
   const { profile } = assistantProfileHooks.use();
   const user = useUserStore((s) => s.user);
 
@@ -84,6 +85,7 @@ export function GlobalAssistant() {
             fallbackSeed={fallbackSeed}
             size="md"
             sensitivity={6}
+            interruptSignal={interruptionPulse}
             className="relative h-14 w-14"
           />
           <AgentActionIndicator outputLanguage={profile.data.outputLanguage} />

@@ -8,4 +8,5 @@ export interface TalkingAssistantAvatarProps {
   className?: string;
   sensitivity?: number;
   speakingThreshold?: number;
+  interruptSignal?: number;
 }

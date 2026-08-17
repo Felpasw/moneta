@@ -7,6 +7,7 @@ import {
 import {
   makeSystemDispatcher,
   makeToolDispatcher,
+  stopPlayback,
 } from "@/hooks/utils/useAgentSession.utils";
 
 describe("makeSystemDispatcher()", () => {
@@ -152,5 +153,63 @@ describe("makeToolDispatcher()", () => {
     dispatch(JSON.stringify({ type: "tool.pending" }));
 
     expect(onEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("stopPlayback()", () => {
+  it("pausa o audio, revoga o objectUrl, zera refs e dispara onStopped", () => {
+    const pause = vi.fn();
+    const audioRef = {
+      current: { pause } as unknown as HTMLAudioElement | null,
+    };
+    const objectUrlRef: { current: string | null } = { current: "blob:abc" };
+    const chunksRef: { current: Uint8Array[] } = {
+      current: [new Uint8Array([1, 2, 3])],
+    };
+    const onStopped = vi.fn();
+    const revoke = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => undefined);
+
+    stopPlayback({ audioRef, objectUrlRef, chunksRef, onStopped });
+
+    expect(pause).toHaveBeenCalledOnce();
+    expect(audioRef.current).toBeNull();
+    expect(revoke).toHaveBeenCalledWith("blob:abc");
+    expect(objectUrlRef.current).toBeNull();
+    expect(chunksRef.current).toEqual([]);
+    expect(onStopped).toHaveBeenCalledOnce();
+
+    revoke.mockRestore();
+  });
+
+  it("é no-op seguro quando não há áudio nem url em cache", () => {
+    const audioRef: { current: HTMLAudioElement | null } = { current: null };
+    const objectUrlRef: { current: string | null } = { current: null };
+    const chunksRef: { current: Uint8Array[] } = { current: [] };
+    const onStopped = vi.fn();
+    const revoke = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => undefined);
+
+    stopPlayback({ audioRef, objectUrlRef, chunksRef, onStopped });
+
+    expect(revoke).not.toHaveBeenCalled();
+    expect(onStopped).toHaveBeenCalledOnce();
+
+    revoke.mockRestore();
+  });
+
+  it("descarta chunks pendentes ainda não montados em Audio (cancel antes do onDone)", () => {
+    const audioRef: { current: HTMLAudioElement | null } = { current: null };
+    const objectUrlRef: { current: string | null } = { current: null };
+    const chunksRef: { current: Uint8Array[] } = {
+      current: [new Uint8Array([9]), new Uint8Array([8])],
+    };
+    const onStopped = vi.fn();
+
+    stopPlayback({ audioRef, objectUrlRef, chunksRef, onStopped });
+
+    expect(chunksRef.current).toEqual([]);
   });
 });

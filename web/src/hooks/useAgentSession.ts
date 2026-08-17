@@ -22,6 +22,7 @@ import {
   makeToolDispatcher,
   makeTtsDispatcher,
   resolveInitialSessionState,
+  stopPlayback,
 } from "@/hooks/utils/useAgentSession.utils";
 import {
   agentSessionActions as actions,
@@ -95,7 +96,16 @@ export function useAgentSession({
         onDelta: (bytes) => chunksRef.current.push(bytes),
         onDone: playAssembledChunks,
         onCanceled: () => {
-          chunksRef.current = [];
+          stopPlayback({
+            audioRef,
+            objectUrlRef,
+            chunksRef,
+            onStopped: () => {
+              actions.setAudioElement(null);
+              actions.setStatus(AgentSessionStatus.Listening);
+              actions.bumpInterruptionPulse();
+            },
+          });
         },
         onError: () => {
           actions.setStatus(AgentSessionStatus.Error);
@@ -126,14 +136,12 @@ export function useAgentSession({
       clearTimeout(boot);
       ws?.close();
       wsRef.current = null;
-      audioRef.current?.pause();
-      audioRef.current = null;
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-        objectUrlRef.current = null;
-      }
-      chunksRef.current = [];
-      actions.resetSession();
+      stopPlayback({
+        audioRef,
+        objectUrlRef,
+        chunksRef,
+        onStopped: () => actions.resetSession(),
+      });
     };
   }, [enabled]);
 
