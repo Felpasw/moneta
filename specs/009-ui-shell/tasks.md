@@ -75,7 +75,7 @@ Mesmas do `specs/002-auth/tasks.md`.
   - `<AppNav>` implementado como `DockTabs` vendored (magnify motion + SVG glass filter, commits `2464cc7`/`e593960`) em vez de shadcn `Tabs`
   - Dock tem 7 destinos (Home / Transactions / Cards / Accounts / Categories / Settings / Assistant) + Sign out, sem destaque específico pro Chat central — Chat/mic vive como `GlobalAssistant` organism flutuante (avatar + expand pra mic/messages/info), MNT-101 continua pendente
   - Rotas `/cards` e `/categories` criadas fora da spec (ver "Pendências abertas do scaffold" ao fim da Fase 1)
-- [ ] **MNT-99** [T][S] `middleware.ts` do Next — lê refresh cookie (MNT-14), decide:
+- [x] **MNT-99** [T][S] ✅ commit `b97f572` `middleware.ts` do Next — lê refresh cookie (MNT-14), decide:
   - Se rota `(auth)` e usuário logado → redirect pra `/` (ou `/onboarding` se `onboarded_at IS NULL`)
   - Se rota `(app)` e não logado → redirect pra `/login?next=<path>`
   - Se logado + não onboarded + rota != `/onboarding` → redirect pra `/onboarding`

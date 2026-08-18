@@ -72,8 +72,8 @@ Mesmas do `specs/002-auth/tasks.md`.
   - Interrompido: user cadastrou nickname + 1 banco, sai, volta — assistente retoma nos saldos
   - Recusa opcional: user diz "não tenho cartão de crédito" — assistente pula pra `complete_onboarding` sem `configure_account_details`
 - [ ] **BankSelector UI** [T][S] Organism no `/web` que carrega os 21 bancos (via HTTP `GET /banks` ou tool `list_banks`), combobox com filter cliente-side sem acento, user marca vários e confirma. Envia `bankIds` selecionados pro agente via novo envelope WS (`client.banks_selected` ou similar) que o agente vê como contexto pra chamar `add_user_banks`. **Bloqueia o smoke test end-to-end.**
-- [ ] **Endpoint HTTP `GET /banks`** (se ainda não existe) pra `BankSelector` consumir sem depender do agente chamar `list_banks`.
-- [ ] **Expandir `ONBOARDING_SNIPPET`** com a ordem das 5 etapas + orientação de que bancos vêm do frontend (nunca inventar bankIds).
+- [x] **Endpoint HTTP `GET /banks`** ✅ implementado em MNT-124 (`specs/004-transactions`, commit `2df01a4`).
+- [x] **Expandir `ONBOARDING_SNIPPET`** ✅ commits `00cd475` (fluxo 5 tools) + `614d9a4` (v4 com `finish_setup`) — orientação de que bancos vêm do frontend inclusa.
 
 ## Fase de UX web migrada
 

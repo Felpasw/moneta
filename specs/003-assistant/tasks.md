@@ -131,7 +131,7 @@ Solução: cada tool carrega **seu próprio playbook** (regras, exemplos, edge c
 
 Front do assistente (MNT-66 `/settings/assistant` com radio de treatmentStyle + seletor de voz + seletor de avatar DiceBear) vive em `specs/009-ui-shell/tasks.md` Fase 3. Tasks 3D antigas (MNT-63/64/67/68/69/70) descartadas com a troca RPM→DiceBear.
 
-- [ ] **MNT-217** [T][S] Preferência de idioma da fala do assistente — hoje o `BASE_PROMPT` (MNT-62 `src/agent/domain/prompts/base.ts`) hardcoda "financeiro, PT-BR". Feature: user escolhe idioma da resposta do agent independente da UI (mas com `auto` seguindo `users.preferred_locale` de MNT-216):
+- [x] **MNT-217** [T][S] ✅ commits `7852f0d` + `961e670` + `a9654a2` + `1640f20` + `4bdc160` — Preferência de idioma da fala do assistente — hoje o `BASE_PROMPT` (MNT-62 `src/agent/domain/prompts/base.ts`) hardcoda "financeiro, PT-BR". Feature: user escolhe idioma da resposta do agent independente da UI (mas com `auto` seguindo `users.preferred_locale` de MNT-216):
   - Prisma migration: `assistant_profiles.output_language` enum `pt_BR | en_US | auto`, default `auto`, NOT NULL. Estende port `AssistantProfile` + repo Prisma
   - Zod DTO de `PATCH /agent/profile` (MNT-61) aceita `outputLanguage` opcional; enum validada; passa a bloquear string livre (mesma defesa de MNT-62 pra `treatmentStyle`)
   - `composeSystemPrompt` (MNT-62) recebe `outputLanguage` resolvido:

@@ -41,7 +41,7 @@ Contexto: MNT-84 já implementou o receive-side (assistente fala, front toca). M
 
 ## Fase 1 — Frontend: captura de mic
 
-- [ ] **MNT-195** [T][S] Estende `useAgentSession` OU cria hook filho `useMicCapture`:
+- [x] **MNT-195** [T][S] ✅ commit `660ec51` Estende `useAgentSession` OU cria hook filho `useMicCapture`:
   - Nova opt `micEnabled: boolean`. Quando vira `true`:
     1. `navigator.mediaDevices.getUserMedia({ audio: true })`
     2. `new AudioContext({ sampleRate: 24000 })`
@@ -52,7 +52,7 @@ Contexto: MNT-84 já implementou o receive-side (assistente fala, front toca). M
   - Cleanup: `mediaStream.getTracks().forEach(t => t.stop())`, `context.close()`, disconnect scriptProcessor.
   - Testes: helper puro `float32ToPcm16Base64(samples)` é testável isolado (edge cases: clamp em ±1.0, samples vazias). Mock de `getUserMedia` no hook opcional — se ficar frágil, testa só o helper.
 
-- [ ] **MNT-196** [T][S] Novo atom `web/src/components/atoms/MicButton.tsx`:
+- [x] **MNT-196** [T][S] ✅ commit `660ec51` Novo atom `web/src/components/atoms/MicButton.tsx`:
   - Botão circular, ícone `Mic` (lucide-react) com pulse quando ativo, ícone `MicOff` quando desligado, `AlertTriangle` quando denied.
   - Props: `{ state: 'off' | 'live' | 'denied' | 'requesting', onToggle: () => void }`.
   - Reutilizável em `/onboarding` (MNT-197) e `/chat` (MNT-101 futuro).
@@ -62,7 +62,7 @@ Contexto: MNT-84 já implementou o receive-side (assistente fala, front toca). M
 
 ## Fase 2 — Wire no `/onboarding`
 
-- [ ] **MNT-197** [T][S] `OnboardingHero` renderiza `<MicButton>` abaixo do BarLoader (mesmo slot).
+- [x] **MNT-197** [T][S] ✅ commit `660ec51` `OnboardingHero` renderiza `<MicButton>` abaixo do BarLoader (mesmo slot).
   - `BarLoader` some quando `isWarming = false` (como já é hoje). `MicButton` aparece no lugar quando `!isWarming && !error`.
   - Estado do micButton derivado do `useAgentSession().micState`.
   - Ao clicar: hook flipa `micEnabled: true`. Se `denied`, mostra toast com instrução de habilitar mic no browser.
