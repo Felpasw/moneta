@@ -11,25 +11,23 @@ export function CheckingAccountCard({ account }: CheckingAccountCardProps) {
   return (
     <motion.div
       variants={SETTINGS_STAGGER_ITEM}
-      className="flex h-full flex-col gap-4 rounded-2xl bg-neutral-900 p-5 text-neutral-50"
+      className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl bg-neutral-900 p-5 text-neutral-50"
     >
       <div className="flex items-center gap-3">
-        <div className="rounded-lg bg-white/10 p-1.5">
-          <BankIcon bankName={account.bank.name} size={32} />
-        </div>
+        <BankIcon bankName={account.bank.name} size={44} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{account.nickname}</p>
-          <p className="truncate text-xs opacity-60">{account.bank.name}</p>
+          <p className="truncate text-base font-medium">{account.nickname}</p>
+          <p className="truncate text-sm opacity-60">{account.bank.name}</p>
         </div>
       </div>
-      <div>
-        <p className="text-xs uppercase tracking-wide opacity-60">Balance</p>
-        <p className="font-heading text-xl font-semibold">
+      <div className="flex flex-1 flex-col justify-center py-4">
+        <p className="text-xs uppercase tracking-[0.2em] opacity-50">Balance</p>
+        <p className="font-heading text-5xl font-semibold leading-tight tracking-tight">
           {formatBRL(account.balance)}
         </p>
       </div>
       {account.overdraftLimit !== null ? (
-        <p className="text-xs opacity-60">
+        <p className="text-xs opacity-50">
           Overdraft: {formatBRL(account.overdraftLimit)}
         </p>
       ) : null}

@@ -134,7 +134,7 @@ export function AssistantAvatar({
       src={dataUri}
       alt={`Avatar do assistente (${style})`}
       className={cn(
-        "rounded-full bg-muted object-cover",
+        "rounded-full object-cover",
         SIZE_CLASSES[size],
         STATE_CLASSES[state],
         className,

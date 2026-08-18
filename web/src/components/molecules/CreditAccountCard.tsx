@@ -27,12 +27,10 @@ export function CreditAccountCard({ account }: CreditAccountCardProps) {
       <div className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-white/10 p-2">
-              <BankIcon bankName={account.bank.name} size={28} />
-            </div>
+            <BankIcon bankName={account.bank.name} size={40} />
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{account.nickname}</p>
-              <p className="truncate text-xs opacity-60">{account.bank.name}</p>
+              <p className="truncate text-base font-medium">{account.nickname}</p>
+              <p className="truncate text-sm opacity-60">{account.bank.name}</p>
             </div>
           </div>
           {account.currentInvoice !== null && (

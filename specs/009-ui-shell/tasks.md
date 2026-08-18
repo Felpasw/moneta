@@ -177,6 +177,17 @@ Tasks originalmente no `specs/003-assistant/tasks.md` que são UI/frontend puro.
   - **Não tem textarea de instruções livres — decisão de segurança já documentada em MNT-61.**
   - Testes: renderização condicional dos exemplos por style + interação de mudança (RadioGroup change dispara mutation) + preview de voz (mock do `<audio>` play) + composição da string `dicebear:*:*`.
 - [x] **MNT-66b** [T][S] ✅ commit `5733c85` — Atom `AssistantAvatar` em `web/src/components/atoms/AssistantAvatar.tsx` com props `avatarUrl: string | null`, `state?: 'idle'|'thinking'|'speaking'` (default `idle`), `size?: 'sm'|'md'|'lg'` (default `md`), `fallbackSeed?: string` (default `'user'` — callsite passa `nickname ?? name` do user), `className?: string`. Parse via regex (`/^dicebear:([a-z0-9-]+):([A-Za-z0-9_-]{1,128})$/`) + whitelist dos 6 styles curados (`notionists`, `personas`, `lorelei`, `micah`, `avataaars`, `open-peeps`); qualquer avatarUrl null/inválido/fora da whitelist cai pra `notionists` + `fallbackSeed`. Render usa `new Avatar(styleModule, { seed }).toDataUri()` em `<img>` (SVG inline via data URI — sem HTTP runtime). `useMemo` sobre `(style, seed)` prova via teste que mudança só de `state` não regenera SVG. Classes via `Record` lookup (`STATE_CLASSES`, `SIZE_CLASSES`, `STYLE_MODULES`). **Downgrade `@dicebear/core` 10.3.0 → 9.4.3** — `@dicebear/collection@9` ainda é o único disponível e `personas`+`open-peeps` (v9) quebravam com core@10 por remoção do export `escape`. Suite 59/59, lint zerado (warning `no-img-element` silenciado com WHY: data URI de SVG inline não tem HTTP pra Next otimizar). 12 testes cobrem: parse feliz, 6 styles curados, fallback null/style desconhecido/regex miss, fallbackSeed default `'user'`, classes por state (idle/thinking/speaking), classes por size (sm/md/lg), memoização (só regenera quando (style,seed) muda), merge de `className` customizada
+- [ ] **MNT-243** [T][S] Visual polish nas actions do agent + cards de banco:
+  - **Atom novo** `ShinyButton` (`atoms/ShinyButton.tsx` + `interfaces/ShinyButton.interface.ts`) — variantes `default | green | indigo | red`, glow gradient sweep no hover, hover:scale/rotate/shadow. Reutilizável em qualquer action button. TDD spec 5/5
+  - `MicButton` refatorado — passa a delegar pro `ShinyButton` com variant mapeada por state (`off/requesting → default`, `live → green`, `denied/error → red`). API pública mantida (state, onToggle, className). 5/5 verde
+  - `GlobalAssistant` — botões Message e Info agora usam `ShinyButton`. Info virou **toggle** (clicar de novo fecha o popover). `onMouseDown` do Info faz `stopPropagation` pra não trigar o `useClickOutside` do popover (que fecharia antes do click inverter o state)
+  - `AssistantCapabilitiesPopover` — `bottom-52` → `bottom-16` (popover cola no row de botões em vez de flutuar solto no meio da tela)
+  - `AssistantAvatar` — remove `bg-muted` (DiceBear SVG é transparente; fundo escuro atrás fica desnecessário)
+  - `CheckingAccountCard` — saldo vira herói do card (`text-5xl` centralizado com `flex-1`, header discreto em cima, overdraft rodapé opcional). Remove wrapper `bg-white/10` do `BankIcon`
+  - `CreditAccountCard` — remove wrapper `bg-white/10` do `BankIcon` (mesma razão: SVG do banco já tem fundo colorido próprio)
+  - `BankIcon` (em `CheckingAccountCard` e `CreditAccountCard`) — bumped de 32/28 pra 44/40; nickname `text-sm → text-base`; nome do banco `text-xs → text-sm`
+  - Zero regressão no que já estava verde. As 5 falhas pré-existentes (`OnboardingHero`, `OnboardingScreen`, `AppShell`) continuam iguais — não relacionadas ao escopo
+
 - [x] **MNT-66c** [T][S] ✅ commit `627f233` — Hook `assistantProfileHooks.use()` (classe + `use()` conforme padrão do domínio, `web/src/hooks/useAssistantProfile.ts`) expondo `profile` (query `['agent','profile']` → `GET /agent/profile`), `voices` (query `['agent','voices']` → `GET /agent/voices`, `staleTime: 10min`), `previewVoice` (mutation → `POST /agent/voices/:voiceId/preview`, responseType `arraybuffer` → `Blob(audio/mpeg)`) e `updateProfile` (mutation → `PATCH /agent/profile`, atualiza `queryData` da profile no `onSuccess`). Interface `IAssistantProfileHooks` + `AssistantProfileHooksResult` em `hooks/interfaces/useAssistantProfile.interface.ts`. Service `assistantProfileService` (singleton exportado default, `services/assistantProfile.service.ts`) + interface `IAssistantProfileService` com `AssistantProfile`, `TtsVoice`, `TreatmentStyle` (union `formal|informal|very_informal`), `UpdateProfilePatch`. Testes cobrem: fetch/cache das duas queries, `previewVoice` retornando Blob, `updateProfile` atualizando cache no sucesso e preservando cache no erro (`test/hooks/useAssistantProfile.spec.tsx` + `test/services/assistantProfile.service.spec.ts`). Toast de erro fica no consumer (ainda não wire-up — vem no MNT-66)
 
 ---
@@ -203,6 +214,21 @@ Especializa as páginas abstratas do shell (MNT-100/102/103) com detalhes de dom
 
 - [ ] **MNT-141** [T][S] Página `/transactions` (MNT-102) — lista virtualizada + filtros + FAB. Row de transaction em cartão mostra badge "Fatura {mês}" pequeno. Click em row abre `<TransactionDetail>` sheet
 - [ ] **MNT-142** [T][S] Página `/banks` (MNT-103) — grid de cards. Cartão de crédito tem card com layout diferente: mostra "fatura atual: R$X | fecha em N dias | vencimento: DD/MM". Click abre `/banks/:id` com extrato daquela conta
+
+- [ ] **MNT-242** [T][S] `/banks/[id]` — página de detalhe do banco (foco em 2 features priorizadas pelo user, extrato completo fica pra ciclo posterior):
+  - **Route**: `web/src/app/(app)/(shell)/banks/[id]/page.tsx` + template `BankDetailScreen`
+  - **Header**: `BankIcon` (size 56) + nickname + nome do banco (mesmo padrão do card mas em escala maior). Botão back pra `/banks`
+  - **Balance history chart**: `<BalanceHistoryChart>` organism consumindo `GET /accounts/:id/balance-history?monthsBack=12` (MNT-241a). Line chart com últimos 12 meses. Escape hatch pra formatação de eixo (`monthKey` YYYY-MM → label via `Intl.DateTimeFormat`). Empty state quando conta é nova (< 1 mês de histórico)
+  - **Invoices agrupadas**: `<InvoicesList>` consumindo `GET /accounts/:id/invoices` (MNT-241b). 3 seções colapsáveis:
+    - **Current** — status `open` (fatura em construção, cycle_end no futuro)
+    - **Upcoming** — status `scheduled` (parcelas futuras já materializadas, cycle_start no futuro)
+    - **Past** — status `closed` / `paid` / `overdue`, limitado às últimas 6 por default com "ver mais"
+    - Cada card mostra: mês (Intl month long), total, dueDate, status badge
+    - Só renderiza se `account.creditLimit !== null` (checking accounts não têm invoices)
+  - **Services + hooks**: extend `accountsService` (`getBalanceHistory(id, monthsBack)`) + novo `invoicesService` (`listByAccount(id, status?)`). Hooks singleton no padrão do domínio (classe + `use()` retornando `useSuspenseQuery`)
+  - **Loading/error**: delegados aos Next boundaries do `(shell)`
+  - **Fora de escopo** (fica pra ciclos futuros): extrato de transactions daquela conta, botão editar conta, botão excluir. MNT-142 continua guarda-chuva de UX completa
+  - Testes web: service specs (novos endpoints), hook specs (Suspense + query key), template spec (empty, populated, 3 seções renderizadas quando cartão)
 - [ ] **MNT-143** [T][S] Dashboard (MNT-100): quando user tem cartão, KPI card "Fatura atual" no topo (só o cartão de mais gasto, ou soma se múltiplos). Botão "pagar" navega pra `/invoices/:id`
 - [ ] **MNT-144** [T][S] Página `/invoices/:id` — detail da fatura: lista das transactions daquele ciclo (readonly), total, cycle_start/end, due_date, status. Botão "pagar fatura" abre modal pra escolher `fromAccountId` (contas não-cartão do user) e confirma
 - [ ] **MNT-145** [T][S] Histórico de faturas em `/banks/:id` (se conta é cartão) — lista das últimas N invoices `closed` / `paid` / `overdue` com badge de status
