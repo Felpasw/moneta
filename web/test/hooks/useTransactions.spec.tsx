@@ -55,9 +55,29 @@ describe("transactionsHooks.use()", () => {
 
     await waitFor(() => expect(result.current).not.toBeNull());
     expect(result.current.list.data).toEqual(LIST_RESULT);
-    expect(queryClient.getQueryData(TRANSACTIONS_QUERY_KEYS.list)).toEqual(
+    expect(queryClient.getQueryData(TRANSACTIONS_QUERY_KEYS.list())).toEqual(
       LIST_RESULT,
     );
     expect(mockedService.list).toHaveBeenCalledTimes(1);
+    expect(mockedService.list).toHaveBeenCalledWith(undefined);
+  });
+
+  it("list — propaga filters pro service e cacheia por chave sensível ao filter", async () => {
+    mockedService.list.mockResolvedValueOnce(LIST_RESULT);
+    const { Wrapper, queryClient } = createWrapper();
+    const filters = { accountIds: ["a1", "a2"] };
+
+    const { result } = renderHook(() => transactionsHooks.use(filters), {
+      wrapper: Wrapper,
+    });
+
+    await waitFor(() => expect(result.current.list.data).toEqual(LIST_RESULT));
+    expect(mockedService.list).toHaveBeenCalledWith(filters);
+    expect(queryClient.getQueryData(TRANSACTIONS_QUERY_KEYS.list(filters))).toEqual(
+      LIST_RESULT,
+    );
+    expect(
+      queryClient.getQueryData(TRANSACTIONS_QUERY_KEYS.list()),
+    ).toBeUndefined();
   });
 });

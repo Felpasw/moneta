@@ -2,13 +2,25 @@
 
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { motion } from "motion/react";
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 
 import { BankIcon } from "@/components/atoms/BankIcon";
+import { BankFilter } from "@/components/molecules/BankFilter";
+import { DateRangeFilter } from "@/components/molecules/DateRangeFilter";
+import { TransactionTypeFilter } from "@/components/molecules/TransactionTypeFilter";
+import type { DateRangeValue } from "@/components/molecules/interfaces/DateRangeFilter.interface";
+import { TransactionTypeFilterValue } from "@/components/molecules/interfaces/TransactionTypeFilter.interface";
 import { EmptyState } from "@/components/molecules/EmptyState";
+import accountsHooks from "@/hooks/useAccounts";
 import transactionsHooks from "@/hooks/useTransactions";
+import urlParamsHooks from "@/hooks/useUrlParams";
 import type { TransactionWithEmbeds } from "@/services/interfaces/transactions.interface";
 import { formatBRL, formatBRLSigned, formatRelativeDay } from "@/utils/currency";
+import {
+  buildTransactionFilters,
+  parseIsoDate,
+  toIsoDate,
+} from "@/utils/transactionFilters";
 
 const DIRECTION_ICON = {
   income: ArrowDownLeft,
@@ -16,11 +28,65 @@ const DIRECTION_ICON = {
 } as const;
 
 const ROW_TRANSITION = { duration: 0.25, ease: [0.16, 1, 0.3, 1] } as const;
+const ACCOUNT_IDS_PARAM = "accountIds";
+const DATE_FROM_PARAM = "dateFrom";
+const DATE_TO_PARAM = "dateTo";
+const TYPE_PARAM = "type";
 
 export function TransactionsScreen() {
-  const { list } = transactionsHooks.use();
+  const { searchParams, setParam, setListParam, setParams } = urlParamsHooks.use();
+
+  const selectedAccountIds = useMemo(
+    () => searchParams.getAll(ACCOUNT_IDS_PARAM),
+    [searchParams],
+  );
+
+  const dateRange = useMemo<DateRangeValue>(
+    () => ({
+      from: parseIsoDate(searchParams.get(DATE_FROM_PARAM)),
+      to: parseIsoDate(searchParams.get(DATE_TO_PARAM)),
+    }),
+    [searchParams],
+  );
+
+  const typeFilter =
+    (searchParams.get(TYPE_PARAM) as TransactionTypeFilterValue | null) ??
+    TransactionTypeFilterValue.All;
+
+  const filters = useMemo(
+    () =>
+      buildTransactionFilters({
+        accountIds: selectedAccountIds,
+        dateRange,
+        type: typeFilter,
+      }),
+    [selectedAccountIds, dateRange, typeFilter],
+  );
+
+  const { list: accountsList } = accountsHooks.use();
+  const { list } = transactionsHooks.use(filters);
   const { items, summary } = list.data;
   const isEmpty = items.length === 0;
+
+  const handleFilterChange = (nextSelected: string[]): void =>
+    setListParam(ACCOUNT_IDS_PARAM, nextSelected);
+
+  const handleDateRangeChange = (nextRange: DateRangeValue): void =>
+    setParams({
+      [DATE_FROM_PARAM]: nextRange.from ? toIsoDate(nextRange.from) : null,
+      [DATE_TO_PARAM]: nextRange.to ? toIsoDate(nextRange.to) : null,
+    });
+
+  const handleTypeChange = (nextType: TransactionTypeFilterValue): void =>
+    setParam(
+      TYPE_PARAM,
+      nextType === TransactionTypeFilterValue.All ? null : nextType,
+    );
+
+  const hasFilters =
+    selectedAccountIds.length > 0 ||
+    dateRange.from !== null ||
+    typeFilter !== TransactionTypeFilterValue.All;
 
   return (
     <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-8 px-4 py-8">
@@ -31,44 +97,70 @@ export function TransactionsScreen() {
         </p>
       </section>
 
-      {isEmpty && (
-        <EmptyState
-          title="No transactions yet"
-          description="Ask Moneta to register your first transaction to see it here."
-        />
-      )}
-
       {!isEmpty && (
         <section
           role="region"
           aria-label="Period summary"
-          className="grid grid-cols-3 gap-2 rounded-2xl bg-neutral-900 p-4 text-neutral-50"
+          className="grid grid-cols-3 gap-6"
         >
-          <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wide opacity-60">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Income
             </p>
-            <p className="mt-1 text-sm font-semibold">
+            <p className="mt-1 font-heading text-3xl font-semibold">
               {formatBRL(summary.totalIncome)}
             </p>
           </div>
-          <div className="border-x border-white/10 text-center">
-            <p className="text-[10px] uppercase tracking-wide opacity-60">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Expenses
             </p>
-            <p className="mt-1 text-sm font-semibold opacity-70">
+            <p className="mt-1 font-heading text-3xl font-semibold opacity-70">
               {formatBRL(summary.totalExpense)}
             </p>
           </div>
-          <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wide opacity-60">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Net
             </p>
-            <p className="mt-1 text-sm font-semibold">
+            <p className="mt-1 font-heading text-3xl font-semibold">
               {formatBRL(summary.net)}
             </p>
           </div>
         </section>
+      )}
+
+      <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-3 md:gap-10">
+        <DateRangeFilter
+          value={dateRange}
+          onChange={handleDateRangeChange}
+          label="Filter by period"
+        />
+        <TransactionTypeFilter
+          value={typeFilter}
+          onChange={handleTypeChange}
+          label="Filter by type"
+        />
+        {accountsList.data.items.length > 0 && (
+          <BankFilter
+            accounts={accountsList.data.items}
+            selected={selectedAccountIds}
+            onChange={handleFilterChange}
+            label="Filter by bank"
+            maxVisible={5}
+          />
+        )}
+      </div>
+
+      {isEmpty && (
+        <EmptyState
+          title={hasFilters ? "No transactions in selection" : "No transactions yet"}
+          description={
+            hasFilters
+              ? "Clear the filters or adjust the range to see other transactions."
+              : "Ask Moneta to register your first transaction to see it here."
+          }
+        />
       )}
 
       {!isEmpty && (
@@ -106,14 +198,17 @@ function TransactionRow({ tx, index }: TransactionRowProps) {
       transition={{ ...ROW_TRANSITION, delay: index * 0.02 }}
       className="flex items-center gap-3 rounded-2xl bg-neutral-900 px-4 py-3 text-neutral-50"
     >
-      <div className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
-        <DirectionIcon aria-hidden className="h-4 w-4" />
-        <div className="absolute -bottom-1 -right-1 rounded-full bg-neutral-900 p-0.5 ring-1 ring-white/10">
-          <BankIcon
-            bankName={tx.account.bankName}
-            size={14}
-            className="rounded-full"
-          />
+      <div className="relative size-10 shrink-0 overflow-visible">
+        <BankIcon
+          bankName={tx.account.bankName}
+          size={40}
+          className="h-10 w-10 rounded-xl"
+        />
+        <div
+          data-type={tx.type}
+          className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-neutral-900 ring-2 ring-neutral-900 data-[type=income]:bg-emerald-500/90 data-[type=expense]:bg-rose-500/90"
+        >
+          <DirectionIcon aria-hidden className="h-3 w-3 text-white" />
         </div>
       </div>
       <div className="min-w-0 flex-1">
