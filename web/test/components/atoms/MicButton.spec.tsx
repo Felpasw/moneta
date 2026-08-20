@@ -6,39 +6,39 @@ import { MicButton } from "@/components/atoms/MicButton";
 import { MicState } from "@/hooks/useAgentSession";
 
 describe("<MicButton />", () => {
-  it("mostra o ícone de mic ligado quando state=live", () => {
+  it("shows the mic-on icon when state=live", () => {
     render(<MicButton state={MicState.Live} onToggle={vi.fn()} />);
     expect(
-      screen.getByRole("button", { name: /desligar mic/i }),
+      screen.getByRole("button", { name: /turn off mic/i }),
     ).toBeInTheDocument();
   });
 
-  it("mostra o ícone de mic desligado quando state=off", () => {
+  it("shows the mic-off icon when state=off", () => {
     render(<MicButton state={MicState.Off} onToggle={vi.fn()} />);
     expect(
-      screen.getByRole("button", { name: /ligar mic/i }),
+      screen.getByRole("button", { name: /turn on mic/i }),
     ).toBeInTheDocument();
   });
 
-  it("mostra ícone de alerta quando state=denied e desabilita o botão", () => {
+  it("shows the alert icon when state=denied and disables the button", () => {
     render(<MicButton state={MicState.Denied} onToggle={vi.fn()} />);
-    const button = screen.getByRole("button", { name: /permissão negada/i });
+    const button = screen.getByRole("button", { name: /permission denied/i });
     expect(button).toBeDisabled();
   });
 
-  it("chama onToggle quando clicado (state=off)", async () => {
+  it("calls onToggle when clicked (state=off)", async () => {
     const onToggle = vi.fn();
     const user = userEvent.setup();
     render(<MicButton state={MicState.Off} onToggle={onToggle} />);
-    await user.click(screen.getByRole("button", { name: /ligar mic/i }));
+    await user.click(screen.getByRole("button", { name: /turn on mic/i }));
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
-  it("chama onToggle quando clicado (state=live)", async () => {
+  it("calls onToggle when clicked (state=live)", async () => {
     const onToggle = vi.fn();
     const user = userEvent.setup();
     render(<MicButton state={MicState.Live} onToggle={onToggle} />);
-    await user.click(screen.getByRole("button", { name: /desligar mic/i }));
+    await user.click(screen.getByRole("button", { name: /turn off mic/i }));
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 });

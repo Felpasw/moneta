@@ -18,14 +18,14 @@ function ControlledHost({ initial = "", type }: { initial?: string; type?: strin
 }
 
 describe("<AnimatedInput />", () => {
-  it("renderiza label acessível e input controlado", () => {
+  it("renders accessible label and controlled input", () => {
     render(<ControlledHost />);
 
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
     expect(screen.getByRole("textbox")).toHaveValue("");
   });
 
-  it("dispara onChange e atualiza o valor conforme o user digita", async () => {
+  it("fires onChange and updates the value as the user types", async () => {
     const user = userEvent.setup();
     render(<ControlledHost />);
 
@@ -35,7 +35,7 @@ describe("<AnimatedInput />", () => {
     expect(input).toHaveValue("foo@bar.com");
   });
 
-  it("respeita `type` prop (ex: password vira input seguro sem role textbox)", () => {
+  it("respects the `type` prop (e.g. password becomes a secure input without textbox role)", () => {
     const { container } = render(<ControlledHost type="password" />);
 
     const input = container.querySelector("input");
@@ -43,10 +43,10 @@ describe("<AnimatedInput />", () => {
     expect(input).toHaveAttribute("type", "password");
   });
 
-  it("mostra toggle de olho quando type='password' e showPasswordToggle=true", () => {
+  it("shows an eye toggle when type='password' and showPasswordToggle=true", () => {
     const { container } = render(
       <AnimatedInput
-        label="Senha"
+        label="Password"
         value="segredo123"
         type="password"
         showPasswordToggle
@@ -54,17 +54,17 @@ describe("<AnimatedInput />", () => {
       />,
     );
 
-    const toggle = screen.getByRole("button", { name: /mostrar senha/i });
+    const toggle = screen.getByRole("button", { name: /show password/i });
     expect(toggle).toBeInTheDocument();
     const input = container.querySelector("input");
     expect(input).toHaveAttribute("type", "password");
   });
 
-  it("alterna type entre password e text ao clicar no olho", async () => {
+  it("switches type between password and text when clicking the eye", async () => {
     const user = userEvent.setup();
     const { container } = render(
       <AnimatedInput
-        label="Senha"
+        label="Password"
         value="segredo123"
         type="password"
         showPasswordToggle
@@ -75,34 +75,34 @@ describe("<AnimatedInput />", () => {
     const input = container.querySelector("input");
     expect(input).toHaveAttribute("type", "password");
 
-    await user.click(screen.getByRole("button", { name: /mostrar senha/i }));
+    await user.click(screen.getByRole("button", { name: /show password/i }));
     expect(input).toHaveAttribute("type", "text");
 
-    await user.click(screen.getByRole("button", { name: /esconder senha/i }));
+    await user.click(screen.getByRole("button", { name: /hide password/i }));
     expect(input).toHaveAttribute("type", "password");
   });
 
-  it("não mostra toggle quando type !== password", () => {
+  it("does not show the toggle when type !== password", () => {
     render(
       <AnimatedInput
-        label="E-mail"
+        label="Email"
         value=""
         type="email"
         showPasswordToggle
         onChange={() => undefined}
       />,
     );
-    expect(screen.queryByRole("button", { name: /mostrar senha/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /show password/i })).toBeNull();
   });
 
-  it("chama onFocus/onBlur do consumidor quando fornecidos", async () => {
+  it("calls the consumer's onFocus/onBlur when provided", async () => {
     const onFocus = vi.fn();
     const onBlur = vi.fn();
     const user = userEvent.setup();
 
     render(
       <AnimatedInput
-        label="Nome"
+        label="Name"
         value=""
         onChange={() => undefined}
         onFocus={onFocus}

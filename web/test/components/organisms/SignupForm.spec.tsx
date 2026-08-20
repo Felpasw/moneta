@@ -45,27 +45,27 @@ describe("<SignupForm />", () => {
     routerPush.mockReset();
   });
 
-  it("renderiza nome, email, senha e botão cadastrar", () => {
+  it("renders name, email, password and the sign-up button", () => {
     renderWithProviders(<SignupForm />);
 
-    expect(screen.getByLabelText(/nome/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/e-?mail/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /cadastrar/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign up/i })).toBeInTheDocument();
   });
 
-  it("bloqueia submit quando campos vazios", async () => {
+  it("blocks submit when fields are empty", async () => {
     const user = userEvent.setup();
     renderWithProviders(<SignupForm />);
 
-    await user.click(screen.getByRole("button", { name: /cadastrar/i }));
+    await user.click(screen.getByRole("button", { name: /sign up/i }));
 
     const alerts = await screen.findAllByRole("alert");
     expect(alerts.length).toBeGreaterThan(0);
     expect(signupMutateAsync).not.toHaveBeenCalled();
   });
 
-  it("com form válido: dispara signup + login com as mesmas credenciais", async () => {
+  it("with a valid form: fires signup + login with the same credentials", async () => {
     signupMutateAsync.mockResolvedValueOnce({ user: { id: "u1" } });
     loginMutateAsync.mockResolvedValueOnce({
       user: { id: "u1" },
@@ -74,10 +74,10 @@ describe("<SignupForm />", () => {
     const user = userEvent.setup();
     renderWithProviders(<SignupForm />);
 
-    await user.type(screen.getByLabelText(/nome/i), "Felipe");
-    await user.type(screen.getByLabelText(/e-?mail/i), "prima@moneta.com");
-    await user.type(screen.getByLabelText(/^senha$/i), "hunter22!");
-    await user.click(screen.getByRole("button", { name: /cadastrar/i }));
+    await user.type(screen.getByLabelText(/^name$/i), "Felipe");
+    await user.type(screen.getByLabelText(/email/i), "prima@moneta.com");
+    await user.type(screen.getByLabelText(/^password$/i), "hunter22!");
+    await user.click(screen.getByRole("button", { name: /sign up/i }));
 
     expect(signupMutateAsync).toHaveBeenCalledWith({
       name: "Felipe",

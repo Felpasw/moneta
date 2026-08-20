@@ -7,7 +7,7 @@ const CELL_DELAYS_MS: readonly number[] = [
   0, 100, 200, 100, 200, 200, 300, 300, 400,
 ];
 
-const DEFAULT_LABEL = "Carregando";
+const DEFAULT_LABEL = "Loading";
 
 export function RippleLoader({
   className,

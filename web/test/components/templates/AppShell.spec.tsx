@@ -58,7 +58,7 @@ describe("<AppShell />", () => {
     useUserStore.setState({ user: null });
   });
 
-  it("bloqueia children até o refresh completar e mostra loader", async () => {
+  it("blocks children until refresh completes and shows the loader", async () => {
     useUserStore.setState({ user: STORED_USER });
     let resolveRefresh!: (v: { user: typeof STORED_USER }) => void;
     refreshMutateAsync.mockReturnValue(
@@ -71,31 +71,31 @@ describe("<AppShell />", () => {
     render(
       <Wrapper>
         <AppShell>
-          <div>conteúdo protegido</div>
+          <div>protected content</div>
         </AppShell>
       </Wrapper>,
     );
 
     expect(
-      screen.getByRole("status", { name: /preparando sua sessão/i }),
+      screen.getByRole("status", { name: /getting your session ready/i }),
     ).toBeInTheDocument();
-    expect(screen.queryByText("conteúdo protegido")).toBeNull();
+    expect(screen.queryByText("protected content")).toBeNull();
 
     await act(async () => {
       resolveRefresh({ user: STORED_USER });
     });
 
     await waitFor(() => {
-      expect(screen.getByText("conteúdo protegido")).toBeInTheDocument();
+      expect(screen.getByText("protected content")).toBeInTheDocument();
     });
   });
 
-  it("empurra /login quando não há user no store", async () => {
+  it("pushes /login when there is no user in the store", async () => {
     const Wrapper = wrap();
     render(
       <Wrapper>
         <AppShell>
-          <div>protegido</div>
+          <div>protected</div>
         </AppShell>
       </Wrapper>,
     );
@@ -106,7 +106,7 @@ describe("<AppShell />", () => {
     expect(refreshMutateAsync).not.toHaveBeenCalled();
   });
 
-  it("empurra /login quando refresh falha", async () => {
+  it("pushes /login when refresh fails", async () => {
     useUserStore.setState({ user: STORED_USER });
     refreshMutateAsync.mockRejectedValue(new Error("401"));
 
@@ -114,7 +114,7 @@ describe("<AppShell />", () => {
     render(
       <Wrapper>
         <AppShell>
-          <div>protegido</div>
+          <div>protected</div>
         </AppShell>
       </Wrapper>,
     );
@@ -124,7 +124,7 @@ describe("<AppShell />", () => {
     });
   });
 
-  it("monta a AppSidebar como landmark 'User Profile Menu'", async () => {
+  it("mounts AppSidebar as the 'User Profile Menu' landmark", async () => {
     useUserStore.setState({ user: STORED_USER });
     refreshMutateAsync.mockResolvedValue({ user: STORED_USER });
 
@@ -142,7 +142,7 @@ describe("<AppShell />", () => {
     ).toBeInTheDocument();
   });
 
-  it("lista todas as rotas incluindo o item Assistente", async () => {
+  it("lists every route including the Assistant item", async () => {
     useUserStore.setState({ user: STORED_USER });
     refreshMutateAsync.mockResolvedValue({ user: STORED_USER });
 
@@ -156,13 +156,12 @@ describe("<AppShell />", () => {
     );
 
     const items: Array<[string, string]> = [
-      ["Início", "/dashboard"],
-      ["Transações", "/transactions"],
-      ["Cartões", "/cards"],
-      ["Contas", "/accounts"],
-      ["Categorias", "/categories"],
-      ["Configurações", "/settings"],
-      ["Assistente", "/settings/assistant"],
+      ["Home", "/dashboard"],
+      ["Transactions", "/transactions"],
+      ["Banks", "/banks"],
+      ["Categories", "/categories"],
+      ["Settings", "/settings"],
+      ["Assistant", "/settings/assistant"],
     ];
     for (const [label, href] of items) {
       const link = screen.getByRole("link", { name: new RegExp(label, "i") });
@@ -170,7 +169,7 @@ describe("<AppShell />", () => {
     }
   });
 
-  it("botão Sair chama logout e redireciona pra /login", async () => {
+  it("Sign out button calls logout and redirects to /login", async () => {
     useUserStore.setState({ user: STORED_USER });
     refreshMutateAsync.mockResolvedValue({ user: STORED_USER });
 
@@ -183,7 +182,7 @@ describe("<AppShell />", () => {
       </Wrapper>,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: /sair/i }));
+    await userEvent.click(screen.getByRole("button", { name: /sign out/i }));
 
     expect(logoutMutate).toHaveBeenCalledTimes(1);
     expect(routerPush).toHaveBeenCalledWith("/login");

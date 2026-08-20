@@ -142,12 +142,12 @@ export function OnboardingProgress({
                           {bank.bankName}
                         </span>
                         <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                          Conta corrente
+                          Checking account
                         </span>
                       </div>
                       <div className="text-right">
                         <div className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-                          Saldo
+                          Balance
                         </div>
                         <div className="text-lg font-semibold tabular-nums text-foreground">
                           {formatBalance(bank.balance)}
@@ -162,10 +162,10 @@ export function OnboardingProgress({
                           <div className="flex items-center justify-between gap-3">
                             <div>
                               <div className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-                                Cartão de crédito
+                                Credit card
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                Fecha dia {dayLabel(bank.closeDay)} · vence dia{" "}
+                                Closes on {dayLabel(bank.closeDay)} · due on{" "}
                                 {dayLabel(bank.dueDay)}
                               </div>
                             </div>
@@ -177,7 +177,7 @@ export function OnboardingProgress({
                         {typeof bank.overdraftLimit === "number" && (
                           <div className="flex items-center justify-between gap-3">
                             <div className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-                              Cheque especial
+                              Overdraft
                             </div>
                             <div className="text-right tabular-nums font-medium text-foreground">
                               {formatBalance(bank.overdraftLimit)}
@@ -202,7 +202,7 @@ export function OnboardingProgress({
               className="text-sm font-medium text-primary"
               role="status"
             >
-              Tudo pronto — redirecionando…
+              All set — redirecting…
             </motion.p>
           )}
         </AnimatePresence>

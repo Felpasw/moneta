@@ -13,22 +13,22 @@ import authHooks from "@/hooks/useAuth";
 const SUCCESS_HOLD_MS = 700;
 
 export const SIGNUP_MESSAGES = {
-  nameRequired: "Nome é obrigatório",
-  nameMax: "Nome deve ter no máximo 100 caracteres",
-  emailInvalid: "E-mail inválido",
-  emailRequired: "E-mail é obrigatório",
-  passwordRequired: "Senha é obrigatória",
-  passwordMin: "Senha precisa ter no mínimo 8 caracteres",
-  passwordMax: "Senha deve ter no máximo 128 caracteres",
-  submit: "Cadastrar",
-  submitting: "Cadastrando…",
-  successToast: "Conta criada! Já tá logado.",
-  errorToast: "Não rolou cadastrar. Verifica os dados e tenta de novo.",
-  emailInUseToast: "Esse e-mail já tem conta. Bora fazer login?",
-  nameLabel: "Nome",
-  emailLabel: "E-mail",
-  passwordLabel: "Senha",
-  alreadyHaveAccount: "Já tem conta? Entrar",
+  nameRequired: "Name is required",
+  nameMax: "Name must be at most 100 characters",
+  emailInvalid: "Invalid email",
+  emailRequired: "Email is required",
+  passwordRequired: "Password is required",
+  passwordMin: "Password must be at least 8 characters",
+  passwordMax: "Password must be at most 128 characters",
+  submit: "Sign up",
+  submitting: "Signing up…",
+  successToast: "Account created! You're signed in.",
+  errorToast: "Couldn't sign up. Check the info and try again.",
+  emailInUseToast: "That email already has an account. Sign in instead?",
+  nameLabel: "Name",
+  emailLabel: "Email",
+  passwordLabel: "Password",
+  alreadyHaveAccount: "Already have an account? Sign in",
 } as const;
 
 const signupSchema = z.object({

@@ -28,8 +28,7 @@ export function BankAvatar({ account, isSelected, onClick }: BankAvatarProps) {
         <BankIcon
           bankName={account.bank.name}
           size={64}
-          data-selected={isSelected || undefined}
-          className="h-full w-full grayscale transition-all duration-200 data-[selected]:grayscale-0"
+          className="h-full w-full grayscale transition-all duration-200 group-data-[selected]:grayscale-0"
         />
       </div>
 

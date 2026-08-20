@@ -25,7 +25,7 @@ const TITLE_TEXT = "MONETA";
 const TITLE_SIZE_CLASS = "text-[clamp(3rem,14vw,10rem)]";
 
 const DESCRIPTION =
-  "O jeito conversacional de cuidar da grana. Fala, digita ou clica — o Moneta escuta, entende e organiza cartões, faturas, receitas e gastos no mesmo lugar. Sem planilha, sem menu, no ritmo de uma conversa.";
+  "The conversational way to handle your money. Talk, type, or tap — Moneta listens, understands, and keeps cards, invoices, income, and expenses in one place. No spreadsheets, no menus, at the pace of a conversation.";
 
 export function AboutScreen({ versions }: AboutScreenProps) {
   return (

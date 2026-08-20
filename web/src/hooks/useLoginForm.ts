@@ -13,19 +13,19 @@ import authHooks from "@/hooks/useAuth";
 const SUCCESS_HOLD_MS = 700;
 
 export const LOGIN_MESSAGES = {
-  emailInvalid: "E-mail inválido",
-  emailRequired: "E-mail é obrigatório",
-  passwordRequired: "Senha é obrigatória",
-  passwordMin: "Senha precisa ter no mínimo 8 caracteres",
-  submit: "Entrar",
-  submitting: "Entrando…",
-  successToast: "Login efetuado com sucesso",
-  errorToast: "Não rolou entrar. Confere as credenciais e tenta de novo.",
-  emailLabel: "E-mail",
-  passwordLabel: "Senha",
-  title: "Entrar na Moneta",
-  subtitle: "Acesse sua conta pra continuar",
-  forgotPassword: "Esqueci minha senha",
+  emailInvalid: "Invalid email",
+  emailRequired: "Email is required",
+  passwordRequired: "Password is required",
+  passwordMin: "Password must be at least 8 characters",
+  submit: "Sign in",
+  submitting: "Signing in…",
+  successToast: "Signed in successfully",
+  errorToast: "Couldn't sign in. Check your credentials and try again.",
+  emailLabel: "Email",
+  passwordLabel: "Password",
+  title: "Sign in to Moneta",
+  subtitle: "Access your account to continue",
+  forgotPassword: "Forgot my password",
 } as const;
 
 const loginSchema = z.object({

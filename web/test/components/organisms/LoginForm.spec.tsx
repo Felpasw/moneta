@@ -43,33 +43,33 @@ describe("<LoginForm />", () => {
     routerPush.mockReset();
   });
 
-  it("renderiza campos de email e senha e botão de submit", () => {
+  it("renders email/password fields and a submit button", () => {
     renderWithProviders(<LoginForm />);
 
-    expect(screen.getByLabelText(/e-?mail/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /entrar/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
   });
 
-  it("bloqueia submit e mostra erros quando campos vazios", async () => {
+  it("blocks submit and shows errors when fields are empty", async () => {
     const user = userEvent.setup();
     renderWithProviders(<LoginForm />);
 
-    await user.click(screen.getByRole("button", { name: /entrar/i }));
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     const alerts = await screen.findAllByRole("alert");
     expect(alerts.length).toBeGreaterThan(0);
     expect(loginMutateAsync).not.toHaveBeenCalled();
   });
 
-  it("chama login.mutateAsync com credenciais quando o form é válido", async () => {
+  it("calls login.mutateAsync with credentials when the form is valid", async () => {
     loginMutateAsync.mockResolvedValueOnce({ user: { id: "u1" }, accessToken: "t" });
     const user = userEvent.setup();
     renderWithProviders(<LoginForm />);
 
-    await user.type(screen.getByLabelText(/e-?mail/i), "prima@gostosa.com");
-    await user.type(screen.getByLabelText(/^senha$/i), "hunter22!");
-    await user.click(screen.getByRole("button", { name: /entrar/i }));
+    await user.type(screen.getByLabelText(/email/i), "prima@gostosa.com");
+    await user.type(screen.getByLabelText(/^password$/i), "hunter22!");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(loginMutateAsync).toHaveBeenCalledTimes(1);
     expect(loginMutateAsync).toHaveBeenCalledWith({

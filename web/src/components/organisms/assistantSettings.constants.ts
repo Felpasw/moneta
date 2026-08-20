@@ -13,8 +13,8 @@ export interface OutputLanguageOption {
 export const OUTPUT_LANGUAGE_OPTIONS: readonly OutputLanguageOption[] = [
   {
     value: "pt_BR",
-    label: "Português (Brasil)",
-    description: "O assistente responde em português brasileiro.",
+    label: "Portuguese (Brazil)",
+    description: "The assistant replies in Brazilian Portuguese.",
   },
   {
     value: "en_US",

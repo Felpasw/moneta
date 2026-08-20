@@ -129,10 +129,10 @@ export function AssistantAvatar({
   }, [style, seed]);
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- SVG inline via data URI, sem otimização remota aplicável
+    // eslint-disable-next-line @next/next/no-img-element -- inline SVG via data URI, remote optimization not applicable
     <img
       src={dataUri}
-      alt={`Avatar do assistente (${style})`}
+      alt={`Assistant avatar (${style})`}
       className={cn(
         "rounded-full object-cover",
         SIZE_CLASSES[size],
