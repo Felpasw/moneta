@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.15.0](https://github.com/Felpasw/moneta/compare/api-v0.14.0...api-v0.15.0) (2026-08-20)
+
+
+### ✨ Features
+
+* **web/agent:** ShinyButton actions + visual polish [MNT-243] ([aa2064c](https://github.com/Felpasw/moneta/commit/aa2064cee085068254471dad1951b2fa6aabfe45))
+
 ## [0.14.0](https://github.com/Felpasw/moneta/compare/api-v0.13.0...api-v0.14.0) (2026-08-17)
 
 
