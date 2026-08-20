@@ -6,7 +6,7 @@ import { AssistantSettingsLanguage } from "@/components/organisms/AssistantSetti
 import { OUTPUT_LANGUAGE_OPTIONS } from "@/components/organisms/assistantSettings.constants";
 
 describe("AssistantSettingsLanguage", () => {
-  it("renders every OutputLanguage option (Português, English)", () => {
+  it("renders every OutputLanguage option (Portuguese, English)", () => {
     render(<AssistantSettingsLanguage value="pt_BR" onChange={vi.fn()} />);
 
     for (const option of OUTPUT_LANGUAGE_OPTIONS) {
@@ -31,7 +31,7 @@ describe("AssistantSettingsLanguage", () => {
       screen.getByRole("radio", { name: /english/i }),
     ).toBeChecked();
     expect(
-      screen.getByRole("radio", { name: /portugu/i }),
+      screen.getByRole("radio", { name: /portuguese/i }),
     ).not.toBeChecked();
   });
 
@@ -50,7 +50,7 @@ describe("AssistantSettingsLanguage", () => {
     const onChange = vi.fn();
     render(<AssistantSettingsLanguage value="pt_BR" onChange={onChange} />);
 
-    const portugueseRadio = screen.getByRole("radio", { name: /portugu/i });
+    const portugueseRadio = screen.getByRole("radio", { name: /portuguese/i });
     await userEvent.click(portugueseRadio);
 
     expect(onChange).not.toHaveBeenCalled();

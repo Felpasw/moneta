@@ -25,18 +25,18 @@ interface StrengthDescriptor {
 
 const STRENGTH_DESCRIPTORS: Record<StrengthLevel, StrengthDescriptor> = {
   [StrengthLevel.EMPTY]: { color: "", label: "", value: 0 },
-  [StrengthLevel.WEAK]: { color: "bg-destructive", label: "Fraca", value: 20 },
-  [StrengthLevel.FAIR]: { color: "bg-orange-500", label: "Razoável", value: 40 },
-  [StrengthLevel.GOOD]: { color: "bg-yellow-500", label: "Boa", value: 60 },
-  [StrengthLevel.STRONG]: { color: "bg-blue-500", label: "Forte", value: 80 },
+  [StrengthLevel.WEAK]: { color: "bg-destructive", label: "Weak", value: 20 },
+  [StrengthLevel.FAIR]: { color: "bg-orange-500", label: "Fair", value: 40 },
+  [StrengthLevel.GOOD]: { color: "bg-yellow-500", label: "Good", value: 60 },
+  [StrengthLevel.STRONG]: { color: "bg-blue-500", label: "Strong", value: 80 },
   [StrengthLevel.VERY_STRONG]: {
     color: "bg-green-500",
-    label: "Muito forte",
+    label: "Very strong",
     value: 100,
   },
 };
 
-const STRENGTH_LABEL = "Força da senha";
+const STRENGTH_LABEL = "Password strength";
 
 const SCORE_CHECKS: Array<(password: string) => boolean> = [
   (password) => password.length >= 8,

@@ -9,6 +9,27 @@ vi.mock("@/services/transactions.service", () => ({
   },
 }));
 
+vi.mock("@/services/accounts.service", () => ({
+  default: {
+    list: vi.fn(() =>
+      Promise.resolve({
+        items: [],
+        summary: { totalBalance: 0, checkingCount: 0, totalOverdraft: 0 },
+      }),
+    ),
+  },
+}));
+
+vi.mock("@edusites/bancos-brasil", () => ({
+  svgBanco: ({ nome }: { nome: string }) => Promise.resolve(`<svg data-slug="${nome}" />`),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  usePathname: () => "/transactions",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { TransactionsScreen } from "@/components/templates/TransactionsScreen";
 import transactionsService from "@/services/transactions.service";
 import type {

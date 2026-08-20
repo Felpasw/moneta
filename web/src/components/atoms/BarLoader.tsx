@@ -17,7 +17,7 @@ const DEFAULT_BAR_WIDTH = 6;
 const DEFAULT_BAR_HEIGHT = 32;
 const DEFAULT_SPEED_SECONDS = 1.2;
 const DEFAULT_COLOR = "bg-foreground";
-const DEFAULT_LABEL = "Conectando…";
+const DEFAULT_LABEL = "Connecting…";
 const BAR_DELAY_STEP_SECONDS = 0.1;
 
 export function BarLoader({

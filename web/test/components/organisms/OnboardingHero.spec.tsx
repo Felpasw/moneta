@@ -18,63 +18,63 @@ const baseProps = {
 };
 
 describe("<OnboardingHero />", () => {
-  it("renderiza orb, título e subtítulo", () => {
+  it("renders orb, title and subtitle", () => {
     render(<OnboardingHero {...baseProps} />);
 
     expect(screen.getByTestId("voice-orb")).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: /bem-vindo à moneta/i }),
+      screen.getByRole("heading", { name: /welcome to moneta/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/toma um segundo pro seu assistente respirar/i),
+      screen.getByText(/give your assistant a second to breathe/i),
     ).toBeInTheDocument();
   });
 
-  it("mostra BarLoader enquanto isWarming=true", () => {
+  it("shows BarLoader while isWarming=true", () => {
     render(<OnboardingHero {...baseProps} isWarming />);
 
     expect(
-      screen.getByRole("status", { name: /conectando/i }),
+      screen.getByRole("status", { name: /connecting/i }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /ligar mic/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /turn on mic/i })).toBeNull();
   });
 
-  it("mostra MicButton quando isWarming=false", () => {
+  it("shows MicButton when isWarming=false", () => {
     render(<OnboardingHero {...baseProps} />);
 
     expect(
-      screen.getByRole("button", { name: /ligar mic/i }),
+      screen.getByRole("button", { name: /turn on mic/i }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("status", { name: /conectando/i })).toBeNull();
+    expect(screen.queryByRole("status", { name: /connecting/i })).toBeNull();
   });
 
-  it("clicar em MicButton dispara onMicToggle", async () => {
+  it("clicking MicButton fires onMicToggle", async () => {
     const onMicToggle = vi.fn();
     const user = userEvent.setup();
     render(<OnboardingHero {...baseProps} onMicToggle={onMicToggle} />);
 
-    await user.click(screen.getByRole("button", { name: /ligar mic/i }));
+    await user.click(screen.getByRole("button", { name: /turn on mic/i }));
     expect(onMicToggle).toHaveBeenCalledTimes(1);
   });
 
-  it("renderiza StepIndicator com labels do onboarding quando activeStep é passado", () => {
+  it("renders StepIndicator with onboarding labels when activeStep is passed", () => {
     render(<OnboardingHero {...baseProps} activeStep={0} />);
 
-    for (const label of ["Apelido", "Bancos", "Saldos", "Ajustes", "Pronto"]) {
+    for (const label of ["Nickname", "Banks", "Balances", "Settings", "Done"]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
   });
 
-  it("não renderiza StepIndicator quando activeStep é undefined", () => {
+  it("does not render StepIndicator when activeStep is undefined", () => {
     render(<OnboardingHero {...baseProps} />);
 
-    expect(screen.queryByText("Apelido")).toBeNull();
-    expect(screen.queryByText("Pronto")).toBeNull();
+    expect(screen.queryByText("Nickname")).toBeNull();
+    expect(screen.queryByText("Done")).toBeNull();
   });
 
-  it("esconde StepIndicator enquanto isWarming (loader ativo)", () => {
+  it("hides StepIndicator while isWarming (loader active)", () => {
     render(<OnboardingHero {...baseProps} isWarming activeStep={2} />);
 
-    expect(screen.queryByText("Saldos")).toBeNull();
+    expect(screen.queryByText("Balances")).toBeNull();
   });
 });

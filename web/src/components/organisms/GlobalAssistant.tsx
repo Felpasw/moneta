@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { AgentActionIndicator } from "@/components/atoms/AgentActionIndicator";
 import { BarLoader } from "@/components/atoms/BarLoader";
 import { MicButton } from "@/components/atoms/MicButton";
+import { ShinyButton } from "@/components/atoms/ShinyButton";
 import { TalkingAssistantAvatar } from "@/components/atoms/TalkingAssistantAvatar";
 import { AssistantCapabilitiesPopover } from "@/components/organisms/AssistantCapabilitiesPopover";
 import { GlobalAssistantSlideSlot } from "@/components/organisms/GlobalAssistantSlideSlot";
@@ -53,7 +54,7 @@ export function GlobalAssistant() {
   };
 
   const handleInfoClick = (): void => {
-    setCapabilitiesOpen(true);
+    setCapabilitiesOpen((prev) => !prev);
   };
 
   return (
@@ -102,7 +103,7 @@ export function GlobalAssistant() {
                 <MicButton
                   state={micState}
                   onToggle={agentSessionActions.toggleMic}
-                  className="h-12 w-12 shrink-0 cursor-pointer bg-background/60 backdrop-blur-md"
+                  className="shrink-0"
                 />
               )}
             </GlobalAssistantSlideSlot>
@@ -110,33 +111,26 @@ export function GlobalAssistant() {
 
           {expanded ? (
             <GlobalAssistantSlideSlot key="msg" delay={0.08}>
-              <button
-                type="button"
-                aria-label="Messages (coming soon)"
+              <ShinyButton
+                ariaLabel="Messages (coming soon)"
                 onClick={handleMessageClick}
-                className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-background/60 ring-1 ring-foreground/20 backdrop-blur-md transition-all hover:ring-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <MessageCircle
-                  aria-hidden
-                  className="h-6 w-6 text-foreground/70"
-                />
-              </button>
+                variant="default"
+                className="p-2"
+                icon={<MessageCircle aria-hidden className="h-6 w-6 text-white/90" />}
+              />
             </GlobalAssistantSlideSlot>
           ) : null}
 
           {expanded ? (
             <GlobalAssistantSlideSlot key="info" delay={0.16}>
-              <button
-                type="button"
-                aria-label="What the assistant can do"
+              <ShinyButton
+                ariaLabel="What the assistant can do"
                 onClick={handleInfoClick}
-                className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-background/60 ring-1 ring-foreground/20 backdrop-blur-md transition-all hover:ring-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <Info
-                  aria-hidden
-                  className="h-6 w-6 text-foreground/70"
-                />
-              </button>
+                onMouseDown={(e) => e.stopPropagation()}
+                variant="indigo"
+                className="p-2"
+                icon={<Info aria-hidden className="h-6 w-6 text-indigo-300" />}
+              />
             </GlobalAssistantSlideSlot>
           ) : null}
         </AnimatePresence>

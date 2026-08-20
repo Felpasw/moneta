@@ -3,7 +3,7 @@ import { HeroShutterText } from "@/components/atoms/HeroShutterText";
 import { SignupForm } from "@/components/organisms/SignupForm";
 
 export const metadata = {
-  title: "Cadastrar · Moneta",
+  title: "Sign up · Moneta",
 };
 
 const HERO_TEXT_SIZE = "text-[clamp(2rem,8vw,6rem)]";

@@ -2,6 +2,8 @@
 
 import { AlertTriangle, Loader2, Mic, MicOff } from "lucide-react";
 
+import { ShinyButton } from "@/components/atoms/ShinyButton";
+import type { ShinyButtonVariant } from "@/components/atoms/interfaces/ShinyButton.interface";
 import { MicState } from "@/hooks/useAgentSession";
 import { cn } from "@/lib/utils";
 
@@ -14,45 +16,45 @@ interface MicButtonProps {
 interface StateVisual {
   Icon: typeof Mic;
   label: string;
+  variant: ShinyButtonVariant;
   iconClass: string;
-  ringClass: string;
   disabled: boolean;
 }
 
 const STATE_VISUAL: Record<MicState, StateVisual> = {
   [MicState.Off]: {
     Icon: MicOff,
-    label: "Ligar mic",
-    iconClass: "text-foreground/70",
-    ringClass: "ring-1 ring-foreground/20 hover:ring-foreground/40",
+    label: "Turn on mic",
+    variant: "default",
+    iconClass: "text-white/90",
     disabled: false,
   },
   [MicState.Requesting]: {
     Icon: Loader2,
-    label: "Solicitando permissão",
-    iconClass: "text-foreground animate-spin",
-    ringClass: "ring-1 ring-foreground/40",
+    label: "Requesting permission",
+    variant: "default",
+    iconClass: "text-white/90 animate-spin",
     disabled: true,
   },
   [MicState.Live]: {
     Icon: Mic,
-    label: "Desligar mic",
-    iconClass: "text-background",
-    ringClass: "bg-foreground animate-pulse",
+    label: "Turn off mic",
+    variant: "green",
+    iconClass: "text-green-300 animate-pulse",
     disabled: false,
   },
   [MicState.Denied]: {
     Icon: AlertTriangle,
-    label: "Permissão negada",
-    iconClass: "text-destructive",
-    ringClass: "ring-1 ring-destructive/60",
+    label: "Permission denied",
+    variant: "red",
+    iconClass: "text-red-300",
     disabled: true,
   },
   [MicState.Error]: {
     Icon: AlertTriangle,
-    label: "Erro no mic",
-    iconClass: "text-destructive",
-    ringClass: "ring-1 ring-destructive/60",
+    label: "Mic error",
+    variant: "red",
+    iconClass: "text-red-300",
     disabled: true,
   },
 };
@@ -62,21 +64,14 @@ export function MicButton({ state, onToggle, className }: MicButtonProps) {
   const { Icon } = visual;
 
   return (
-    <button
-      type="button"
-      aria-label={visual.label}
-      disabled={visual.disabled}
+    <ShinyButton
+      ariaLabel={visual.label}
+      variant={visual.variant}
       onClick={onToggle}
-      className={cn(
-        "flex h-14 w-14 items-center justify-center rounded-full transition-all",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        "disabled:cursor-not-allowed disabled:opacity-70",
-        visual.ringClass,
-        className,
-      )}
-    >
-      <Icon className={cn("h-6 w-6", visual.iconClass)} aria-hidden="true" />
-    </button>
+      disabled={visual.disabled}
+      className={cn("p-2", className)}
+      icon={<Icon aria-hidden className={cn("h-6 w-6", visual.iconClass)} />}
+    />
   );
 }
 

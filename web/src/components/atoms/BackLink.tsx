@@ -12,7 +12,7 @@ interface BackLinkProps {
   className?: string;
 }
 
-const DEFAULT_LABEL = "Voltar";
+const DEFAULT_LABEL = "Back";
 
 export function BackLink({ href, label = DEFAULT_LABEL, className }: BackLinkProps) {
   return (

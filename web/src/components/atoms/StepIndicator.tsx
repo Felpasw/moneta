@@ -63,7 +63,7 @@ export function StepIndicator({
     <div className={cn("w-full max-w-md", className)}>
       <ol
         className="flex items-center justify-between gap-2"
-        aria-label="Progresso do onboarding"
+        aria-label="Onboarding progress"
       >
         {steps.map((label, index) => {
           const state = stateFor(index, clampedIndex);
@@ -89,7 +89,7 @@ export function StepIndicator({
                     "disabled:cursor-default",
                     canJump && "cursor-pointer hover:opacity-90",
                   )}
-                  aria-label={`Etapa ${index + 1}: ${label}`}
+                  aria-label={`Step ${index + 1}: ${label}`}
                 >
                   {state === "past" ? (
                     <Check className="h-4 w-4" strokeWidth={2.75} />

@@ -6,26 +6,26 @@ import { AboutScreen } from "@/components/templates/AboutScreen";
 const VERSIONS = { web: "0.4.0", api: "0.7.0" };
 
 describe("<AboutScreen />", () => {
-  it("renderiza MONETA como título animado", () => {
+  it("renders MONETA as the animated title", () => {
     render(<AboutScreen versions={VERSIONS} />);
     expect(screen.getByText("MONETA")).toBeInTheDocument();
   });
 
-  it("mostra a versão do web", () => {
+  it("shows the web version", () => {
     render(<AboutScreen versions={VERSIONS} />);
     const list = screen.getByLabelText(/app versions/i);
     expect(list).toHaveTextContent(/v0\.4\.0/);
     expect(list).toHaveTextContent(/web/i);
   });
 
-  it("mostra a versão da api", () => {
+  it("shows the api version", () => {
     render(<AboutScreen versions={VERSIONS} />);
     const list = screen.getByLabelText(/app versions/i);
     expect(list).toHaveTextContent(/v0\.7\.0/);
     expect(list).toHaveTextContent(/api/i);
   });
 
-  it("linka pro site do Moneta com target=_blank + rel de segurança", () => {
+  it("links to the Moneta site with target=_blank + safe rel", () => {
     render(<AboutScreen versions={VERSIONS} />);
     const link = screen.getByRole("link", {
       name: /moneta\.felipeclacerda\.com/i,
@@ -36,7 +36,7 @@ describe("<AboutScreen />", () => {
     expect(link).toHaveAttribute("rel", expect.stringMatching(/noreferrer/));
   });
 
-  it("linka pro portfolio do autor com target=_blank + rel de segurança", () => {
+  it("links to the author's portfolio with target=_blank + safe rel", () => {
     render(<AboutScreen versions={VERSIONS} />);
     const link = screen.getByRole("link", {
       name: /^felipeclacerda\.com/i,
@@ -46,8 +46,8 @@ describe("<AboutScreen />", () => {
     expect(link).toHaveAttribute("rel", expect.stringMatching(/noopener/));
   });
 
-  it("mostra uma descrição do produto", () => {
+  it("shows a product description", () => {
     render(<AboutScreen versions={VERSIONS} />);
-    expect(screen.getByText(/conversacional/i)).toBeInTheDocument();
+    expect(screen.getByText(/conversational/i)).toBeInTheDocument();
   });
 });

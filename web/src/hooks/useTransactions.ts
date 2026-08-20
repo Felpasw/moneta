@@ -9,7 +9,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import transactionsService from "@/services/transactions.service";
-import type { ListTransactionsResult } from "@/services/interfaces/transactions.interface";
+import type {
+  ListTransactionsFilters,
+  ListTransactionsResult,
+} from "@/services/interfaces/transactions.interface";
 
 import type {
   ITransactionsHooks,
@@ -18,14 +21,15 @@ import type {
 
 export const TRANSACTIONS_QUERY_KEYS = {
   all: ["transactions"] as const,
-  list: ["transactions", "list"] as const,
+  list: (filters?: ListTransactionsFilters) =>
+    ["transactions", "list", filters ?? {}] as const,
 };
 
 class TransactionsHooks implements ITransactionsHooks {
-  use(): TransactionsHooksResult {
+  use(filters?: ListTransactionsFilters): TransactionsHooksResult {
     const list = useSuspenseQuery<ListTransactionsResult>({
-      queryKey: TRANSACTIONS_QUERY_KEYS.list,
-      queryFn: () => transactionsService.list(),
+      queryKey: TRANSACTIONS_QUERY_KEYS.list(filters),
+      queryFn: () => transactionsService.list(filters),
     });
 
     return { list };

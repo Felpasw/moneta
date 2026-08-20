@@ -13,7 +13,7 @@ function Host({ defaultEmail = "" }: { defaultEmail?: string }) {
   const { control } = useForm<FormShape>({
     defaultValues: { email: defaultEmail },
   });
-  return <ControlledInput control={control} name="email" label="E-mail" type="email" />;
+  return <ControlledInput control={control} name="email" label="Email" type="email" />;
 }
 
 function HostWithErrors() {
@@ -24,7 +24,7 @@ function HostWithErrors() {
         return {
           values: {},
           errors: {
-            email: { type: "required", message: "E-mail é obrigatório" },
+            email: { type: "required", message: "Email is required" },
           },
         };
       }
@@ -34,33 +34,33 @@ function HostWithErrors() {
   });
   return (
     <form onSubmit={handleSubmit(() => undefined)} noValidate>
-      <ControlledInput control={control} name="email" label="E-mail" />
+      <ControlledInput control={control} name="email" label="Email" />
       <button type="submit">Submit</button>
     </form>
   );
 }
 
 describe("<ControlledInput />", () => {
-  it("renderiza input controlled via react-hook-form", async () => {
+  it("renders input controlled via react-hook-form", async () => {
     const user = userEvent.setup();
     render(<Host />);
 
-    const input = screen.getByLabelText(/e-?mail/i);
+    const input = screen.getByLabelText(/email/i);
     await user.type(input, "prima@moneta.com");
     expect(input).toHaveValue("prima@moneta.com");
   });
 
-  it("respeita defaultValues do form", () => {
+  it("respects the form's defaultValues", () => {
     render(<Host defaultEmail="cagao@moneta.com" />);
-    expect(screen.getByLabelText(/e-?mail/i)).toHaveValue("cagao@moneta.com");
+    expect(screen.getByLabelText(/email/i)).toHaveValue("cagao@moneta.com");
   });
 
-  it("mostra mensagem de erro vinda do fieldState", async () => {
+  it("shows the error message coming from fieldState", async () => {
     const user = userEvent.setup();
     render(<HostWithErrors />);
 
     await user.click(screen.getByRole("button", { name: /submit/i }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/e-?mail é obrigatório/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/email is required/i);
   });
 });

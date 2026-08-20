@@ -42,16 +42,16 @@ const BANKS: Array<{
 ];
 
 const DEFAULT_CATEGORIES: string[] = [
-  'Alimentação',
-  'Transporte',
-  'Moradia',
-  'Lazer',
-  'Saúde',
-  'Educação',
-  'Assinaturas',
-  'Salário',
-  'Investimentos',
-  'Outros',
+  'Food',
+  'Transportation',
+  'Housing',
+  'Leisure',
+  'Health',
+  'Education',
+  'Subscriptions',
+  'Salary',
+  'Investments',
+  'Other',
 ];
 
 async function seedBanks(): Promise<void> {

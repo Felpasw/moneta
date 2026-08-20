@@ -12,8 +12,8 @@ interface AnimatedInputProps extends InputHTMLAttributes<HTMLInputElement> {
   showPasswordToggle?: boolean;
 }
 
-const TOGGLE_SHOW_LABEL = "Mostrar senha";
-const TOGGLE_HIDE_LABEL = "Esconder senha";
+const TOGGLE_SHOW_LABEL = "Show password";
+const TOGGLE_HIDE_LABEL = "Hide password";
 
 const containerVariants: Variants = {
   initial: {},

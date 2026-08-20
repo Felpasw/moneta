@@ -4,18 +4,18 @@ import { describe, expect, it } from "vitest";
 import { PasswordStrengthMeter } from "@/components/molecules/PasswordStrengthMeter";
 
 describe("<PasswordStrengthMeter />", () => {
-  it("não mostra label de força quando value é vazio", () => {
+  it("does not show a strength label when value is empty", () => {
     render(<PasswordStrengthMeter value="" />);
-    expect(screen.queryByText(/fraca|razoável|boa|forte/i)).toBeNull();
+    expect(screen.queryByText(/weak|fair|good|strong/i)).toBeNull();
   });
 
-  it("mostra 'fraca' pra senha de 8 chars sem variedade", () => {
+  it("shows 'Weak' for an 8-char password with no variety", () => {
     render(<PasswordStrengthMeter value="abcdefgh" />);
-    expect(screen.getByText(/fraca/i)).toBeInTheDocument();
+    expect(screen.getByText(/weak/i)).toBeInTheDocument();
   });
 
-  it("mostra 'muito forte' pra senha longa com variedade", () => {
+  it("shows 'Very strong' for a long password with variety", () => {
     render(<PasswordStrengthMeter value="Abcdefgh123!@#" />);
-    expect(screen.getByText(/muito forte/i)).toBeInTheDocument();
+    expect(screen.getByText(/very strong/i)).toBeInTheDocument();
   });
 });

@@ -4,17 +4,17 @@ import { describe, expect, it } from "vitest";
 import { BackLink } from "@/components/atoms/BackLink";
 
 describe("<BackLink />", () => {
-  it("renderiza link com href e label default 'Voltar'", () => {
+  it("renders link with href and default label 'Back'", () => {
     render(<BackLink href="/" />);
 
-    const link = screen.getByRole("link", { name: /voltar/i });
+    const link = screen.getByRole("link", { name: /back/i });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/");
   });
 
-  it("aceita label customizado", () => {
-    render(<BackLink href="/somewhere" label="Cancelar" />);
+  it("accepts a custom label", () => {
+    render(<BackLink href="/somewhere" label="Cancel" />);
 
-    expect(screen.getByRole("link", { name: /cancelar/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /cancel/i })).toBeInTheDocument();
   });
 });

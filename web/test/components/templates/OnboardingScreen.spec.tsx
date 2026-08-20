@@ -75,7 +75,7 @@ afterEach(() => {
 });
 
 describe("<OnboardingScreen />", () => {
-  it("abre a sessão do agente com mic desligado por default", () => {
+  it("opens the agent session with the mic off by default", () => {
     render(<OnboardingScreen />);
     expect(useAgentSessionMock).toHaveBeenCalledWith({
       enabled: true,
@@ -83,18 +83,18 @@ describe("<OnboardingScreen />", () => {
     });
   });
 
-  it("clicar em MicButton pede pra re-renderizar com micEnabled=true", async () => {
+  it("clicking MicButton asks for a re-render with micEnabled=true", async () => {
     const user = userEvent.setup();
     render(<OnboardingScreen />);
 
-    await user.click(screen.getByRole("button", { name: /ligar mic/i }));
+    await user.click(screen.getByRole("button", { name: /turn on mic/i }));
 
     const lastCall =
       useAgentSessionMock.mock.calls[useAgentSessionMock.mock.calls.length - 1];
     expect(lastCall[0]).toEqual({ enabled: true, micEnabled: true });
   });
 
-  it("dispara toast e reseta mic quando micState=denied", async () => {
+  it("fires a toast and resets the mic when micState=denied", async () => {
     useAgentSessionMock.mockReturnValue({
       ...defaultAgentSessionShape(),
       micState: MicState.Denied,
@@ -103,18 +103,18 @@ describe("<OnboardingScreen />", () => {
 
     await new Promise((r) => setTimeout(r, 0));
     expect(toastError).toHaveBeenCalledWith(
-      expect.stringMatching(/permita o microfone/i),
+      expect.stringMatching(/allow microphone/i),
     );
   });
 
-  it("renderiza o StepIndicator com os labels do onboarding", () => {
+  it("renders the StepIndicator with the onboarding labels", () => {
     render(<OnboardingScreen />);
-    for (const label of ["Apelido", "Bancos", "Saldos", "Ajustes", "Pronto"]) {
+    for (const label of ["Nickname", "Banks", "Balances", "Settings", "Done"]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
   });
 
-  it("dispara router.push quando redirectTarget é setado pelo envelope system.redirect", () => {
+  it("fires router.push when redirectTarget is set by the system.redirect envelope", () => {
     useAgentSessionMock.mockReturnValue({
       ...defaultAgentSessionShape(),
       redirectTarget: "/dashboard",
@@ -125,7 +125,7 @@ describe("<OnboardingScreen />", () => {
     expect(routerPush).toHaveBeenCalledWith("/dashboard");
   });
 
-  it("NÃO dispara router.push quando redirectTarget é null", () => {
+  it("does NOT fire router.push when redirectTarget is null", () => {
     render(<OnboardingScreen />);
     expect(routerPush).not.toHaveBeenCalled();
   });

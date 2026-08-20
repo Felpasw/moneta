@@ -2,11 +2,11 @@ import type { ToolEvent } from "@/hooks/interfaces/useAgentSession.interface";
 import { ToolEventKind } from "@/hooks/constants/useAgentSession.constants";
 
 export const ONBOARDING_STEP_LABELS = [
-  "Apelido",
-  "Bancos",
-  "Saldos",
-  "Ajustes",
-  "Pronto",
+  "Nickname",
+  "Banks",
+  "Balances",
+  "Settings",
+  "Done",
 ] as const;
 
 export const ONBOARDING_TOOL_STEP: Record<string, number> = {
