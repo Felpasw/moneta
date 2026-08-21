@@ -6,6 +6,15 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.13.0](https://github.com/Felpasw/moneta/compare/web-v0.12.0...web-v0.13.0) (2026-08-20)
+
+
+### ✨ Features
+
+* **web/agent:** ShinyButton actions + visual polish [MNT-243] ([aa2064c](https://github.com/Felpasw/moneta/commit/aa2064cee085068254471dad1951b2fa6aabfe45))
+* **web/agent:** ShinyButton actions + visual polish [MNT-243] ([178f050](https://github.com/Felpasw/moneta/commit/178f050000dd43525a82f832c6fba653e6c9e859))
+* **web/transactions:** filtros por periodo/tipo/banco + URL sync [MNT-141] ([c077fed](https://github.com/Felpasw/moneta/commit/c077fedb7f7c2511dc6e1a9839aa236656fd2707))
+
 ## [0.12.0](https://github.com/Felpasw/moneta/compare/web-v0.11.0...web-v0.12.0) (2026-08-17)
 
 
