@@ -28,6 +28,7 @@ export const groupingSchema = z.enum([
   'year',
   'category',
   'bank',
+  'transactionType',
 ]);
 
 export const yFieldSchema = z.enum(['amount', 'count']);

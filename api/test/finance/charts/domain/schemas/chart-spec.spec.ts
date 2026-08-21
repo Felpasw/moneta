@@ -82,6 +82,14 @@ describe('chartSpecSchema', () => {
       expect(result.success).toBe(false);
     });
 
+    it('accepts transactionType as xAxis.grouping', () => {
+      const result = chartSpecSchema.safeParse({
+        ...validSpec,
+        xAxis: { field: 'transactionType', grouping: 'transactionType' },
+      });
+      expect(result.success).toBe(true);
+    });
+
     it('rejects an unknown chartType', () => {
       const result = chartSpecSchema.safeParse({
         ...validSpec,

@@ -39,7 +39,7 @@ Componente `chart` do shadcn (MNT-72) migrou pra `specs/009-ui-shell/tasks.md` �
 
 ## Fase 1 — Schema e backend
 
-- [ ] **MNT-73** [T][S] `ChartSpec` em Zod (`api/src/assistant/domain/schemas/chart-spec.ts`):
+- [x] **MNT-73** [T][S] ✅ commit `a526448` — `ChartSpec` em Zod (`api/src/finance/charts/domain/schemas/chart-spec.ts` — módulo migrou de `assistant/` pra `finance/charts/` alinhando com agrupamento por domínio). Presets nomeados enxutos (`this_month`, `ytd`, `all_time`) + `rolling { unit, n }` (cap n≤1000) substituem os 7 presets originais — cobre "últimos N dias/meses" arbitrário sem sacrificar whitelist. `tag` cortado do XField/grouping/filter (schema Prisma não tem tabela de tags). `filter.categories/banks` viraram `categoryIds/accountIds/bankIds` UUID pra consistência com `list_transactions`.
   ```ts
   ChartSpec = {
     chartType: 'bar' | 'stacked-bar' | 'line' | 'area' | 'pie' | 'donut' | 'scatter' | 'heatmap',
