@@ -4,6 +4,7 @@ export enum AgentSocketEvent {
   ToolError = 'tool.error',
   SystemRedirect = 'system.redirect',
   StateInvalidate = 'state.invalidate',
+  ChartOpen = 'chart.open',
   TtsAudioDelta = 'tts.audio.delta',
   TtsAudioDone = 'tts.audio.done',
   TtsAudioCanceled = 'tts.audio.canceled',

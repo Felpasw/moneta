@@ -56,6 +56,14 @@ describe('CreateVisualizationTool', () => {
     expect(result).toEqual({
       ok: true,
       data: { spec: validInput, data: chartData, meta: chartData.meta },
+      sideEffects: [
+        {
+          kind: 'chartOpen',
+          spec: validInput,
+          data: chartData,
+          meta: chartData.meta,
+        },
+      ],
     });
   });
 

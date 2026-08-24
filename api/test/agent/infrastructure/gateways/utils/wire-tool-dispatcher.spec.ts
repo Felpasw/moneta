@@ -322,6 +322,54 @@ describe('wireToolDispatcher', () => {
     });
   });
 
+  it('quando dispatch.ok trás sideEffects kind:chartOpen, emite envelope chart.open com { spec, data, meta } após o tool.result', async () => {
+    const upstream = new FakeUpstream();
+    const client = makeClient();
+    const spec = { chartType: 'bar', title: 'Test' };
+    const data = { points: [{ x: 'A', y: 1 }], meta: { totalRows: 1 } };
+    const meta = { totalRows: 1 };
+    const dispatcher = makeDispatcher(({ callId }) =>
+      Promise.resolve({
+        ok: true,
+        callId,
+        data: { spec, data, meta },
+        sideEffects: [{ kind: 'chartOpen', spec, data, meta }],
+      } as ToolDispatchResult),
+    );
+    wireToolDispatcher({
+      client: client as unknown as Parameters<
+        typeof wireToolDispatcher
+      >[0]['client'],
+      upstream,
+      dispatcher: dispatcher.asPort,
+      userId: 'user-42',
+      logger: noopLogger,
+    });
+
+    upstream.emitMessage(
+      JSON.stringify({
+        type: 'response.function_call_arguments.done',
+        call_id: 'call_viz',
+        name: 'create_visualization',
+        arguments: JSON.stringify({}),
+      }),
+    );
+    await flushMicrotasks();
+    await flushMicrotasks();
+
+    const payloads = clientPayloads(client);
+    const resultIdx = payloads.findIndex((e) => e.type === 'tool.result');
+    const chartIdx = payloads.findIndex((e) => e.type === 'chart.open');
+    expect(resultIdx).toBeGreaterThanOrEqual(0);
+    expect(chartIdx).toBeGreaterThan(resultIdx);
+    expect(payloads[chartIdx]).toEqual({
+      type: 'chart.open',
+      spec,
+      data,
+      meta,
+    });
+  });
+
   it('não emite envelopes extra quando sideEffects está ausente', async () => {
     const upstream = new FakeUpstream();
     const client = makeClient();

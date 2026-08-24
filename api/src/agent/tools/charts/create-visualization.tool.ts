@@ -133,6 +133,14 @@ export class CreateVisualizationTool implements AssistantTool {
         data: chartData,
         meta: chartData.meta,
       },
+      sideEffects: [
+        {
+          kind: 'chartOpen',
+          spec: parsed.data,
+          data: chartData,
+          meta: chartData.meta,
+        },
+      ],
     };
   }
 }
