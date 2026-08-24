@@ -19,6 +19,7 @@ import type {
 import {
   attachMicGraph,
   buildAgentWsUrl,
+  makeChartDispatcher,
   makeStateInvalidateDispatcher,
   makeSystemDispatcher,
   makeToolDispatcher,
@@ -30,6 +31,7 @@ import {
   agentSessionActions as actions,
   useAgentSessionStore,
 } from "@/stores/agentSessionStore";
+import { chartTakeoverActions } from "@/stores/chartTakeoverStore";
 import { useUserStore } from "@/stores/userStore";
 
 // Re-export pra manter path @/hooks/useAgentSession como fonte de
@@ -130,6 +132,10 @@ export function useAgentSession({
         },
       });
 
+      const dispatchChart = makeChartDispatcher({
+        onOpenChart: chartTakeoverActions.open,
+      });
+
       ws.onopen = () => actions.setStatus(AgentSessionStatus.Listening);
       ws.onerror = () => {
         actions.setStatus(AgentSessionStatus.Error);
@@ -140,6 +146,7 @@ export function useAgentSession({
         dispatchTool(ev.data);
         dispatchStateInvalidate(ev.data);
         dispatchSystem(ev.data);
+        dispatchChart(ev.data);
       };
     }, 0);
 
