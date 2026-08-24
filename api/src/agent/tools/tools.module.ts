@@ -5,6 +5,7 @@ import { AccountsToolsModule } from './accounts/accounts-tools.module';
 import { BanksToolsModule } from './banks/banks-tools.module';
 import { CardBillingToolsModule } from './card-billing/card-billing-tools.module';
 import { CategoriesToolsModule } from './categories/categories-tools.module';
+import { ChartsToolsModule } from './charts/charts-tools.module';
 import { ToolDispatcher } from './infrastructure/tool-dispatcher';
 import { ToolRegistry } from './infrastructure/tool-registry';
 import { OnboardingToolsModule } from './onboarding/onboarding-tools.module';
@@ -22,6 +23,7 @@ import { TransfersToolsModule } from './transfers/transfers-tools.module';
     TransactionsToolsModule,
     TransfersToolsModule,
     OnboardingToolsModule,
+    ChartsToolsModule,
   ],
   providers: [ToolRegistry, ToolDispatcher],
   exports: [ToolRegistry, ToolDispatcher],
