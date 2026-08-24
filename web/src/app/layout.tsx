@@ -3,6 +3,7 @@ import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 
 import { CircuitBackground } from "@/components/atoms/CircuitBackground";
 import { PoweredByFooter } from "@/components/atoms/PoweredByFooter";
+import { ChartTakeoverOverlay } from "@/components/organisms/ChartTakeoverOverlay";
 
 import { Providers } from "./Providers";
 import "./globals.css";
@@ -41,6 +42,7 @@ export default function RootLayout({
             {children}
             <PoweredByFooter />
           </CircuitBackground>
+          <ChartTakeoverOverlay />
         </Providers>
       </body>
     </html>
