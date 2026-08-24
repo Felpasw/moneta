@@ -173,6 +173,32 @@ describe('ChartQueryBuilder', () => {
         { x: '2026-06', y: 1500 },
         { x: '2026-07', y: 2100 },
       ]);
+      expect(result.meta.aggregatedFrom).toBeUndefined();
+    });
+
+    it('escalates day → month when the interval would blow the cap and reports aggregatedFrom', async () => {
+      const { prisma, tx } = buildPrismaMock();
+      tx.$queryRaw.mockResolvedValue([
+        { bucket: new Date('2024-01-01T00:00:00.000Z'), value: 100 },
+      ]);
+
+      const builder = new ChartQueryBuilder(prisma);
+      const result = await builder.build(
+        baseSpec({
+          xAxis: { field: 'date', grouping: 'day' },
+          filters: {
+            dateRange: {
+              from: '2020-01-01T00:00:00.000Z',
+              to: '2026-01-01T00:00:00.000Z',
+            },
+          },
+        }),
+        USER_ID,
+        NOW,
+      );
+
+      expect(result.meta.aggregatedFrom).toBe('day');
+      expect(result.meta.totalRows).toBe(1);
     });
   });
 

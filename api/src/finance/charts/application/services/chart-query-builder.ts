@@ -38,7 +38,7 @@ export class ChartQueryBuilder {
       await tx.$executeRawUnsafe(
         `SET LOCAL statement_timeout = ${STATEMENT_TIMEOUT_MS}`,
       );
-      return handler({ tx, where, yAxis: spec.yAxis, grouping });
+      return handler({ tx, where, yAxis: spec.yAxis, grouping, dateRange });
     });
   }
 }

@@ -5,6 +5,7 @@ import type {
   Grouping,
 } from '~/finance/charts/domain/schemas/chart-spec';
 import type { ChartData } from '~/finance/charts/domain/types/chart-data';
+import type { ResolvedDateRange } from '~/finance/charts/domain/types/resolved-date-range';
 import type { PrismaService } from '~/infrastructure/prisma/prisma.service';
 
 export type TxClient = Parameters<
@@ -18,6 +19,7 @@ export interface StrategyContext {
   readonly where: Prisma.TransactionWhereInput;
   readonly yAxis: ChartSpec['yAxis'];
   readonly grouping: Grouping;
+  readonly dateRange: ResolvedDateRange | undefined;
 }
 
 export type StrategyHandler = (ctx: StrategyContext) => Promise<ChartData>;
