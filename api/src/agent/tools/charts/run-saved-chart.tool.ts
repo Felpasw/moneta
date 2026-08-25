@@ -6,6 +6,7 @@ import {
   SAVED_CHARTS_REPOSITORY,
   type SavedChartsRepository,
 } from '~/finance/charts/domain/ports/saved-charts-repository';
+import { chartSpecSchema } from '~/finance/charts/domain/schemas/chart-spec';
 import { CLOCK, type Clock } from '~/@common/domain/ports/clock';
 
 import type {
@@ -59,19 +60,24 @@ export class RunSavedChartTool implements AssistantTool {
     });
     if (!saved) return { ok: false, error: 'not_found' };
 
+    const specCheck = chartSpecSchema.safeParse(saved.spec);
+    if (!specCheck.success) {
+      return { ok: false, error: 'spec_corrupted' };
+    }
+
     const chartData = await this.chartQueryBuilder.build(
-      saved.spec,
+      specCheck.data,
       ctx.userId,
       this.clock.now(),
     );
 
     return {
       ok: true,
-      data: { spec: saved.spec, data: chartData, meta: chartData.meta },
+      data: { spec: specCheck.data, data: chartData, meta: chartData.meta },
       sideEffects: [
         {
           kind: 'chartOpen',
-          spec: saved.spec,
+          spec: specCheck.data,
           data: chartData,
           meta: chartData.meta,
         },
