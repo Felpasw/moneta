@@ -3,6 +3,7 @@ import {
   OutputLanguage,
 } from '~/agent/domain/constants/output-language';
 import { BASE_PROMPT } from '~/agent/domain/prompts/base';
+import { CHART_FOLLOW_UP_SNIPPET } from '~/agent/domain/prompts/chart-follow-up';
 import { composeSystemPrompt } from '~/agent/domain/prompts/compose-system-prompt';
 import { DASHBOARD_TOUR_SNIPPET } from '~/agent/domain/prompts/dashboard-tour';
 import { LANGUAGE_SNIPPETS } from '~/agent/domain/prompts/language';
@@ -21,14 +22,50 @@ describe('composeSystemPrompt', () => {
     },
   );
 
-  it('composes base + language snippet + treatment separated by blank lines', () => {
+  it('composes base + language snippet + treatment + chart follow-up separated by blank lines', () => {
     const prompt = composeSystemPrompt({
       treatmentStyle: TreatmentStyle.Informal,
     });
 
     expect(prompt).toBe(
-      `${BASE_PROMPT}\n\n${LANGUAGE_SNIPPETS[DEFAULT_OUTPUT_LANGUAGE]}\n\n${TREATMENT_SNIPPETS[TreatmentStyle.Informal]}`,
+      `${BASE_PROMPT}\n\n${LANGUAGE_SNIPPETS[DEFAULT_OUTPUT_LANGUAGE]}\n\n${TREATMENT_SNIPPETS[TreatmentStyle.Informal]}\n\n${CHART_FOLLOW_UP_SNIPPET}`,
     );
+  });
+
+  describe('chart follow-up snippet (MNT-90)', () => {
+    it('is included in every base composition regardless of treatment', () => {
+      for (const style of Object.values(TreatmentStyle)) {
+        const prompt = composeSystemPrompt({ treatmentStyle: style });
+        expect(prompt).toContain(CHART_FOLLOW_UP_SNIPPET);
+      }
+    });
+
+    it('is included when dashboardTour=true', () => {
+      const prompt = composeSystemPrompt({
+        treatmentStyle: TreatmentStyle.Informal,
+        dashboardTour: true,
+      });
+      expect(prompt).toContain(CHART_FOLLOW_UP_SNIPPET);
+    });
+
+    it('is included when onboarding=true', () => {
+      const prompt = composeSystemPrompt({
+        treatmentStyle: TreatmentStyle.Informal,
+        onboarding: true,
+      });
+      expect(prompt).toContain(CHART_FOLLOW_UP_SNIPPET);
+    });
+
+    it('forbids calling save_chart without explicit user confirmation', () => {
+      expect(CHART_FOLLOW_UP_SNIPPET).toMatch(
+        /NEVER call save_chart without an explicit yes/i,
+      );
+    });
+
+    it('tells the assistant to resolve names via list_saved_charts before run_saved_chart', () => {
+      expect(CHART_FOLLOW_UP_SNIPPET).toMatch(/list_saved_charts/);
+      expect(CHART_FOLLOW_UP_SNIPPET).toMatch(/run_saved_chart/);
+    });
   });
 
   it('defaults to pt-BR language snippet when outputLanguage is omitted', () => {
