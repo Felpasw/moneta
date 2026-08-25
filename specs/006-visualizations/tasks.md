@@ -79,7 +79,7 @@ Componente `chart` do shadcn (MNT-72) migrou pra `specs/009-ui-shell/tasks.md` �
   - Explícito: `"pizza dos meus gastos por banco no mês passado"` → pie / bank / sum + filtro dateRange do mês anterior
   - Ambíguo: `"meus gastos"` → default: line / month / sum + últimos 3 meses (documentar default no schema)
   - Impossível: `"gastos quando eu estava em SP"` → erro `field_not_allowed: location` (não existe no schema)
-- [ ] **MNT-79** [SEC] Suite de segurança: `userId` do payload é ignorado (sempre o da sessão), campos fora do whitelist rejeitados com erro estruturado, queries > cap são re-agregadas (não retornam raw), timeout de 5s não deixa dispatcher pendurado, teste de injeção via `filters.categories: ["'; DROP TABLE..."]` — QueryBuilder trata como parâmetro, não interpola
+- [x] **MNT-79** [SEC] ✅ commit `dc2e44e` — Suite `test/finance/charts/security.spec.ts` com 13 invariantes agrupados por domínio: (1) `userId` só da sessão (Zod strict rejeita payload, tool rejeita smuggle, builder sempre escreve `ctx.userId`); (2) whitelist enforcement em 7 pontos (`chartType`/`xAxis.field`/`xAxis.grouping`/`yAxis.aggregation`/`transactionTypes`/`preset`/top-level unknown); (3) SQL injection resistance (Zod UUID rejeita não-UUID, Prisma parametriza arrays); (4) `SET LOCAL statement_timeout = 5000` dentro do `$transaction` **antes** de qualquer query (via `invocationCallOrder`); (5) `bank` grouping estora erro controlado. Re-agregação em cap fica pendente até MNT-74b implementar.
 
 ---
 
