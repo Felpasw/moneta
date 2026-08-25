@@ -171,21 +171,30 @@ describe('charts security invariants (MNT-79)', () => {
     });
   });
 
-  describe('unsupported grouping surfaces as a controlled error', () => {
-    it('bank grouping throws instead of silently running an unbounded query', async () => {
-      const { prisma } = buildPrismaMock();
+  describe('bank grouping (runs via parametrized $queryRaw with joins)', () => {
+    it('runs the bank aggregation query with userId as parameter (not interpolated)', async () => {
+      const { prisma, tx } = buildPrismaMock();
       const builder = new ChartQueryBuilder(prisma);
 
-      await expect(
-        builder.build(
-          {
-            ...validSpec,
-            xAxis: { field: 'bank' as const, grouping: 'bank' as const },
-          },
-          AUTHENTIC_USER,
-          NOW,
-        ),
-      ).rejects.toThrow(/bank grouping/i);
+      await builder.build(
+        {
+          ...validSpec,
+          xAxis: { field: 'bank' as const, grouping: 'bank' as const },
+        },
+        AUTHENTIC_USER,
+        NOW,
+      );
+
+      expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
+      // Prisma tagged-template: raw strings first arg, values follow. userId
+      // must appear as a value (possibly nested inside a Prisma.Sql from
+      // buildWhereSql), never interpolated into the template literal itself.
+      const [rawStrings, ...values] = tx.$queryRaw.mock.calls[0] as [
+        readonly string[],
+        ...unknown[],
+      ];
+      expect(rawStrings.join(' ')).not.toContain(AUTHENTIC_USER);
+      expect(JSON.stringify(values)).toContain(AUTHENTIC_USER);
     });
   });
 });

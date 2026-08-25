@@ -29,9 +29,6 @@ export class ChartQueryBuilder {
     });
 
     const grouping = resolveGrouping(spec.xAxis);
-    if (grouping === 'bank') {
-      throw new Error('bank grouping is not implemented yet');
-    }
     const handler = STRATEGIES[grouping];
 
     return this.prisma.$transaction(async (tx) => {

@@ -202,6 +202,48 @@ describe('ChartQueryBuilder', () => {
     });
   });
 
+  describe('bank grouping', () => {
+    it('runs a raw query with joins and maps rows into { x: bankName, y: value }', async () => {
+      const { prisma, tx } = buildPrismaMock();
+      tx.$queryRaw.mockResolvedValue([
+        { bankId: 'b-1', bankName: 'Nubank', value: 1200 },
+        { bankId: 'b-2', bankName: 'Itau', value: 800 },
+      ]);
+
+      const builder = new ChartQueryBuilder(prisma);
+      const result = await builder.build(
+        baseSpec({
+          xAxis: { field: 'bank', grouping: 'bank' },
+        }),
+        USER_ID,
+        NOW,
+      );
+
+      expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
+      expect(result.points).toEqual([
+        { x: 'Nubank', y: 1200 },
+        { x: 'Itau', y: 800 },
+      ]);
+      expect(result.meta.totalRows).toBe(2);
+    });
+
+    it('falls back to "Unknown bank" when the row has a null name', async () => {
+      const { prisma, tx } = buildPrismaMock();
+      tx.$queryRaw.mockResolvedValue([
+        { bankId: 'b-1', bankName: null, value: 500 },
+      ]);
+
+      const builder = new ChartQueryBuilder(prisma);
+      const result = await builder.build(
+        baseSpec({ xAxis: { field: 'bank', grouping: 'bank' } }),
+        USER_ID,
+        NOW,
+      );
+
+      expect(result.points).toEqual([{ x: 'Unknown bank', y: 500 }]);
+    });
+  });
+
   describe('all_time preset (no date filter)', () => {
     it('does not include occurredAt in the where clause', async () => {
       const { prisma, tx } = buildPrismaMock();
