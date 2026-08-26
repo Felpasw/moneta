@@ -6,6 +6,22 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.16.0](https://github.com/Felpasw/moneta/compare/api-v0.15.0...api-v0.16.0) (2026-08-26)
+
+
+### ✨ Features
+
+* **agent:** chart.open side effect for takeover overlay [MNT-244] ([d01699e](https://github.com/Felpasw/moneta/commit/d01699eb4116727e947188d6c4eb822c9cb3d2be))
+* **agent:** system prompt snippet for save-chart follow-up [MNT-90] ([4673ef9](https://github.com/Felpasw/moneta/commit/4673ef955fba3e2ecf07c156b2be662f001601e7))
+* **charts:** 6 saved-chart tools (save/list/run/rename/delete/pin) [MNT-89] ([fbf4767](https://github.com/Felpasw/moneta/commit/fbf47671e4e9880fee43f061d44c7d49ae7ecffb))
+* **charts:** add ChartSpec zod schema with strict whitelist ([6fd41a5](https://github.com/Felpasw/moneta/commit/6fd41a554f930e608f5627696aac23ecdca6bccc))
+* **charts:** auto re-aggregation when time buckets exceed the cap [MNT-74] ([779a812](https://github.com/Felpasw/moneta/commit/779a81231fed481c184d8840ec200f6504fe4202))
+* **charts:** bank grouping via joined raw query [MNT-74] ([5b09e4c](https://github.com/Felpasw/moneta/commit/5b09e4c090414462a722d329c87e91eadca43501))
+* **charts:** chart query builder with 3 strategies [MNT-74] ([d213353](https://github.com/Felpasw/moneta/commit/d21335372cf2566d1cb2f234de8dd1e785684fcd))
+* **charts:** create_visualization tool wiring chart query builder [MNT-75] ([7927ef3](https://github.com/Felpasw/moneta/commit/7927ef389f5162af4d1c753ca8b170c12c20e1b4))
+* **charts:** saved-charts page with REST controller + grid UI [MNT-91] ([42e03dc](https://github.com/Felpasw/moneta/commit/42e03dcc410afacc8f835d777f7f7a2961d0aeb2))
+* **charts:** SavedChart model + prisma repository [MNT-88] ([20719b0](https://github.com/Felpasw/moneta/commit/20719b01bdc2c51317ae935bbd480926924d685b))
+
 ## [0.15.0](https://github.com/Felpasw/moneta/compare/api-v0.14.0...api-v0.15.0) (2026-08-20)
 
 
