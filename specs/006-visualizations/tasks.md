@@ -59,7 +59,7 @@ Componente `chart` do shadcn (MNT-72) migrou pra `specs/009-ui-shell/tasks.md` �
   }
   ```
   Whitelist estrito de `XField` — só campos permitidos (`date`, `category`, `bank`, `tag`, `transactionType`). `dateRange` é união discriminada: absoluto **ou** preset (necessário pra saved charts que se atualizam sozinhos). Testes rejeitam campo fora do whitelist, agregação inválida por tipo, e preset fora do enum
-- [~] **MNT-74** [T][S] ✅ parcial commit `d213353` — `ChartQueryBuilder` (`api/src/finance/charts/application/services/chart-query-builder.ts`): `build(spec, userId, now): Promise<ChartData>` orquestra 3 strategies (`aggregate-by-category`, `aggregate-by-transaction-type`, `aggregate-by-time`) via `Record<Grouping, StrategyHandler>` exhaustive. `userId` da sessão injetado em todo `where`. `$transaction` com `SET LOCAL statement_timeout = 5000`. Resolve preset/rolling/absolute em runtime. **Pendente**: (1) `bank` grouping — `throw` no service (precisa `$queryRaw` com 2 joins `transactions → user_bank_accounts → banks`); (2) re-agregação automática quando `rows > cap` (`meta.aggregatedFrom`)
+- [x] **MNT-74** [T][S] ✅ commits `d213353` + `779a812` (re-agregação) + `5b09e4c` (bank) — `ChartQueryBuilder` orquestra 4 strategies (`category`, `transactionType`, `time`, `bank`) via `Record<Grouping, StrategyHandler>` exhaustive. `userId` da sessão injetado em todo `where`. `$transaction` com `SET LOCAL statement_timeout = 5000`. Resolve preset/rolling/absolute em runtime. Re-aggregation automática (day→week→month) quando `rows > 100`. `bank` grouping via `$queryRaw` com 2 joins (`transactions → user_bank_accounts → banks`), agrupado por `(bank.id, bank.name)`, ordenado por value DESC. `buildWhereSql` aceita `alias` opcional (safe: hardcoded, `userId` continua parametrizado). MNT-74 100% fechado.
 - [x] **MNT-75** [T][S] ✅ commit `7927ef3` — Tool `create_visualization` (`api/src/agent/tools/charts/create-visualization.tool.ts`) implementa `AssistantTool` (MNT-52), registrada via `@RegisterAssistantTool`. Fluxo: strict Zod parse do input (rejeita `userId` smuggle) → `ChartQueryBuilder.build(spec, ctx.userId, clock.now())` → retorna `{ spec, data, meta }`. `ChartsModule` exporta builder, `ChartsToolsModule` wire no `ToolsModule` global.
 
 ---
@@ -89,26 +89,10 @@ Componente `chart` do shadcn (MNT-72) migrou pra `specs/009-ui-shell/tasks.md` �
 
 Assistente sugere salvar quando o gráfico tem valor recorrente ("Quer salvar esse gráfico pra consultar depois?"). User acessa depois via chat ("mostra meu gráfico de gastos por categoria salvo") ou UI (`/charts`, MNT-91 em `specs/009-ui-shell/tasks.md`).
 
-- [ ] **MNT-88** [T][S] Entity `saved_charts` + migration:
-  - `id UUID PK`
-  - `user_id UUID FK → users ON DELETE CASCADE`
-  - `name VARCHAR(100) NOT NULL`
-  - `spec JSONB NOT NULL` — `ChartSpec` validado no momento do save
-  - `pinned BOOLEAN NOT NULL DEFAULT false`
-  - `last_viewed_at TIMESTAMPTZ`
-  - `created_at, updated_at TIMESTAMPTZ`
-  - Índice `(user_id, pinned DESC, updated_at DESC)`
-  - `SavedChartRepository` no `infrastructure/`
-- [ ] **MNT-89** [T][S] Use-cases + tools (bundle — assinaturas parecidas, mesma auth context):
-  - `save_chart({ name, spec })` — valida spec com o Zod da MNT-73 (mesmo schema, reaproveita), insere. Retorna `{ id }`
-  - `list_saved_charts()` — retorna `[{ id, name, chartType, pinned, updatedAt }]`, ordenado (pinned first)
-  - `run_saved_chart({ id })` — carrega spec, chama `ChartQueryBuilder.build(spec, userId, now())`, executa, retorna `{ spec, data, meta }` — **mesmo shape do `create_visualization`** pra frontend renderizar sem código novo. Atualiza `last_viewed_at`
-  - `rename_saved_chart({ id, name })`
-  - `delete_saved_chart({ id })`
-  - `toggle_pin_saved_chart({ id })`
-  - Todas registradas via `@AssistantTool()` (MNT-52)
-- [ ] **MNT-90** [T][S] Assistant follow-up: snippet de prompt adicionado em `treatment/*` (composição MNT-62) — "**depois** de executar `create_visualization`, se o gráfico tem valor recorrente óbvio (visão de mês, comparativo temporal, breakdown por categoria/banco), ofereça salvar com sugestão de nome ('Gastos mensais por categoria'). NUNCA salve sem confirmação do user". Golden test garante que assistente não chama `save_chart` sem OK explícito
-- [ ] **MNT-92** [SEC] Suite de saved charts: user só vê/edita/deleta os próprios (filtro por `user_id` da sessão), spec salvo passa pelo mesmo whitelist (impede envenenar spec por API direta), `name` sanitizado (max 100 chars, trim, sem HTML)
+- [x] **MNT-88** [T][S] ✅ commit `20719b0` — model `SavedChart` (JSONB `spec` + `pinned` + índice composto `(user_id, pinned DESC, updated_at DESC)`) + `User.savedCharts` relation. Port `SavedChartsRepository` com 6 métodos (add, findById, listSummaries, rename, togglePin, delete). **`lastViewedAt` removido** (YAGNI — sem consumer). **`prisma-json-types-generator`** instalado — Prisma tipa `SavedChart.spec` como `ChartSpec` direto via namespace `PrismaJson`, repo fica idêntico ao pattern do projeto (zero cast, zero helper, zero parse). Namespace em `api/src/types/prisma-json.d.ts`. Migration a rodar via `prisma migrate dev` quando Postgres up.
+- [x] **MNT-89** [T][S] ✅ commit `fbf4767` — 6 tools assistente cobrindo CRUD completo dos saved charts (`save_chart`, `list_saved_charts`, `run_saved_chart`, `rename_saved_chart`, `delete_saved_chart`, `toggle_pin_saved_chart`). Todas com `@RegisterAssistantTool` + strict Zod (rejeita userId smuggle). `run_saved_chart` retorna mesmo shape do `create_visualization` + emite `chart.open` side effect (overlay abre sem código FE novo). `SavedChartNotFoundError` traduzido pra `not_found` opaco (não vaza cross-user). `list_saved_charts` retorna full spec no summary (consumer pega `.spec.chartType`). Registradas no `ChartsToolsModule`. `last_viewed_at` removido (YAGNI).
+- [x] **MNT-90** [T][S] ✅ commit `4673ef9` — `CHART_FOLLOW_UP_SNIPPET` em `src/agent/domain/prompts/chart-follow-up.ts` injetado no `core` do `composeSystemPrompt` (sempre presente, alongside BASE/LANGUAGE/TREATMENT — não vive em `treatment/*` como o spec original sugeria porque é regra de comportamento, não estilo de fala). Instrui sugerir salvar depois de `create_visualization` com nome intent-oriented, **NUNCA** chamar `save_chart` sem "yes" explícito, pular one-off diagnostic, e resolver `list_saved_charts` → `run_saved_chart` (nunca chutar id). Golden tests asserts literais de: (1) presença em todo treatment style, (2) presença em dashboardTour/onboarding, (3) regra "NEVER call save_chart without an explicit yes", (4) menção do fluxo `list_saved_charts`/`run_saved_chart`.
+- [x] **MNT-92** [SEC] ✅ commit `d457dc7` — Suite `test/finance/charts/saved-charts-security.spec.ts` com 17 asserções em 5 grupos: (1) userId da sessão sempre (`save`/`list`/`run` passam `ctx.userId`, strict rejeita smuggle), (2) cross-user access retorna `not_found` opaco nos 4 tools (`run`/`rename`/`delete`/`toggle_pin`) via `it.each`, (3) `save` reforça whitelist (xAxis.field/chartType/top-level unknown), (4) name sanitization (empty, whitespace, >100 chars, `rename` idem), (5) **defense in depth**: `run_saved_chart` re-parseia spec do banco via `chartSpecSchema.safeParse` antes de executar — se DB devolveu lixo, retorna `spec_corrupted` opaco (fix da regressão introduzida pelo generator).
 
 ---
 
