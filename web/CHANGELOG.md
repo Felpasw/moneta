@@ -6,6 +6,17 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.14.0](https://github.com/Felpasw/moneta/compare/web-v0.13.0...web-v0.14.0) (2026-08-26)
+
+
+### ✨ Features
+
+* **charts:** add ChartSpec zod schema with strict whitelist ([6fd41a5](https://github.com/Felpasw/moneta/commit/6fd41a554f930e608f5627696aac23ecdca6bccc))
+* **charts:** ChartTakeoverOverlay fullscreen widget [MNT-245] ([17d2a97](https://github.com/Felpasw/moneta/commit/17d2a9790aaf8171819d99e225d42c85e5d3974c))
+* **charts:** DynamicChart with SVG bar/line/pie widgets [MNT-76] ([f7c7336](https://github.com/Felpasw/moneta/commit/f7c733632588821b5d89c0a44e6c6a7d937dfa61))
+* **charts:** saved-charts page with REST controller + grid UI [MNT-91] ([42e03dc](https://github.com/Felpasw/moneta/commit/42e03dcc410afacc8f835d777f7f7a2961d0aeb2))
+* **charts:** wire chart.open socket dispatcher into agent session [MNT-246] ([50f577b](https://github.com/Felpasw/moneta/commit/50f577b5c58d4aad5a918434529d62da85cf26f2))
+
 ## [0.13.0](https://github.com/Felpasw/moneta/compare/web-v0.12.0...web-v0.13.0) (2026-08-20)
 
 
