@@ -5,6 +5,7 @@ import { BanksModule } from './banks/banks.module';
 import { CardBillingModule } from './card-billing/card-billing.module';
 import { InstallmentsModule } from './card-billing/installments/installments.module';
 import { CategoriesModule } from './categories/categories.module';
+import { ChartsModule } from './charts/charts.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { TransfersModule } from './transfers/transfers.module';
 
@@ -17,6 +18,7 @@ import { TransfersModule } from './transfers/transfers.module';
     InstallmentsModule,
     TransactionsModule,
     TransfersModule,
+    ChartsModule,
   ],
   exports: [
     BanksModule,
@@ -26,6 +28,7 @@ import { TransfersModule } from './transfers/transfers.module';
     InstallmentsModule,
     TransactionsModule,
     TransfersModule,
+    ChartsModule,
   ],
 })
 export class FinanceModule {}

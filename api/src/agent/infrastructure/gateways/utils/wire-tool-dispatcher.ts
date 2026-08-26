@@ -16,17 +16,27 @@ import { sendClientEvent } from './send-client-event';
 import { resolveToolCaption } from './tool-captions';
 import { resolveToolResources } from './tool-resources';
 
-const SIDE_EFFECT_EMITTERS: Record<
-  ToolSideEffect['kind'],
-  (client: WebSocket, effect: ToolSideEffect) => void
-> = {
-  redirect: (client, effect) => {
-    sendClientEvent(client, {
-      type: AgentSocketEvent.SystemRedirect,
-      target: effect.target,
-    });
-  },
-};
+type SideEffectEmitter = (client: WebSocket, effect: ToolSideEffect) => void;
+
+const SIDE_EFFECT_EMITTERS: Record<ToolSideEffect['kind'], SideEffectEmitter> =
+  {
+    redirect: (client, effect) => {
+      if (effect.kind !== 'redirect') return;
+      sendClientEvent(client, {
+        type: AgentSocketEvent.SystemRedirect,
+        target: effect.target,
+      });
+    },
+    chartOpen: (client, effect) => {
+      if (effect.kind !== 'chartOpen') return;
+      sendClientEvent(client, {
+        type: AgentSocketEvent.ChartOpen,
+        spec: effect.spec,
+        data: effect.data,
+        meta: effect.meta,
+      });
+    },
+  };
 
 const emitSideEffects = (
   client: WebSocket,

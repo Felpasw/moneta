@@ -3,6 +3,7 @@ import { DEFAULT_OUTPUT_LANGUAGE } from '~/agent/domain/constants/output-languag
 import type { ComposeSystemPromptInput } from '../types/compose-system-prompt-input';
 
 import { BASE_PROMPT } from './base';
+import { CHART_FOLLOW_UP_SNIPPET } from './chart-follow-up';
 import { DASHBOARD_TOUR_SNIPPET } from './dashboard-tour';
 import { LANGUAGE_SNIPPETS } from './language';
 import { ONBOARDING_SNIPPET } from './onboarding';
@@ -28,7 +29,7 @@ export const composeSystemPrompt = ({
   userNickname = null,
   onboardingResume = null,
 }: ComposeSystemPromptInput): string => {
-  const core = `${BASE_PROMPT}\n\n${LANGUAGE_SNIPPETS[outputLanguage]}\n\n${TREATMENT_SNIPPETS[treatmentStyle]}`;
+  const core = `${BASE_PROMPT}\n\n${LANGUAGE_SNIPPETS[outputLanguage]}\n\n${TREATMENT_SNIPPETS[treatmentStyle]}\n\n${CHART_FOLLOW_UP_SNIPPET}`;
   if (dashboardTour) {
     return `${core}\n\n${DASHBOARD_TOUR_SNIPPET}${buildUserLine(userName, userNickname)}`;
   }

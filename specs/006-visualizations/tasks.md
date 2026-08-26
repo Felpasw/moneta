@@ -39,7 +39,7 @@ Componente `chart` do shadcn (MNT-72) migrou pra `specs/009-ui-shell/tasks.md` �
 
 ## Fase 1 — Schema e backend
 
-- [ ] **MNT-73** [T][S] `ChartSpec` em Zod (`api/src/assistant/domain/schemas/chart-spec.ts`):
+- [x] **MNT-73** [T][S] ✅ commit `a526448` — `ChartSpec` em Zod (`api/src/finance/charts/domain/schemas/chart-spec.ts` — módulo migrou de `assistant/` pra `finance/charts/` alinhando com agrupamento por domínio). Presets nomeados enxutos (`this_month`, `ytd`, `all_time`) + `rolling { unit, n }` (cap n≤1000) substituem os 7 presets originais — cobre "últimos N dias/meses" arbitrário sem sacrificar whitelist. `tag` cortado do XField/grouping/filter (schema Prisma não tem tabela de tags). `filter.categories/banks` viraram `categoryIds/accountIds/bankIds` UUID pra consistência com `list_transactions`.
   ```ts
   ChartSpec = {
     chartType: 'bar' | 'stacked-bar' | 'line' | 'area' | 'pie' | 'donut' | 'scatter' | 'heatmap',
@@ -59,14 +59,16 @@ Componente `chart` do shadcn (MNT-72) migrou pra `specs/009-ui-shell/tasks.md` �
   }
   ```
   Whitelist estrito de `XField` — só campos permitidos (`date`, `category`, `bank`, `tag`, `transactionType`). `dateRange` é união discriminada: absoluto **ou** preset (necessário pra saved charts que se atualizam sozinhos). Testes rejeitam campo fora do whitelist, agregação inválida por tipo, e preset fora do enum
-- [ ] **MNT-74** [T][S] `ChartQueryBuilder` (`api/src/assistant/application/services/chart-query-builder.ts`): `build(spec, userId, now): Promise<ChartData>` — spec → chamada Prisma tipada (`findMany`/`groupBy`/`aggregate` da Client API; `$queryRaw` parametrizado só onde a API estruturada não cobre — ex: `date_trunc` custom). Resolve `dateRange.preset` em runtime usando `now` (ex: `last_month` = 1º ao último dia do mês anterior à `now`). Cobre os 8 chartTypes. Timeout 5s (pg `statement_timeout` via `$executeRawUnsafe('SET LOCAL statement_timeout')` dentro de transação, ou middleware que aborta). Re-agregação automática se contagem esperada > cap
-- [ ] **MNT-75** [T][S] Tool `create_visualization` (`api/src/assistant/infrastructure/tools/create-visualization.tool.ts`) — implementa interface `AssistantTool` (MNT-52); registrada via `@AssistantTool()`. Fluxo: valida input com Zod → `ChartQueryBuilder.build` → executa → retorna `{ spec, data, meta: { totalRows, aggregatedFrom? } }`. Erro estruturado (`{ error: 'field_not_allowed', field }`) pro LLM entender e reformular pro user
+- [~] **MNT-74** [T][S] ✅ parcial commit `d213353` — `ChartQueryBuilder` (`api/src/finance/charts/application/services/chart-query-builder.ts`): `build(spec, userId, now): Promise<ChartData>` orquestra 3 strategies (`aggregate-by-category`, `aggregate-by-transaction-type`, `aggregate-by-time`) via `Record<Grouping, StrategyHandler>` exhaustive. `userId` da sessão injetado em todo `where`. `$transaction` com `SET LOCAL statement_timeout = 5000`. Resolve preset/rolling/absolute em runtime. **Pendente**: (1) `bank` grouping — `throw` no service (precisa `$queryRaw` com 2 joins `transactions → user_bank_accounts → banks`); (2) re-agregação automática quando `rows > cap` (`meta.aggregatedFrom`)
+- [x] **MNT-75** [T][S] ✅ commit `7927ef3` — Tool `create_visualization` (`api/src/agent/tools/charts/create-visualization.tool.ts`) implementa `AssistantTool` (MNT-52), registrada via `@RegisterAssistantTool`. Fluxo: strict Zod parse do input (rejeita `userId` smuggle) → `ChartQueryBuilder.build(spec, ctx.userId, clock.now())` → retorna `{ spec, data, meta }`. `ChartsModule` exporta builder, `ChartsToolsModule` wire no `ToolsModule` global.
 
 ---
 
 ## Fase 2 — Frontend
 
 `<DynamicChart>` (MNT-76) e integração no `<MessageBubble>` (MNT-77) migraram pra `specs/009-ui-shell/tasks.md`.
+
+**Takeover fullscreen (voice-mode)**: MNT-244 (backend side effect `chartOpen`) + MNT-245 (`<ChartTakeoverOverlay>`) + MNT-246 (socket wiring) vivem em `specs/009-ui-shell/tasks.md`. Enquanto text-mode não existe, MNT-77 (bubble inline) fica DEFERRED — todo `create_visualization` abre takeover.
 
 ---
 
@@ -77,7 +79,7 @@ Componente `chart` do shadcn (MNT-72) migrou pra `specs/009-ui-shell/tasks.md` �
   - Explícito: `"pizza dos meus gastos por banco no mês passado"` → pie / bank / sum + filtro dateRange do mês anterior
   - Ambíguo: `"meus gastos"` → default: line / month / sum + últimos 3 meses (documentar default no schema)
   - Impossível: `"gastos quando eu estava em SP"` → erro `field_not_allowed: location` (não existe no schema)
-- [ ] **MNT-79** [SEC] Suite de segurança: `userId` do payload é ignorado (sempre o da sessão), campos fora do whitelist rejeitados com erro estruturado, queries > cap são re-agregadas (não retornam raw), timeout de 5s não deixa dispatcher pendurado, teste de injeção via `filters.categories: ["'; DROP TABLE..."]` — QueryBuilder trata como parâmetro, não interpola
+- [x] **MNT-79** [SEC] ✅ commit `dc2e44e` — Suite `test/finance/charts/security.spec.ts` com 13 invariantes agrupados por domínio: (1) `userId` só da sessão (Zod strict rejeita payload, tool rejeita smuggle, builder sempre escreve `ctx.userId`); (2) whitelist enforcement em 7 pontos (`chartType`/`xAxis.field`/`xAxis.grouping`/`yAxis.aggregation`/`transactionTypes`/`preset`/top-level unknown); (3) SQL injection resistance (Zod UUID rejeita não-UUID, Prisma parametriza arrays); (4) `SET LOCAL statement_timeout = 5000` dentro do `$transaction` **antes** de qualquer query (via `invocationCallOrder`); (5) `bank` grouping estora erro controlado. Re-agregação em cap fica pendente até MNT-74b implementar.
 
 ---
 

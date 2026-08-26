@@ -6,6 +6,8 @@ import {
   ToolEventKind,
 } from "@/hooks/constants/useAgentSession.constants";
 import type {
+  ChartEnvelope,
+  ChartHandlers,
   InitialSessionState,
   MicGraph,
   StateInvalidateEnvelope,
@@ -128,6 +130,26 @@ export function makeSystemDispatcher(
       return;
     }
     routes[envelope.type]?.(envelope);
+  };
+}
+
+// -----------------------------------------------------------------------------
+// Chart envelope dispatcher (chart.open → abre o takeover overlay)
+// -----------------------------------------------------------------------------
+
+export function makeChartDispatcher(
+  handlers: ChartHandlers,
+): (raw: unknown) => void {
+  return (raw: unknown) => {
+    if (typeof raw !== "string") return;
+    let envelope: ChartEnvelope;
+    try {
+      envelope = JSON.parse(raw) as ChartEnvelope;
+    } catch {
+      return;
+    }
+    if (envelope.type !== AgentSocketEvent.ChartOpen) return;
+    handlers.onOpenChart({ spec: envelope.spec, data: envelope.data });
   };
 }
 

@@ -2,6 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -26,6 +30,7 @@ model User {
   transactions       Transaction[]
   transfers          Transfer[]
   installmentGroups  InstallmentGroup[]
+  savedCharts        SavedChart[]
 
   @@map("users")
 }
@@ -238,19 +243,19 @@ model Category {
 }
 
 model Transaction {
-  id                  String          @id @default(uuid()) @db.Uuid
-  userId              String          @map("user_id") @db.Uuid
-  accountId           String          @map("account_id") @db.Uuid
-  categoryId          String?         @map("category_id") @db.Uuid
-  invoiceId           String?         @map("invoice_id") @db.Uuid
-  installmentGroupId  String?         @map("installment_group_id") @db.Uuid
-  installmentNumber   Int?            @map("installment_number") @db.SmallInt
-  type                TransactionType
-  amount              Decimal         @db.Decimal(15, 2)
-  description         String?         @db.VarChar(255)
-  occurredAt          DateTime        @map("occurred_at") @db.Timestamptz
-  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  id                 String          @id @default(uuid()) @db.Uuid
+  userId             String          @map("user_id") @db.Uuid
+  accountId          String          @map("account_id") @db.Uuid
+  categoryId         String?         @map("category_id") @db.Uuid
+  invoiceId          String?         @map("invoice_id") @db.Uuid
+  installmentGroupId String?         @map("installment_group_id") @db.Uuid
+  installmentNumber  Int?            @map("installment_number") @db.SmallInt
+  type               TransactionType
+  amount             Decimal         @db.Decimal(15, 2)
+  description        String?         @db.VarChar(255)
+  occurredAt         DateTime        @map("occurred_at") @db.Timestamptz
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime        @updatedAt @map("updated_at") @db.Timestamptz
 
   user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   account          UserBankAccount    @relation(fields: [accountId], references: [id], onDelete: Restrict)
@@ -344,4 +349,20 @@ model InstallmentGroup {
   @@index([userId])
   @@index([accountId])
   @@map("installment_groups")
+}
+
+model SavedChart {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  /// [ChartSpec]
+  spec      Json     @db.JsonB
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, pinned(sort: Desc), updatedAt(sort: Desc)])
+  @@map("saved_charts")
 }

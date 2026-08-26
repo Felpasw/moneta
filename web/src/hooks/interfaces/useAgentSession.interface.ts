@@ -4,6 +4,10 @@ import type {
   ToolCaptionKey,
   ToolEventKind,
 } from "@/hooks/constants/useAgentSession.constants";
+import type {
+  ChartData,
+  ChartSpec,
+} from "@/services/interfaces/chart.interface";
 
 export interface UseAgentSessionOptions {
   enabled: boolean;
@@ -61,6 +65,16 @@ export interface StateInvalidateEnvelope {
 
 export interface StateInvalidateHandlers {
   onInvalidate: (resources: readonly string[]) => void;
+}
+
+export interface ChartEnvelope {
+  type: string;
+  spec: ChartSpec;
+  data: ChartData;
+}
+
+export interface ChartHandlers {
+  onOpenChart: (payload: { spec: ChartSpec; data: ChartData }) => void;
 }
 
 export interface WebkitAudioWindow extends Window {
