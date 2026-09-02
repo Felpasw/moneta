@@ -63,14 +63,26 @@ describe("<ChartTakeoverOverlay />", () => {
     );
   });
 
-  it("closes when the back button is clicked", async () => {
+  it("closes when the close button is clicked", async () => {
     const user = userEvent.setup();
     render(<ChartTakeoverOverlay />);
     act(() => {
       chartTakeoverActions.open({ spec, data });
     });
 
-    await user.click(screen.getByRole("button", { name: /back/i }));
+    await user.click(screen.getByRole("button", { name: /close/i }));
+
+    expect(useChartTakeoverStore.getState().open).toBe(false);
+  });
+
+  it("closes when the backdrop is clicked", async () => {
+    const user = userEvent.setup();
+    render(<ChartTakeoverOverlay />);
+    act(() => {
+      chartTakeoverActions.open({ spec, data });
+    });
+
+    await user.click(screen.getByTestId("chart-backdrop"));
 
     expect(useChartTakeoverStore.getState().open).toBe(false);
   });

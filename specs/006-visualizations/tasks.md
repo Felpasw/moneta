@@ -4,7 +4,7 @@
 
 ## Decisões (inline)
 
-- **UI kit**: **shadcn/ui** (init em MNT-71 no `specs/009-ui-shell`) — usa o `<Chart>` do shadcn, que é wrapper de **Recharts**. Ganhamos tema/dark mode automático + tooltip customizado alinhado com o resto da UI
+- **UI de chart**: **visx** (`@visx/scale`, `@visx/shape`, `@visx/curve`) + **motion/react** — decisão revisada em MNT-249. Original era shadcn/Recharts; migrou pra visx+motion porque (1) preserva o pattern de animação já usado no projeto (`pathLength`, easing bezier custom, stagger por índice), (2) destranca `layoutId` do motion pra morphing entre chart types no chat (feature killer no voice-mode takeover), (3) evita reshape adapters — visx aceita datashape genérico (`{ x, y }[]`) do backend direto. Recharts descartado por engine de animação própria (`react-smooth`) incompatível com motion. Paleta preto/branco fixa via CSS var `--foreground` — sem multi-cor por série no V1
 - **Padrão LLM ↔ dados**: LLM preenche schema estruturado (`ChartSpec`, Zod-validado), backend traduz pra chamada Prisma tipada (Client API `findMany`/`groupBy`/`aggregate`; `$queryRaw` só onde a API estruturada não cobre, sempre parametrizado). **Zero SQL do LLM, zero código do LLM, zero shell.**
 - **Segurança**:
   - `userId` **sempre** vem do contexto de auth da sessão (nunca do payload da tool)

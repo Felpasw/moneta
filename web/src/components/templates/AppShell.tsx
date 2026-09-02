@@ -20,6 +20,7 @@ import { MicState, useAgentSession } from "@/hooks/useAgentSession";
 import authHooks from "@/hooks/useAuth";
 import { useUserHydrated } from "@/hooks/useUserHydrated";
 import { agentSessionActions } from "@/stores/agentSessionStore";
+import { useChartTakeoverStore } from "@/stores/chartTakeoverStore";
 import { useUserStore } from "@/stores/userStore";
 
 const MIC_DENIED_TOAST =
@@ -91,6 +92,7 @@ export function AppShell({ children }: AppShellProps) {
   const didBootRef = useRef(false);
 
   const { micState } = useAgentSession({ enabled: bootStatus === "ready" });
+  const chartTakeoverOpen = useChartTakeoverStore((s) => s.open);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -141,7 +143,10 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="relative flex min-h-screen flex-col">
-      <div className="flex flex-1 flex-col pb-36">
+      <div
+        className="flex flex-1 flex-col pb-36"
+        aria-hidden={chartTakeoverOpen}
+      >
         {bootStatus === "ready" ? (
           children
         ) : (

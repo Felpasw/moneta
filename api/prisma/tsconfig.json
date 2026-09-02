@@ -5,5 +5,5 @@
     "moduleResolution": "node10",
     "resolvePackageJsonExports": false
   },
-  "include": ["seed.ts"]
+  "include": ["seed.ts", "seed-demo.ts"]
 }

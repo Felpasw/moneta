@@ -63,7 +63,7 @@ export function GlobalAssistant() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed bottom-36 left-1/2 z-40 -translate-x-1/2"
+      className="fixed bottom-36 left-1/2 z-50 -translate-x-1/2"
     >
       <div ref={containerRef} className="flex items-center gap-3">
         <motion.button
