@@ -55,10 +55,20 @@ describe('AgentController', () => {
   });
 
   describe('GET /agent/voices', () => {
-    it('returns the voices from the use-case for an authenticated request', async () => {
+    it('returns the voices with languageMatch from the use-case for an authenticated request', async () => {
       const voices = [
-        { voiceId: 'v1', name: 'Rachel', language: 'en' },
-        { voiceId: 'v2', name: 'Carlos', language: 'pt' },
+        {
+          voiceId: 'v1',
+          name: 'Rachel',
+          language: 'en_US',
+          languageMatch: 'mismatch',
+        },
+        {
+          voiceId: 'v2',
+          name: 'Carlos',
+          language: 'pt_BR',
+          languageMatch: 'match',
+        },
       ];
       mocks.listVoices.execute.mockResolvedValue(voices);
       const tokens = new JwtTokenService();
@@ -70,7 +80,9 @@ describe('AgentController', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ voices });
-      expect(mocks.listVoices.execute).toHaveBeenCalledTimes(1);
+      expect(mocks.listVoices.execute).toHaveBeenCalledWith({
+        userId: 'user-42',
+      });
     });
 
     it('returns 401 without a Bearer token', async () => {

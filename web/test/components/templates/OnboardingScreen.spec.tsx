@@ -8,6 +8,10 @@ import {
   MicState,
 } from "@/hooks/useAgentSession";
 import type { ToolEvent } from "@/hooks/interfaces/useAgentSession.interface";
+import {
+  agentSessionActions,
+  useAgentSessionStore,
+} from "@/stores/agentSessionStore";
 
 vi.mock("@/components/atoms/VoiceOrb", () => ({
   VoiceOrb: () => <div data-testid="voice-orb" />,
@@ -52,7 +56,7 @@ const defaultAgentSessionShape = (): AgentSessionShape => ({
 });
 
 const useAgentSessionMock = vi.fn<
-  (opts: { enabled: boolean; micEnabled?: boolean }) => AgentSessionShape
+  (opts: { enabled: boolean }) => AgentSessionShape
 >(defaultAgentSessionShape);
 
 vi.mock("@/hooks/useAgentSession", async () => {
@@ -62,8 +66,7 @@ vi.mock("@/hooks/useAgentSession", async () => {
     );
   return {
     ...actual,
-    useAgentSession: (opts: { enabled: boolean; micEnabled?: boolean }) =>
-      useAgentSessionMock(opts),
+    useAgentSession: (opts: { enabled: boolean }) => useAgentSessionMock(opts),
   };
 });
 
@@ -72,26 +75,23 @@ afterEach(() => {
   useAgentSessionMock.mockImplementation(defaultAgentSessionShape);
   toastError.mockClear();
   routerPush.mockClear();
+  agentSessionActions.setMicEnabled(false);
 });
 
 describe("<OnboardingScreen />", () => {
-  it("opens the agent session with the mic off by default", () => {
+  it("opens the agent session and leaves the mic off by default", () => {
     render(<OnboardingScreen />);
-    expect(useAgentSessionMock).toHaveBeenCalledWith({
-      enabled: true,
-      micEnabled: false,
-    });
+    expect(useAgentSessionMock).toHaveBeenCalledWith({ enabled: true });
+    expect(useAgentSessionStore.getState().micEnabled).toBe(false);
   });
 
-  it("clicking MicButton asks for a re-render with micEnabled=true", async () => {
+  it("clicking MicButton toggles micEnabled to true in the store", async () => {
     const user = userEvent.setup();
     render(<OnboardingScreen />);
 
     await user.click(screen.getByRole("button", { name: /turn on mic/i }));
 
-    const lastCall =
-      useAgentSessionMock.mock.calls[useAgentSessionMock.mock.calls.length - 1];
-    expect(lastCall[0]).toEqual({ enabled: true, micEnabled: true });
+    expect(useAgentSessionStore.getState().micEnabled).toBe(true);
   });
 
   it("fires a toast and resets the mic when micState=denied", async () => {

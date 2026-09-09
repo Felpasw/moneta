@@ -6,9 +6,24 @@ import { AssistantSettingsVoice } from "@/components/organisms/AssistantSettings
 import type { TtsVoice } from "@/services/interfaces/assistantProfile.interface";
 
 const VOICES: TtsVoice[] = [
-  { voiceId: "v-1", name: "Bella", language: "pt-BR" },
-  { voiceId: "v-2", name: "Adam", language: "en-US" },
-  { voiceId: "v-3", name: "Rachel" },
+  {
+    voiceId: "v-1",
+    name: "Bella",
+    language: "pt_BR",
+    languageMatch: "match",
+  },
+  {
+    voiceId: "v-2",
+    name: "Adam",
+    language: "en_US",
+    languageMatch: "mismatch",
+  },
+  {
+    voiceId: "v-3",
+    name: "Rachel",
+    language: "unknown",
+    languageMatch: "unknown",
+  },
 ];
 
 const originalCreateObjectURL = URL.createObjectURL;
@@ -32,7 +47,7 @@ afterEach(() => {
 });
 
 describe("AssistantSettingsVoice", () => {
-  it("renderiza um card por voz com nome e idioma", () => {
+  it("agrupa vozes match na seção Recommended e mismatch/unknown em Other", () => {
     render(
       <AssistantSettingsVoice
         voices={VOICES}
@@ -42,11 +57,68 @@ describe("AssistantSettingsVoice", () => {
       />,
     );
 
+    expect(
+      screen.getByRole("heading", { name: /recommended for your language/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /other languages/i }),
+    ).toBeInTheDocument();
+
     expect(screen.getByText("Bella")).toBeInTheDocument();
     expect(screen.getByText("Adam")).toBeInTheDocument();
     expect(screen.getByText("Rachel")).toBeInTheDocument();
-    expect(screen.getByText(/pt-br/i)).toBeInTheDocument();
-    expect(screen.getByText(/en-us/i)).toBeInTheDocument();
+  });
+
+  it("esconde a seção Other quando não há vozes fora do idioma", () => {
+    render(
+      <AssistantSettingsVoice
+        voices={[VOICES[0]!]}
+        selectedVoiceId="v-1"
+        onSelect={vi.fn()}
+        onPreview={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("heading", { name: /other languages/i }),
+    ).toBeNull();
+  });
+
+  it("esconde a seção Recommended quando não há vozes que batem", () => {
+    render(
+      <AssistantSettingsVoice
+        voices={[VOICES[1]!, VOICES[2]!]}
+        selectedVoiceId="v-2"
+        onSelect={vi.fn()}
+        onPreview={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("heading", {
+        name: /recommended for your language/i,
+      }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: /other languages/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("mostra badge de warning apenas em vozes mismatch", () => {
+    render(
+      <AssistantSettingsVoice
+        voices={VOICES}
+        selectedVoiceId="v-1"
+        onSelect={vi.fn()}
+        onPreview={vi.fn()}
+      />,
+    );
+
+    const adamBadge = screen.getByTestId("voice-mismatch-badge-v-2");
+    expect(adamBadge).toBeInTheDocument();
+
+    expect(screen.queryByTestId("voice-mismatch-badge-v-1")).toBeNull();
+    expect(screen.queryByTestId("voice-mismatch-badge-v-3")).toBeNull();
   });
 
   it("marca o card selecionado com aria-pressed=true no botão principal", () => {
@@ -68,7 +140,7 @@ describe("AssistantSettingsVoice", () => {
     expect(bellaSelect.getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("dispara onSelect com o voiceId ao clicar no card", async () => {
+  it("dispara onSelect com o voiceId ao clicar em uma voz mismatch (sem bloqueio)", async () => {
     const onSelect = vi.fn();
     render(
       <AssistantSettingsVoice
@@ -80,11 +152,11 @@ describe("AssistantSettingsVoice", () => {
     );
 
     await userEvent.click(
-      screen.getByRole("button", { name: /select rachel/i }),
+      screen.getByRole("button", { name: /select adam/i }),
     );
 
     expect(onSelect).toHaveBeenCalledTimes(1);
-    expect(onSelect).toHaveBeenCalledWith("v-3");
+    expect(onSelect).toHaveBeenCalledWith("v-2");
   });
 
   it("não dispara onSelect ao clicar na voz já selecionada", async () => {
@@ -166,7 +238,7 @@ describe("AssistantSettingsVoice", () => {
     );
 
     await userEvent.click(
-      screen.getByRole("button", { name: /select rachel/i }),
+      screen.getByRole("button", { name: /select adam/i }),
     );
     await userEvent.click(
       screen.getByRole("button", { name: /preview bella/i }),
@@ -186,8 +258,6 @@ describe("AssistantSettingsVoice", () => {
       />,
     );
 
-    expect(
-      screen.getByText(/no voices available/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/no voices available/i)).toBeInTheDocument();
   });
 });

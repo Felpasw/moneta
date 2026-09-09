@@ -9,12 +9,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { CurrentUser } from '~/auth/infrastructure/decorators/current-user.decorator';
 import { JwtAuthGuard } from '~/auth/infrastructure/guards/jwt-auth.guard';
 
 import { ListAvailableVoicesUseCase } from './application/use-cases/list-available-voices.use-case';
 import { PreviewVoiceUseCase } from './application/use-cases/preview-voice.use-case';
 import { VOICE_ID_PATTERN } from './domain/constants/voice-preview';
-import type { TtsVoice } from './domain/ports/tts-service';
+import type { TtsVoiceWithMatch } from './domain/types/tts-voice-with-match';
+
+interface AuthUser {
+  readonly sub: string;
+}
 
 @Controller('agent')
 export class AgentController {
@@ -25,8 +30,12 @@ export class AgentController {
 
   @Get('voices')
   @UseGuards(JwtAuthGuard)
-  async voices(): Promise<{ voices: TtsVoice[] }> {
-    const voices = await this.listAvailableVoices.execute();
+  async voices(
+    @CurrentUser() user: AuthUser,
+  ): Promise<{ voices: TtsVoiceWithMatch[] }> {
+    const voices = await this.listAvailableVoices.execute({
+      userId: user.sub,
+    });
     return { voices };
   }
 
