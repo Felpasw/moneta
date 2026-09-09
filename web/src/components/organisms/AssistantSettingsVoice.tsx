@@ -1,15 +1,15 @@
 "use client";
 
-import { Play } from "lucide-react";
 import { motion } from "motion/react";
+import { useMemo } from "react";
 
-import { ScrollArea } from "@/components/atoms/ScrollArea";
+import { VoiceCard } from "@/components/molecules/VoiceCard";
 import { useVoicePreview } from "@/hooks/useVoicePreview";
 import { cn } from "@/lib/utils";
 import type { TtsVoice } from "@/services/interfaces/assistantProfile.interface";
 import { SETTINGS_STAGGER_ITEM } from "@/utils/settingsStagger";
 
-const MAX_VISIBLE_VOICES = 12;
+const MAX_VISIBLE_PER_SECTION = 12;
 
 interface AssistantSettingsVoiceProps {
   voices: TtsVoice[];
@@ -33,13 +33,44 @@ export function AssistantSettingsVoice({
     disabled,
   });
 
-  const visibleVoices = voices.slice(0, MAX_VISIBLE_VOICES);
+  const { recommended, other } = useMemo(() => {
+    const recommendedList: TtsVoice[] = [];
+    const otherList: TtsVoice[] = [];
+    for (const voice of voices) {
+      if (voice.languageMatch === "match") {
+        recommendedList.push(voice);
+      } else {
+        otherList.push(voice);
+      }
+    }
+    return {
+      recommended: recommendedList.slice(0, MAX_VISIBLE_PER_SECTION),
+      other: otherList.slice(0, MAX_VISIBLE_PER_SECTION),
+    };
+  }, [voices]);
 
   const handleSelect = (voiceId: string) => {
     if (disabled) return;
     if (voiceId === selectedVoiceId) return;
     onSelect(voiceId);
   };
+
+  const renderCards = (list: TtsVoice[]) => (
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {list.map((voice) => (
+        <li key={voice.voiceId} className="h-full">
+          <VoiceCard
+            voice={voice}
+            isSelected={voice.voiceId === selectedVoiceId}
+            isPreviewing={previewingVoiceId === voice.voiceId}
+            disabled={disabled}
+            onSelect={handleSelect}
+            onPreview={play}
+          />
+        </li>
+      ))}
+    </ul>
+  );
 
   if (voices.length === 0) {
     return (
@@ -65,7 +96,7 @@ export function AssistantSettingsVoice({
   return (
     <section
       aria-labelledby="assistant-voice-heading"
-      className={cn("space-y-4", className)}
+      className={cn("space-y-8", className)}
     >
       <motion.header variants={SETTINGS_STAGGER_ITEM} className="space-y-1">
         <h2
@@ -79,56 +110,27 @@ export function AssistantSettingsVoice({
         </p>
       </motion.header>
 
-      <motion.div variants={SETTINGS_STAGGER_ITEM}>
-        <ScrollArea className="max-h-72 pr-3">
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {visibleVoices.map((voice) => {
-              const isSelected = voice.voiceId === selectedVoiceId;
-              const isPreviewing = previewingVoiceId === voice.voiceId;
-              return (
-                <li key={voice.voiceId}>
-                  <div
-                    className={cn(
-                      "flex items-center justify-between gap-3 rounded-lg border border-border p-3 transition-colors",
-                      isSelected && "border-primary bg-primary/5",
-                      disabled && "opacity-60",
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleSelect(voice.voiceId)}
-                      aria-pressed={isSelected}
-                      aria-label={`Select ${voice.name}`}
-                      disabled={disabled}
-                      className="flex flex-1 flex-col items-start text-left"
-                    >
-                      <span className="text-sm font-medium">{voice.name}</span>
-                      {voice.language !== undefined && (
-                        <span className="text-xs text-muted-foreground">
-                          {voice.language}
-                        </span>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => play(voice.voiceId)}
-                      disabled={disabled}
-                      aria-label={`Preview ${voice.name}`}
-                      className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground",
-                        "hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50",
-                        isPreviewing && "border-primary text-primary",
-                      )}
-                    >
-                      <Play className="h-4 w-4" />
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </ScrollArea>
-      </motion.div>
+      {recommended.length > 0 && (
+        <motion.div variants={SETTINGS_STAGGER_ITEM} className="space-y-3">
+          <h3 className="text-sm font-medium text-foreground">
+            Recommended for your language
+          </h3>
+          {renderCards(recommended)}
+        </motion.div>
+      )}
+
+      {other.length > 0 && (
+        <motion.div variants={SETTINGS_STAGGER_ITEM} className="space-y-3">
+          <h3 className="text-sm font-medium text-foreground">
+            Other languages
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            These voices weren&apos;t made for the language you picked and may
+            sound off.
+          </p>
+          {renderCards(other)}
+        </motion.div>
+      )}
     </section>
   );
 }

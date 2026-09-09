@@ -9,10 +9,14 @@ export interface AssistantProfile {
   avatarUrl: string | null;
 }
 
+export type NormalizedVoiceLanguage = "pt_BR" | "en_US" | "unknown";
+export type VoiceLanguageMatch = "match" | "mismatch" | "unknown";
+
 export interface TtsVoice {
   voiceId: string;
   name: string;
-  language?: string;
+  language: NormalizedVoiceLanguage;
+  languageMatch: VoiceLanguageMatch;
 }
 
 export interface ListVoicesResponse {

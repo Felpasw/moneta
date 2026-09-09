@@ -6,10 +6,12 @@ export interface SynthesizeStreamParams {
   readonly signal?: AbortSignal;
 }
 
+import type { NormalizedVoiceLanguage } from '~/agent/domain/constants/normalized-voice-language';
+
 export interface TtsVoice {
   readonly voiceId: string;
   readonly name: string;
-  readonly language?: string;
+  readonly language: NormalizedVoiceLanguage;
 }
 
 export interface TtsService {

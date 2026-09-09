@@ -48,9 +48,9 @@ describe('ElevenLabsTtsProvider', () => {
       };
 
       expect(provider.parseVoicesResponse(raw)).toEqual([
-        { voiceId: 'v1', name: 'Rachel', language: 'en' },
-        { voiceId: 'v2', name: 'Carlos', language: 'pt' },
-        { voiceId: 'v3', name: 'NoLabels' },
+        { voiceId: 'v1', name: 'Rachel', language: 'en_US' },
+        { voiceId: 'v2', name: 'Carlos', language: 'pt_BR' },
+        { voiceId: 'v3', name: 'NoLabels', language: 'unknown' },
       ]);
     });
 
