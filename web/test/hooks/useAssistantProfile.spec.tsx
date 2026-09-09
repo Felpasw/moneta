@@ -41,11 +41,22 @@ const PROFILE: AssistantProfile = {
   treatmentStyle: "informal",
   voiceId: "v-1",
   avatarUrl: "dicebear:notionists:felps",
+  outputLanguage: "pt_BR",
 };
 
 const VOICES: TtsVoice[] = [
-  { voiceId: "v-1", name: "Bella", language: "pt-BR" },
-  { voiceId: "v-2", name: "Adam" },
+  {
+    voiceId: "v-1",
+    name: "Bella",
+    language: "pt_BR",
+    languageMatch: "match",
+  },
+  {
+    voiceId: "v-2",
+    name: "Adam",
+    language: "en_US",
+    languageMatch: "mismatch",
+  },
 ];
 
 describe("assistantProfileHooks.use()", () => {

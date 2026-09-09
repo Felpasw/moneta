@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
 import { OnboardingHero } from "@/components/organisms/OnboardingHero";
 import { OnboardingProgress } from "@/components/organisms/OnboardingProgress";
 import { MicState, useAgentSession } from "@/hooks/useAgentSession";
+import { agentSessionActions } from "@/stores/agentSessionStore";
 import {
   buildOnboardingSummary,
   deriveActiveStep,
@@ -18,14 +19,13 @@ const MIC_ERROR_TOAST = "Couldn't open your microphone.";
 
 export function OnboardingScreen() {
   const router = useRouter();
-  const [micEnabled, setMicEnabled] = useState(false);
   const {
     audioElement,
     isWarming,
     micState,
     toolEvents,
     redirectTarget,
-  } = useAgentSession({ enabled: true, micEnabled });
+  } = useAgentSession({ enabled: true });
 
   const activeStep = useMemo(
     () => deriveActiveStep(toolEvents),
@@ -45,7 +45,7 @@ export function OnboardingScreen() {
     const message =
       micState === MicState.Denied ? MIC_DENIED_TOAST : MIC_ERROR_TOAST;
     toast.error(message);
-    queueMicrotask(() => setMicEnabled(false));
+    queueMicrotask(() => agentSessionActions.setMicEnabled(false));
   }, [micState]);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export function OnboardingScreen() {
     router.push(redirectTarget);
   }, [redirectTarget, router]);
 
-  const handleMicToggle = (): void => setMicEnabled((prev) => !prev);
+  const handleMicToggle = (): void => agentSessionActions.toggleMic();
 
   return (
     <div className="flex min-h-screen flex-col">

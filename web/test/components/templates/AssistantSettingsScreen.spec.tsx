@@ -61,8 +61,18 @@ const PROFILE = {
 };
 
 const VOICES = [
-  { voiceId: "v-1", name: "Bella", language: "pt-BR" },
-  { voiceId: "v-2", name: "Adam", language: "en-US" },
+  {
+    voiceId: "v-1",
+    name: "Bella",
+    language: "pt_BR" as const,
+    languageMatch: "match" as const,
+  },
+  {
+    voiceId: "v-2",
+    name: "Adam",
+    language: "en_US" as const,
+    languageMatch: "mismatch" as const,
+  },
 ];
 
 const wrap = () => {
