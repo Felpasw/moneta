@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.17.0](https://github.com/Felpasw/moneta/compare/api-v0.16.0...api-v0.17.0) (2026-09-09)
+
+
+### ✨ Features
+
+* **agent:** categorize voices by language match with outputLanguage [MNT-250] ([8b14648](https://github.com/Felpasw/moneta/commit/8b146486c6d7d91d1fb4e748e052fb3f005ae2ac))
+
 ## [0.16.0](https://github.com/Felpasw/moneta/compare/api-v0.15.0...api-v0.16.0) (2026-08-26)
 
 

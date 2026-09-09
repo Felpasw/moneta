@@ -6,6 +6,18 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 
 Manutenção deste arquivo é **automatizada pelo [release-please](https://github.com/googleapis/release-please)**. Não editar manualmente entradas de release — só a versão baseline `[0.1.0]` abaixo é escrita à mão.
 
+## [0.15.0](https://github.com/Felpasw/moneta/compare/web-v0.14.0...web-v0.15.0) (2026-09-09)
+
+
+### ✨ Features
+
+* **agent:** categorize voices by language match with outputLanguage [MNT-250] ([8b14648](https://github.com/Felpasw/moneta/commit/8b146486c6d7d91d1fb4e748e052fb3f005ae2ac))
+
+
+### 🐛 Correções
+
+* **web:** unblock Vercel build — TS errors + OnboardingScreen mic wiring [MNT-250] ([f6b73ce](https://github.com/Felpasw/moneta/commit/f6b73ce8ae098ca51b2414f2384692744bca89b8))
+
 ## [0.14.0](https://github.com/Felpasw/moneta/compare/web-v0.13.0...web-v0.14.0) (2026-08-26)
 
 
